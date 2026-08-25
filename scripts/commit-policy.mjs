@@ -53,6 +53,7 @@ export const POLICY = {
     "style",
     "perf",
     "security",
+    "ci",
   ],
   scopes: [
     "app",
