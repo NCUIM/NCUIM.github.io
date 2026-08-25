@@ -3,13 +3,13 @@
 #
 # Prerequisites:
 #   - Docker installed and running
-#   - App built (npm run build)
 #
 # Usage:
 #   ./scripts/zap-scan.sh              # Scan http://127.0.0.1:4173
 #   ./scripts/zap-scan.sh http://host:port  # Scan a custom URL
 #
-# The script starts the preview server, runs ZAP, then stops the server.
+# The script builds the app, starts the preview server, runs ZAP, then stops
+# the server on every exit path (including scan failures).
 
 set -euo pipefail
 
@@ -24,16 +24,22 @@ if ! command -v docker &> /dev/null; then
   exit 1
 fi
 
-# Ensure app is built
-if [[ ! -d "dist" ]]; then
-  echo "Building app..."
-  npm run build
-fi
+# Always build to avoid scanning stale output
+echo "Building app..."
+npm run build
 
 # Start preview server in background
 echo "Starting preview server on port 4173..."
 npm run preview &
 PREVIEW_PID=$!
+
+# Ensure preview server is stopped on every exit path
+cleanup() {
+  echo "Stopping preview server..."
+  kill "$PREVIEW_PID" 2>/dev/null || true
+  wait "$PREVIEW_PID" 2>/dev/null || true
+}
+trap cleanup EXIT
 
 # Wait for server to be ready
 for i in $(seq 1 30); do
@@ -43,7 +49,6 @@ for i in $(seq 1 30); do
   fi
   if [[ "$i" -eq 30 ]]; then
     echo "Error: Server failed to start within 30 seconds." >&2
-    kill "$PREVIEW_PID" 2>/dev/null || true
     exit 1
   fi
   sleep 1
@@ -59,11 +64,15 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   NETWORK_OPT="--network host"
   SCAN_TARGET="$TARGET"
 else
-  SCAN_TARGET="$(echo "$TARGET" | sed 's|127.0.0.1|host.docker.internal|g')"
+  SCAN_TARGET="$(echo "$TARGET" | sed -e 's|127\.0\.0\.1|host.docker.internal|g' -e 's|localhost|host.docker.internal|g')"
   NETWORK_OPT=""
 fi
 
 echo "Running ZAP baseline scan against $SCAN_TARGET..."
+
+# Disable errexit temporarily so we can capture ZAP's exit code and still
+# reach the cleanup trap.
+set +e
 docker run --rm \
   $NETWORK_OPT \
   -v "$(pwd):/zap/wrk:rw" \
@@ -74,13 +83,8 @@ docker run --rm \
     -J "zap-reports/zap-report-${TIMESTAMP}.json" \
     -a \
     -j
-
 ZAP_EXIT=$?
-
-# Stop preview server
-echo "Stopping preview server..."
-kill "$PREVIEW_PID" 2>/dev/null || true
-wait "$PREVIEW_PID" 2>/dev/null || true
+set -e
 
 echo ""
 echo "ZAP scan complete."
