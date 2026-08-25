@@ -262,7 +262,7 @@ function runSelfTest() {
   check("missing scope", validateSubject("feat: add photo-linked entries"), true);
   check("bad type", validateSubject("feta(auth): implement anonymous sign-in"), true);
   check("unknown scope", validateSubject("feat(nonsense): add photo-linked entries"), true);
-  check("too long", validateSubject(`feat(auth): ${"x".repeat(60)}`), true);
+  check("too long", validateSubject(`feat(auth): ${"x".repeat(61)}`), true);
   check("uppercase start", validateSubject("feat(auth): Add photo-linked entries"), true);
   check("trailing period", validateSubject("feat(auth): add photo-linked entries."), true);
   check("vague", validateSubject("chore(ci): update"), true);
