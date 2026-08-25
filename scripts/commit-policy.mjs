@@ -80,6 +80,8 @@ export const POLICY = {
     "privacy",
     "workflow",
     "quality",
+    "setup",
+    "style",
   ],
   subjectMaxLength: 72,
   // Description (text after "<type>(<scope>): ") must start with these.
