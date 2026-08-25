@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "event": {
+    "id": "ncuim-fresher-2026-demo",
+    "name": {
+      "en": "NCUIM 2026 Fresher Quest",
+      "zh-TW": "中大資管 2026 新生任務"
+    },
+    "shortName": {
+      "en": "Fresher Quest",
+      "zh-TW": "新生任務"
+    },
+    "slogan": {
+      "en": "Meet. Connect. Level up.",
+      "zh-TW": "認識彼此，一起升級。"
+    },
+    "timeZone": "Asia/Taipei",
+    "startsAt": "2026-09-05T05:00:00Z",
+    "endsAt": "2026-09-05T09:00:00Z",
+    "graceEndsAt": "2026-09-05T10:00:00Z",
+    "expectedAttendance": 120,
+    "supportedLocales": ["en", "zh-TW"],
+    "defaultLocale": "en",
+    "organizerContact": "PLACEHOLDER@example.invalid"
+  },
+  "brand": {
+    "direction": "NCUIM Pixel Quest",
+    "wordmark": {
+      "en": "NCUIM / FRESHER QUEST 2026",
+      "zh-TW": "中大資管 / 新生任務 2026"
+    },
+    "officialNcuEmblemApproved": true,
+    "bodyFont": "Noto Sans TC",
+    "displayFont": "Fusion Pixel Font zh_hant",
+    "palette": {
+      "canvas": "#F7F5EE",
+      "surface": "#FFFFFF",
+      "ink": "#172033",
+      "primary": "#3157C8",
+      "star": "#FFD45A",
+      "success": "#55CFA5",
+      "danger": "#CC3D4A",
+      "muted": "#667085",
+      "terminal": "#101522",
+      "terminalText": "#B9F6CA"
+    },
+    "mascot": {
+      "id": "query-cat",
+      "name": {
+        "en": "Query Cat",
+        "zh-TW": "查詢貓"
+      }
+    }
+  },
+  "checkIn": {
+    "credential": "anonymous-participant-card",
+    "cardsToGenerate": 130,
+    "fallbackCodeAlphabet": "CROCKFORD_BASE32",
+    "fallbackCodeLength": 16,
+    "cardSerialPrefix": "F-",
+    "storeRosterInFirebase": false,
+    "recoveryMethod": "offline-handoff-roster-and-card-serial"
+  },
+  "demoData": {
+    "syntheticParticipantCount": 120,
+    "seed": "ncuim-fresher-2026-demo-data-v1",
+    "useFakeNames": true,
+    "resettable": true
+  },
+  "features": {
+    "profiles": true,
+    "encounters": true,
+    "nfc": false,
+    "activities": true,
+    "groups": true,
+    "individualLeaderboard": true,
+    "teamLeaderboard": true,
+    "offlineChallenge": true,
+    "rewards": true,
+    "laboratoryLottery": true,
+    "fullDarkMode": false
+  },
+  "profile": {
+    "displayNameMaxLength": 40,
+    "introMaxLength": 160,
+    "interestLimit": 5,
+    "avatarInputMaxBytes": 10485760,
+    "avatarOutputMaxBytes": 1048576,
+    "avatarLongestEdgePx": 1080
+  },
+  "interaction": {
+    "tokenLifetimeSeconds": 120,
+    "uniqueEncounterPointLimit": 10,
+    "allowNfcFallback": false
+  },
+  "activities": [
+    {
+      "id": "conversation-combo",
+      "name": {
+        "en": "Conversation Combo",
+        "zh-TW": "對話連擊"
+      },
+      "description": {
+        "en": "Meet three different participants after starting this mission.",
+        "zh-TW": "開始任務後，認識三位不同的新生。"
+      },
+      "verification": "three-unique-encounters",
+      "points": 15
+    },
+    {
+      "id": "team-sync",
+      "name": {
+        "en": "Team Sync",
+        "zh-TW": "小隊同步"
+      },
+      "description": {
+        "en": "Complete the physical team activity and ask staff to scan the group QR.",
+        "zh-TW": "完成現場小隊活動，再請工作人員掃描小隊 QR。"
+      },
+      "verification": "staff-group-qr",
+      "points": 15
+    }
+  ],
+  "scoringRules": [
+    {
+      "id": "profile-complete",
+      "points": 10,
+      "limit": 1
+    },
+    {
+      "id": "unique-encounter",
+      "points": 5,
+      "limit": 10
+    },
+    {
+      "id": "conversation-combo",
+      "points": 15,
+      "limit": 1
+    },
+    {
+      "id": "team-sync",
+      "points": 15,
+      "limit": 1
+    },
+    {
+      "id": "offline-challenge",
+      "points": 10,
+      "limit": 1
+    }
+  ],
+  "groups": {
+    "mode": "hybrid",
+    "minimumSize": 4,
+    "targetSize": 5,
+    "maximumSize": 6,
+    "allowSelfFormation": true,
+    "allowSystemFillOptIn": true,
+    "avoidRepeatedEncounterPairs": true,
+    "formationDeadline": "2026-09-05T06:30:00Z",
+    "systemGroupingSeed": "PLACEHOLDER-public-grouping-seed",
+    "placeholderGroupAliases": [
+      "Pixel Pine",
+      "Data Star",
+      "Cloud Fox",
+      "Query Cat"
+    ]
+  },
+  "leaderboard": {
+    "individualEnabled": true,
+    "teamEnabled": true,
+    "publicOptOut": true,
+    "teamScoreMethod": "average-member-score-plus-team-missions",
+    "teamMissionPointCap": 50,
+    "laboratoryAllocationInfluence": "none",
+    "freezeAt": "2026-09-05T08:30:00Z"
+  },
+  "challenge": {
+    "id": "network-inspection-v1",
+    "stationId": "challenge-station-01",
+    "ticketLifetimeSeconds": 900,
+    "proofExpiresAt": "2026-09-05T10:00:00Z",
+    "flagPrefix": "IMIS",
+    "firebaseTicketKeyId": "PLACEHOLDER-firebase-ticket-key-v1",
+    "stationProofKeyId": "PLACEHOLDER-station-proof-key-v1"
+  },
+  "rewards": [
+    {
+      "id": "challenge-gift",
+      "name": {
+        "en": "Mystery Pixel Gift",
+        "zh-TW": "像素神秘小禮物"
+      },
+      "inventory": 50,
+      "consumeInventoryAt": "redemption"
+    }
+  ],
+  "laboratoryLottery": {
+    "mode": "event-station",
+    "unit": "group",
+    "preferenceDeadline": "2026-09-05T07:00:00Z",
+    "leaderboardInfluence": "none",
+    "preferenceUtility": [100, 60, 30, 10],
+    "unassignedPenalty": -10000,
+    "solver": "OR-Tools CP-SAT",
+    "solverVersion": "9.15",
+    "solverWorkers": 1,
+    "solverSeed": "PLACEHOLDER-public-allocation-seed",
+    "runnerSigningKeyId": "PLACEHOLDER-allocation-runner-key-v1",
+    "laboratories": [
+      {
+        "id": "LAB-A",
+        "name": {
+          "en": "Placeholder Data Lab",
+          "zh-TW": "佔位資料實驗室"
+        },
+        "capacity": 30
+      },
+      {
+        "id": "LAB-B",
+        "name": {
+          "en": "Placeholder AI Lab",
+          "zh-TW": "佔位人工智慧實驗室"
+        },
+        "capacity": 30
+      },
+      {
+        "id": "LAB-C",
+        "name": {
+          "en": "Placeholder Security Lab",
+          "zh-TW": "佔位資安實驗室"
+        },
+        "capacity": 30
+      },
+      {
+        "id": "LAB-D",
+        "name": {
+          "en": "Placeholder Systems Lab",
+          "zh-TW": "佔位資訊系統實驗室"
+        },
+        "capacity": 30
+      }
+    ]
+  },
+  "firebase": {
+    "firestoreRegion": "asia-east1",
+    "functionsRegion": "asia-east1",
+    "storageRegion": "asia-east1",
+    "realtimeDatabaseRegion": "asia-southeast1",
+    "billingPlan": "Blaze",
+    "appCheckProvider": "reCAPTCHA Enterprise",
+    "appCheckEnforced": true,
+    "budgetAlertsRequired": true
+  },
+  "retentionDays": {
+    "profilesAndActivity": 30,
+    "redemptionAudit": 90,
+    "challengeStationState": 30
+  }
+}

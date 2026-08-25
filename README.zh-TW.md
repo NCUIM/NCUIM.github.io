@@ -4,7 +4,7 @@
 
 本專案目前處於規格階段，尚無應用程式 scaffold。實作應在 P0 需求被接受後開始。
 
-[繁體中文說明](README.zh-TW.md)
+[English](README.md)
 
 ## 產品原則
 
@@ -49,4 +49,4 @@
 
 ## 倉庫狀態
 
-No application scaffold has been generated yet. Implementation should begin only after the P0 requirements in the spec are accepted.
+尚未建立應用程式 scaffold。實作前應先確認 P0 需求。

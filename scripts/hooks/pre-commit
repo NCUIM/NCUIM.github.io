@@ -1,0 +1,19 @@
+#!/bin/sh
+# Advisory pre-commit hook.
+#
+# Prints a scope hint BEFORE the commit message is written, based on the
+# staged files (scripts/commit-policy.mjs `suggest-scope` mode). It NEVER
+# blocks: the hard gate is the commit-msg hook (and CI), which validate the
+# actual message. See docs/engineering/commit-policy.md.
+#
+# Installed automatically into .git/hooks/pre-commit by `npm run prepare`
+# (see scripts/install-hooks.mjs). Do not edit .git/hooks/pre-commit directly.
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+if ! command -v node >/dev/null 2>&1; then
+  exit 0
+fi
+
+node "$repo_root/scripts/commit-policy.mjs" suggest-scope
+exit 0

@@ -1,0 +1,28 @@
+#!/bin/sh
+# Local commit-msg hook.
+#
+# Delegates ALL validation to scripts/commit-policy.mjs so the local gate runs
+# the exact same code as CI (.github/workflows/policy.yml). The rules live in
+# exactly one file (scripts/commit-policy.mjs) — if this hook and CI ever
+# disagree, that is a bug. See docs/engineering/commit-policy.md.
+#
+# Installed automatically into .git/hooks/commit-msg by `npm run prepare`
+# (see scripts/install-hooks.mjs; `prepare` runs on every `npm install`).
+# Do not edit .git/hooks/commit-msg directly — edit this file instead and
+# re-run `npm run prepare`.
+
+commit_msg_file="$1"
+if [ -z "$commit_msg_file" ]; then
+  echo "[COMMIT BLOCKED] commit-msg hook called without a message file." >&2
+  exit 1
+fi
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "[COMMIT BLOCKED] 'node' not found on PATH; cannot validate commit message." >&2
+  echo "Run the commit from a shell where 'node' is available (e.g. your normal terminal)." >&2
+  exit 1
+fi
+
+node "$repo_root/scripts/commit-policy.mjs" message "$commit_msg_file"
