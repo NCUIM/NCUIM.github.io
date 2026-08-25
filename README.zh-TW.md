@@ -20,7 +20,7 @@ NCUIM 新生綜合服務與生活入口平台：以手機瀏覽器為主要載�
 - 計分與管理操作必須由伺服器驗證。
 - 只蒐集活動真正需要的資料。
 
-## 技術棧（暫定）
+## 技術棧（暫定，待 ADR 確認）
 
 - Ionic React、TypeScript、Vite
 - Firebase Authentication
