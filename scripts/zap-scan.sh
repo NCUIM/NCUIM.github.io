@@ -16,7 +16,6 @@ set -euo pipefail
 TARGET="${1:-http://127.0.0.1:4173}"
 REPORT_DIR="zap-reports"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-REPORT_FILE="${REPORT_DIR}/zap-report-${TIMESTAMP}.json"
 
 # Ensure Docker is available
 if ! command -v docker &> /dev/null; then
@@ -53,17 +52,26 @@ done
 # Create report directory
 mkdir -p "$REPORT_DIR"
 
-# Run ZAP baseline scan
-echo "Running ZAP baseline scan against $TARGET..."
+# Determine Docker networking:
+# - Linux: --network host lets the container reach 127.0.0.1 directly.
+# - Docker Desktop (macOS/Windows): use host.docker.internal instead.
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  NETWORK_OPT="--network host"
+  SCAN_TARGET="$TARGET"
+else
+  SCAN_TARGET="$(echo "$TARGET" | sed 's|127.0.0.1|host.docker.internal|g')"
+  NETWORK_OPT=""
+fi
+
+echo "Running ZAP baseline scan against $SCAN_TARGET..."
 docker run --rm \
-  --network host \
-  -v "$(pwd)/.zap:/zap/wrk/:rw" \
-  -v "$(pwd)/${REPORT_DIR}:/zap/wrk/:rw" \
+  $NETWORK_OPT \
+  -v "$(pwd):/zap/wrk:rw" \
   ghcr.io/zaproxy/zaproxy:stable \
   zap-baseline.py \
-    -t "$TARGET" \
-    -r "zap-report-${TIMESTAMP}.json" \
-    -J "zap-report-${TIMESTAMP}.json" \
+    -t "$SCAN_TARGET" \
+    -r "zap-reports/zap-report-${TIMESTAMP}.html" \
+    -J "zap-reports/zap-report-${TIMESTAMP}.json" \
     -a \
     -j
 
