@@ -76,6 +76,15 @@ Apply to frontend PRs.
 - Buttons and icon buttons have accessible names.
 - Empty states are helpful and informative.
 
+## Security Scan Checks
+
+Apply when ZAP scan results are available (weekly CI or local `npm run test:zap`).
+
+- Review any new HIGH or MEDIUM risk alerts since the last scan.
+- Verify false positives are documented in `.zap/rules.tsv` with a comment.
+- Check that security headers (CSP, HSTS, X-Content-Type-Options) are present.
+- Verify no sensitive information is leaked in error messages or comments.
+
 ## Test Expectations By Risk
 
 The required verification evidence per risk area is defined in exactly one
