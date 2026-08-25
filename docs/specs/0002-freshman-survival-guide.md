@@ -1,0 +1,132 @@
+# Spec: 新生生存指南與生活工具箱系統
+
+> 詞彙依循 [CONTEXT.md](../../CONTEXT.md)。相關決策：[ADR-0003](../adr/0003-unified-portal-and-seating-architecture.md)。
+
+## Problem Statement
+
+資管所新生入學時面臨多重資訊孤島與生活痛點：
+1. **資訊碎片化**：選課規定、修業辦法、學術倫理研習、校園授權軟體等資訊散落在教務處、計中、圖書館及系所網站不同子分頁，難以一次掌握。
+2. **日常空間與找人困難**：新生進入管二館大研究室（209, 310, 313, 919）時，無法快速辨識各座位的使用者、年級與所屬實驗室，找學長姐與同儕極為不便。
+3. **迎新選位流程繁瑣**：每年新生茶會的研究室抽籤需要維持「同組/同實驗室相鄰不拆散」與「S 型蛇形走位」，過去依賴離線 Python 腳本或 Excel 人工操作，缺乏沉浸式現場開獎與自動同步機制。
+4. **排課與周邊生活缺乏傳承**：學校選課系統介面零碎無法一眼綜覽全所每週開課時段；中大周邊餐飲（後門、宵夜街）營業時間與公休資訊分散，新生常面臨選擇困難與踩雷。
+
+## Solution
+
+在 `NCUIM2026-Fresher` 整合平台上擴充「新生生存指南與生活工具箱」模組，以手機瀏覽器體驗為核心（支援大螢幕投影），提供：
+1. **生存指南與時程檢核 (Guide & Checklist)**：主題式圖文指引、依時程規劃之入學檢核清單與校園資源直達車。
+2. **研究室抽籤大會 (Lab Lottery Stage)**：支援名單匯入、S型蛇形相鄰回溯分配演算、大螢幕輪播開獎跑馬燈與慶祝動畫。
+3. **擬真研究室座位表 (Floorplan Seating Map)**：抽籤結果自動沉澱為 209/310/313/919 四間實體格局座位圖，支援依姓名/教授即時搜尋與點擊查看成員資料。
+4. **全系週課表 (Weekly Timetable Matrix)**：一覽全所碩博與大學部開課時段、教室、學分與授課教師，支援快速篩選。
+5. **中大美食地圖 (Food Guide & Randomizer)**：收錄後門、宵夜街與校內餐廳資訊，提供分類篩選、營業狀態及「今天吃什麼」隨機抽籤轉盤。
+6. **學分試算工具 (Credit Calculator)**：勾選修習課程，即時試算必修、選修、跨所學分抵免與畢業門檻達成率。
+
+## Module Ownership & Team Boundaries
+
+本專案採模組化責任切分，確保多人協作時架構解耦且無 Git 衝突：
+
+| 模組領域 | 負責人 | 規格對應 | 目錄邊界 (建議) | 包含功能與路由 |
+| :--- | :--- | :--- | :--- | :--- |
+| **電子名片與破冰活動** | **ThanatosJun** | Spec 0001 | `src/features/cards/`<br>`src/services/cards/` | QR 掃碼互換、Profile 卡片、破冰成就、排行榜 (`/cards`, `/scan`, `/leaderboard`) |
+| **研究室選位與座位地圖** | **Youchen Jiang** | Spec 0002 (空間) | `src/features/seating/`<br>`src/features/lottery/` | 蛇形回溯抽籤演算法、現場開獎大會舞台 (`/stage/lottery`)、209/310/313/919 實體座位表 (`/seats`) |
+| **新生生活指南與實用工具** | **Youchen Jiang** | Spec 0002 (生活) | `src/features/guide/`<br>`src/features/timetable/`<br>`src/features/food/`<br>`src/features/tools/` | 入學 Checklist、全系週課表 (`/timetable`)、中大美食地圖與轉盤 (`/food`)、學分試算器 (`/tools/credit`) |
+
+
+
+---
+
+## User Stories
+
+### 1. 研究室抽籤大會 (Lab Lottery)
+
+1. As a 管理員/主持人, I want 上傳包含組別與成員的名單, so that 系統能自動讀取各組人數與代表人。
+2. As a 管理員/主持人, I want 系統採用蛇形相鄰約束求解演算法自動分配房間與座位, so that 同一組成員被安排在同一間研究室且座位相連不拆散。
+3. As a 管理員/主持人, I want 在大螢幕上逐組點擊「開出下一組」或開啟「自動連續開獎」, so that 現場迎新具有懸疑刺激的開獎效果。
+4. As a 現場參與者, I want 在大螢幕看到組別成員標籤、滾動跑馬燈動畫、即時滿座進度條與灑花效果, so that 開獎過程充滿儀式感與即時回饋。
+5. As a 管理員, I want 開獎完成後一鍵將結果固化並發布至正式座位表, so that 不需人工手動二次鍵入。
+
+### 2. 擬真研究室座位表 (Seating Map)
+
+6. As a 新生/在校生, I want 在手機上切換查看 209 (20席)、310 (27席)、313 (23席)、919 (9席) 的實體格局圖, so that 我能清楚理解各研究室的空間配置（如大門、走道、印表機區、牆柱）。
+7. As a 新生/在校生, I want 點擊任一已佔用座位查看該成員姓名、年級、指導教授與所屬 Lab, so that 我能迅速認識學長姐或找到聯絡對象。
+8. As a 新生/在校生, I want 輸入人名或教授名字快速高亮其座位, so that 我不用在整張圖上一格一格尋找。
+
+### 3. 全系課表導覽 (Department Timetable)
+
+9. As a 新生, I want 以週曆矩陣視圖（週一至週五、各節次 1~E）查看全系開課狀況, so that 我能綜觀每週的排課時間分佈。
+10. As a 新生, I want 依學制（碩博班 / 大學部）與課程屬性（必修 / 選修）進行快速篩選, so that 課表不會被無關課程干擾。
+11. As a 新生, I want 點擊課程查看課號、學分、上課教室、授課教授與課程大綱連結, so that 我能掌握選課細節。
+
+### 4. 中大美食地圖與決策工具 (Food Guide)
+
+12. As a 新生, I want 瀏覽後門、宵夜街、前門與校內各餐廳店家清單, so that 我能快速找到想吃的餐點。
+13. As a 新生, I want 查看店家的推薦品項、價位區間、營業時間與公休日, so that 我不會白跑一趟。
+14. As a 新生, I want 點擊 Google Maps 導航按鈕或查看菜單圖片, so that 我能直接前往或電話訂餐。
+15. As a 新生, I want 使用「今天吃什麼」隨機轉盤/抽卡功能, so that 能快速解決午晚餐與聚餐的選擇障礙。
+
+### 5. 生存指南與學分工具 (Guide & Tools)
+
+16. As a 新生, I want 依入學時間軸（報到、選課、學術倫理、找教授、畢業口試）檢核待辦事項, so that 我不會漏掉關鍵手續。
+17. As a 新生, I want 快速存取校園系統直達車與學生軟體福利（GitHub Student Pack, JetBrains, Office 365, MATLAB, VPN 設定教學）, so that 我能充分利用學校資源。
+18. As a 新生, I want 使用學分試算工具勾選已修/預選課程, so that 系統自動計算必修、選修、外所抵免上限與剩餘畢業學分。
+
+---
+
+## Technical Specifications
+
+### 1. 空間格局規格 (Room Layouts)
+
+| 研究室編號 | 總席數 | 空間特徵與格局描述 |
+| :--- | :--- | :--- |
+| **209** | 20 席 | 4 排 × 5 列標準矩陣，蛇形走位（1-1~1-5 $\to$ 2-5~2-1 $\to$ 3-1~3-5 $\to$ 4-5~4-1）。頂部為大門。 |
+| **310** | 27 席 | 5 排 × 5 列 + 右側額外席位（6-1, 6-2），右上角包含「印表機區」。左上角為大門。 |
+| **313** | 23 席 | 4 排結構（1~3排各6席，第4排5席），右上角為大門，右側第2列為「牆柱」。 |
+| **919** | 9 席 | 左側 1 排（4席）、右側 1 排（5席），中間為走道。左上角為大門與公用電腦區。 |
+
+### 2. 抽籤演算法規格 (Constraint Backtracking Solver)
+- **輸入**：各組 ID、成員名單、組代表人、每組人數 $S_i$。
+- **約束條件**：
+  1. $\forall$ 組別 $G_i$，所有成員必須全部分配至同一房間 $R_j$。
+  2. 房間剩餘容量 $\ge S_i$。
+  3. 座位依預設蛇形序列 $L_{R_j}$ 分配，組內成員必須佔據連續的索引區間 $[k, k + S_i - 1]$。
+- **隨機性**：組別抽籤順序隨機洗牌，房間探尋順序隨機打亂，以確保公平性。
+
+### 3. 資料結構範例 (TypeScript Schemas)
+
+```typescript
+// 座位實體
+export interface SeatInfo {
+  roomId: '209' | '310' | '313' | '919';
+  seatLabel: string;       // e.g. "1-1", "6-2"
+  studentName?: string;
+  grade?: '碩一' | '碩二' | '博班';
+  advisor?: string;        // 指導教授
+  labName?: string;        // 所屬實驗室名稱
+}
+
+// 課程實體
+export interface CourseInfo {
+  id: string;
+  code: string;            // 課號
+  title: string;           // 課名
+  instructor: string;      // 授課教師
+  credits: number;
+  dayOfWeek: 1 | 2 | 3 | 4 | 5;
+  slots: string[];         // e.g. ["2", "3", "4"]
+  classroom: string;       // e.g. "管二 208"
+  level: 'graduate' | 'undergraduate';
+  category: 'required' | 'elective';
+}
+
+// 美食店家實體
+export interface FoodSpot {
+  id: string;
+  name: string;
+  area: 'back_gate' | 'night_street' | 'front_gate' | 'campus';
+  category: 'rice_noodle' | 'drink' | 'snack' | 'cafe' | 'group';
+  signatureDishes: string[];
+  priceRange: '$' | '$$' | '$$$';
+  businessHours: string;
+  offDays: string[];
+  googleMapsUrl?: string;
+}
+```
