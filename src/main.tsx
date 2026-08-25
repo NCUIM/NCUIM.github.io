@@ -1,3 +1,13 @@
 import { createRoot } from "react-dom/client";
+import { IonApp } from "@ionic/react";
 
-createRoot(document.getElementById("root")!).render("NCUIM 2026 Fresher Mixer");
+import "@ionic/react/css/core.css";
+import "./theme/variables.css";
+
+createRoot(document.getElementById("root")!).render(
+  <IonApp>
+    <div style={{ padding: "var(--ncu-space-4)" }}>
+      <h1>NCUIM 2026 Fresher</h1>
+    </div>
+  </IonApp>,
+);

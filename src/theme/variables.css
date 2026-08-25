@@ -1,0 +1,113 @@
+/*
+ * NCUIM 2026 Fresher — Design System Theme
+ *
+ * Color tokens from docs/archive/07-visual-design.md §4.1.
+ * All contrast ratios verified: canvas/ink 14.91:1, surface/ink 16.27:1,
+ * primary/white 6.31:1, star/ink 11.48:1, success/ink 8.41:1,
+ * danger/white 4.85:1, surface/muted 4.97:1, terminal/terminal-text 14.84:1.
+ */
+
+:root {
+  /* ── Color Tokens ─────────────────────────────────────────────── */
+  --ncu-canvas: #f7f5ee;
+  --ncu-surface: #ffffff;
+  --ncu-ink: #172033;
+  --ncu-primary: #3157c8;
+  --ncu-star: #ffd45a;
+  --ncu-success: #55cfa5;
+  --ncu-danger: #cc3d4a;
+  --ncu-muted: #667085;
+  --ncu-terminal: #101522;
+  --ncu-terminal-text: #b9f6ca;
+
+  /* ── Derived Tokens ───────────────────────────────────────────── */
+  --ncu-primary-light: #e8edfb;
+  --ncu-danger-light: #fde8ea;
+  --ncu-success-light: #e6f7f1;
+  --ncu-star-light: #fef6dc;
+  --ncu-border: #d0d5dd;
+
+  /* ── Typography ───────────────────────────────────────────────── */
+  --ncu-font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
+    system-ui, -apple-system, sans-serif;
+  --ncu-font-size-xs: 12px;
+  --ncu-font-size-sm: 14px;
+  --ncu-font-size-base: 16px;
+  --ncu-font-size-lg: 18px;
+  --ncu-font-size-xl: 20px;
+  --ncu-font-size-2xl: 24px;
+  --ncu-font-size-3xl: 30px;
+  --ncu-line-height: 1.5;
+  --ncu-font-weight-regular: 400;
+  --ncu-font-weight-medium: 500;
+  --ncu-font-weight-bold: 700;
+
+  /* ── Spacing (4px base, 8px increments) ──────────────────────── */
+  --ncu-space-1: 4px;
+  --ncu-space-2: 8px;
+  --ncu-space-3: 12px;
+  --ncu-space-4: 16px;
+  --ncu-space-5: 20px;
+  --ncu-space-6: 24px;
+  --ncu-space-8: 32px;
+  --ncu-space-10: 40px;
+  --ncu-space-12: 48px;
+
+  /* ── Shape ────────────────────────────────────────────────────── */
+  --ncu-radius-sm: 4px;
+  --ncu-radius-md: 8px;
+  --ncu-radius-lg: 12px;
+  --ncu-radius-full: 9999px;
+  --ncu-shadow-hard: 4px 4px 0 var(--ncu-ink);
+
+  /* ── Ionic Theme Overrides ────────────────────────────────────── */
+  --ion-background-color: var(--ncu-canvas);
+  --ion-text-color: var(--ncu-ink);
+  --ion-color-primary: var(--ncu-primary);
+  --ion-color-primary-rgb: 49, 87, 200;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #2a4bae;
+  --ion-color-primary-tint: #4567cd;
+
+  --ion-color-success: var(--ncu-success);
+  --ion-color-success-rgb: 85, 207, 165;
+  --ion-color-danger: var(--ncu-danger);
+  --ion-color-danger-rgb: 204, 61, 74;
+
+  --ion-toolbar-background: var(--ncu-surface);
+  --ion-toolbar-color: var(--ncu-ink);
+  --ion-tab-bar-background: var(--ncu-surface);
+  --ion-tab-bar-color: var(--ncu-muted);
+  --ion-tab-bar-color-selected: var(--ncu-primary);
+
+  --ion-card-background: var(--ncu-surface);
+  --ion-card-border-radius: var(--ncu-radius-md);
+
+  --ion-font-family: var(--ncu-font-family);
+}
+
+/* ── Global Resets ─────────────────────────────────────────────── */
+body {
+  font-family: var(--ncu-font-family);
+  font-size: var(--ncu-font-size-base);
+  line-height: var(--ncu-line-height);
+  color: var(--ncu-ink);
+  background-color: var(--ncu-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent iOS auto-zoom on inputs < 16px */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent iOS zoom on focused inputs */
+ion-input,
+ion-textarea {
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+ion-input input,
+ion-textarea textarea {
+  font-size: var(--ncu-font-size-base) !important;
+}
