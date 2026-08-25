@@ -65,7 +65,7 @@ All commit messages must follow Conventional Commits:
 
 - **Header**: Must not exceed 72 characters; must not end with a period.
 - **Allowed types**: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
-- **Allowed scopes**: `app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `challenge`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`
+- **Allowed scopes**: `app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`
 - **Body**: Must be a numbered English list starting with `1. `, separated from header by a blank line.
 
 Example:
@@ -91,8 +91,6 @@ If the user objects to or revokes an action, stop all mutations immediately. Do 
 This project is a **mobile-first web app** built with:
 - Ionic React + TypeScript + Vite
 - Firebase (Auth, Firestore, Cloud Storage, Realtime Database, Cloud Functions, Hosting)
-- Offline TypeScript challenge station with SQLite
-- Optional Python OR-Tools runner
 
 ### Firebase-Specific Guardrails
 - Security Rules changes require careful review — they affect all client access.

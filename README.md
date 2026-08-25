@@ -1,56 +1,52 @@
-# NCUIM 2026 Fresher Mixer
+# NCUIM2026-Fresher
 
-A mobile-first web app for NCU Information Management freshmen to meet one another during the 2026 welcome mixer.
+一個以手機瀏覽器為主要載體的活動互動網頁：參與者在活動現場透過掃描 QR Code 收集彼此的卡片，並可查看該場活動的公告。
 
-The project is currently in the specification phase. It will be delivered as a web app rather than an App Store or Play Store application.
+本專案目前處於規格階段，尚無應用程式 scaffold。實作應在 P0 需求被接受後開始。
 
 [繁體中文說明](README.zh-TW.md)
 
-## Product principles
+## 產品原則
 
-- Open from a link or QR code without installation.
-- Optimize for current mobile Safari and Chrome.
-- Keep the event usable without creating a permanent account.
-- Use QR codes as the primary interaction mechanism and NFC URL tags only as an optional shortcut.
-- Keep trusted operations server-side while avoiding a custom long-running backend.
-- Collect only data required to run the event.
+- 掃描連結或 QR Code 即可使用，不要求安裝。
+- 主要支援目前的 iOS Safari 與 Android Chrome。
+- 新生不必註冊永久帳號即可參加活動。
+- QR Code 是主要互動方式。
+- 計分與管理操作必須由伺服器驗證。
+- 只蒐集活動真正需要的資料。
 
-## Selected stack
+## 技術棧（暫定，待 ADR 確認）
 
-- Ionic React, TypeScript, and Vite
+- Ionic React、TypeScript、Vite
 - Firebase Authentication
 - Cloud Firestore
 - Cloud Storage for Firebase
-- Firebase Realtime Database for presence only
-- Cloud Functions for trusted operations
-- Firebase Hosting, Security Rules, and App Check
-- Offline TypeScript challenge station with SQLite and signed proofs
-- Optional Python OR-Tools runner for laboratory allocation
+- Cloud Functions
+- Firebase Hosting、Security Rules、App Check
 
-## Canonical specifications
+> 技術棧尚未正式記錄為 ADR，實作前應確認並補建 ADR。
 
-The English documents below are normative. Localized documents are navigation aids unless they explicitly say otherwise.
+## 規格文件
 
-| Document | Responsibility |
+以中文規格為主要來源。相關決策記錄於 ADR。
+
+| 文件 | 責任範圍 |
 | --- | --- |
-| [Product requirements](docs/01-product-requirements.md) | Scope, actors, user journeys, priorities, and acceptance criteria |
-| [System architecture](docs/02-system-architecture.md) | Runtime boundaries, routes, Firebase services, functions, and deployment |
-| [Data and security](docs/03-data-and-security.md) | Data model, authorization, privacy, uploads, secrets, and abuse controls |
-| [Interactions and rewards](docs/04-interactions-and-rewards.md) | QR/NFC encounters, the hidden flag challenge, submission, and redemption |
-| [Admin and operations](docs/05-admin-and-operations.md) | Back-office roles, monitoring, recovery, moderation, and event runbook |
-| [Quality and launch](docs/06-quality-and-launch.md) | i18n, accessibility, browser support, testing, performance, and release gates |
-| [Visual design](docs/07-visual-design.md) | Pixel Quest direction, design tokens, typography, screens, motion, and required artifacts |
-| [Offline challenge server](docs/08-challenge-server.md) | Isolated station, signed tickets/proofs, offline operation, and security |
-| [Grouping, leaderboard, and laboratory lottery](docs/09-grouping-leaderboard-and-lottery.md) | Group formation, scoring, ranking, preference allocation, and fairness |
-| [Demo event configuration](docs/examples/event-config.example.json) | Replaceable seed data for 120 fake participants and four placeholder labs |
+| [CONTEXT.md](CONTEXT.md) | 領域術語辭典：所有規格文件的詞彙基準 |
+| [活動卡片收集系統](docs/specs/0001-event-card-collection.md) | 完整產品規格：使用者故事、實作決策、測試策略 |
+| [ADR-0001](docs/adr/0001-per-event-identity-without-accounts.md) | 身分繫於單場活動，不建立帳號系統 |
+| [ADR-0002](docs/adr/0002-achievements-are-never-revoked.md) | 已達成的 Achievement 永不撤銷 |
 
-## Language policy
+## 規模
 
-- Product locales: English (`en`) and Traditional Chinese (`zh-TW`) at minimum.
-- Runtime fallback locale: English.
-- The user can change language at any time; the choice persists on the device.
-- Documentation defaults to English. Traditional Chinese files use the `.zh-TW.md` suffix.
+單場活動約七十人，每組五至八人。沒有效能或擴展性顧慮。
 
-## Repository status
+## 語言規則
 
-No application scaffold has been generated yet. Implementation should begin only after the P0 requirements and launch configuration in these documents are accepted.
+- 文件預設使用繁體中文；英文文件使用 `.en.md` 後綴。
+- App 至少支援英文 `en` 與繁體中文 `zh-TW`。
+- 找不到翻譯時回退英文。
+
+## 倉庫狀態
+
+No application scaffold has been generated yet. Implementation should begin only after the P0 requirements in the spec are accepted.

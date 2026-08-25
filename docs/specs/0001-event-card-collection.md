@@ -220,9 +220,11 @@ Admin 在後台即時掌握所有人的狀況，能發布公告、調整成就�
 
 ## Further Notes
 
-### 尚未決定：技術棧
+### 技術棧（暫定，待 ADR 確認）
 
-本專案為全新 repo，尚未選定語言、框架、資料庫與部署方式。這個決定應在實作前單獨做出，並考量：需要伺服器端邏輯與資料庫、需要寄送 email、需要一個 Admin 後台、以手機瀏覽器為唯一前端、規模僅約七十人。建議選定後記錄為一份 ADR。
+初步選定 **Ionic React + TypeScript + Vite** 為前端框架，**Firebase** 為後端服務（Authentication、Cloud Firestore、Cloud Storage、Cloud Functions、Firebase Hosting）。此決定尚未正式記錄為 ADR，實作前應確認並補建 ADR。
+
+選型考量：需要伺服器端邏輯與資料庫、需要寄送 email、需要一個 Admin 後台、以手機瀏覽器為唯一前端、規模僅約七十人。
 
 ### 規模
 
