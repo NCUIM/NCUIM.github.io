@@ -1,0 +1,11 @@
+<type>(<scope>): <description>
+
+1. Why this change is needed.
+
+2. What changed and how.
+
+3. How it was verified.
+
+# Format: <type>(<scope>): <description>
+# All rules (types, scopes, length, body): docs/engineering/commit-policy.md
+# Enforced identically by the local commit-msg hook and CI.
