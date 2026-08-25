@@ -25,7 +25,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Ensure app is built
-if [ ! -d "dist" ]; then
+if [[ ! -d "dist" ]]; then
   echo "Building app..."
   npm run build
 fi
@@ -41,7 +41,7 @@ for i in $(seq 1 30); do
     echo "Server ready at $TARGET"
     break
   fi
-  if [ "$i" -eq 30 ]; then
+  if [[ "$i" -eq 30 ]]; then
     echo "Error: Server failed to start within 30 seconds." >&2
     kill "$PREVIEW_PID" 2>/dev/null || true
     exit 1
@@ -87,9 +87,9 @@ echo "ZAP scan complete."
 echo "Report: ${REPORT_DIR}/zap-report-${TIMESTAMP}.json"
 echo ""
 
-if [ "$ZAP_EXIT" -eq 0 ]; then
+if [[ "$ZAP_EXIT" -eq 0 ]]; then
   echo "✅ No alerts found."
-elif [ "$ZAP_EXIT" -eq 1 ]; then
+elif [[ "$ZAP_EXIT" -eq 1 ]]; then
   echo "⚠️  Alerts found — review the report."
 else
   echo "❌ Scan failed (exit code: $ZAP_EXIT)."
