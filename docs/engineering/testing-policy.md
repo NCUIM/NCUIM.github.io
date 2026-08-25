@@ -57,7 +57,23 @@ npm run test         # Unit tests (vitest)
 npm run test:e2e     # E2E tests (Playwright)
 npm run test:policy  # Commit policy self-test
 npm run test:docs    # Doc link check
+npm run test:zap     # OWASP ZAP baseline scan (requires Docker)
 ```
+
+## Security Scanning
+
+OWASP ZAP baseline scans run automatically on a weekly schedule via GitHub
+Actions (`.github/workflows/zap-scan.yml`). Developers can also run scans
+locally:
+
+```sh
+npm run test:zap     # Builds app, starts preview server, runs ZAP, stops server
+```
+
+ZAP performs passive scanning (header analysis, information disclosure,
+cookie issues, etc.) against the running app. Reports are saved to
+`zap-reports/` (git-ignored). The CI workflow uploads reports as artifacts
+with 30-day retention.
 
 ## Generated Artifacts
 

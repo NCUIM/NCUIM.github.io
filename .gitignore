@@ -31,5 +31,8 @@ ui-debug.log
 Thumbs.db
 .DS_Store
 
+# ZAP scan reports
+zap-reports/
+
 # Freebuff local tool state
 .freebuff/
