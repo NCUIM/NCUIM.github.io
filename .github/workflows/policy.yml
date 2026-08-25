@@ -1,0 +1,66 @@
+name: Repository Policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  commit-policy:
+    name: Commit and PR policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Prove the policy code itself is sane before using it as the gate.
+      - name: Policy self-test
+        run: node scripts/commit-policy.mjs self-test
+
+      - name: Validate PR title and commit messages
+        uses: actions/github-script@v8
+        with:
+          script: |
+            // The rules live in exactly one file: scripts/commit-policy.mjs.
+            // The local hook (scripts/hooks/commit-msg) and this CI job both
+            // execute that file, so local and CI enforcement are identical by
+            // construction. See docs/engineering/commit-policy.md.
+            const { execFileSync } = require("node:child_process");
+
+            const runPolicy = (args, input) =>
+              execFileSync("node", ["scripts/commit-policy.mjs", ...args], {
+                input,
+                encoding: "utf8",
+              });
+
+            const failures = [];
+
+            try {
+              runPolicy(["subject", context.payload.pull_request.title]);
+            } catch (e) {
+              failures.push(`PR title failed policy:\n${(e.stderr || "").trim()}`);
+            }
+
+            const commits = await github.paginate(github.rest.pulls.listCommits, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+
+            for (const commit of commits) {
+              try {
+                runPolicy(["message"], commit.commit.message);
+              } catch (e) {
+                failures.push(
+                  `Commit ${commit.sha.slice(0, 7)} failed policy:\n${(e.stderr || "").trim()}`,
+                );
+              }
+            }
+
+            if (failures.length > 0) {
+              core.setFailed(failures.join("\n\n"));
+            }

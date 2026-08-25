@@ -1,0 +1,40 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Typecheck, build, and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        # --ignore-scripts: CI never commits, so the `prepare` hook installer is
+        # unnecessary here; skipping lifecycle scripts hardens the install.
+        run: npm ci --ignore-scripts
+
+      # Same package.json scripts developers run locally, so local and CI
+      # verification cannot drift. See docs/engineering/testing-policy.md.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # `npm run build` is `tsc -b && vite build` — proves the production
+      # bundle compiles and builds, not just the type layer.
+      - name: Production build
+        run: npm run build
+
+      - name: Unit and component tests
+        run: npm test
