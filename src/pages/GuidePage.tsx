@@ -13,7 +13,7 @@ import {
   IonLabel,
   IonIcon,
 } from "@ionic/react";
-import { checkmarkCircle, openOutline } from "ionicons/icons";
+import { checkmarkCircle, openOutline, link } from "ionicons/icons";
 
 const checklist = [
   { id: "1", title: "完成報到手續", done: false },
@@ -31,6 +31,17 @@ const resources = [
   { title: "VPN 設定教學", url: "#" },
   { title: "GitHub Student Pack", url: "#" },
   { title: "JetBrains 授權", url: "#" },
+];
+
+const links = [
+  { title: "2026 新生知訊網", url: "https://ncufresh.ncu.edu.tw/link" },
+  { title: "NCU Portal", url: "https://portal.ncu.edu.tw/" },
+  { title: "新 ee-class", url: "https://ncueeclass.ncu.edu.tw/" },
+  { title: "iNCU 首頁", url: "https://cis.ncu.edu.tw/iNCU/home" },
+  { title: "iNCU 學校活動", url: "https://cis.ncu.edu.tw/iNCU/messageNotice/activityManagement/activity" },
+  { title: "NCU TALK 臉書版", url: "https://www.facebook.com/groups/NCUgroup/" },
+  { title: "復活福利社", url: "https://www.facebook.com/groups/209055389218793/" },
+  { title: "雲端租屋生活網", url: "https://house.nfu.edu.tw/NCU" },
 ];
 
 export default function GuidePage() {
@@ -79,6 +90,19 @@ export default function GuidePage() {
           {resources.map((res, i) => (
             <IonItem key={i} button detail href={res.url}>
               <IonLabel>{res.title}</IonLabel>
+              <IonIcon icon={openOutline} slot="end" color="primary" />
+            </IonItem>
+          ))}
+        </IonList>
+
+        <h3 style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: "var(--ncu-font-weight-bold)", marginTop: "var(--ncu-space-4)" }}>
+          常用連結
+        </h3>
+        <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
+          {links.map((l, i) => (
+            <IonItem key={i} button href={l.url} target="_blank" rel="noopener noreferrer">
+              <IonIcon icon={link} slot="start" color="medium" />
+              <IonLabel>{l.title}</IonLabel>
               <IonIcon icon={openOutline} slot="end" color="primary" />
             </IonItem>
           ))}
