@@ -11,7 +11,7 @@ import {
   IonButton,
   IonIcon,
 } from "@ionic/react";
-import { people, scan } from "ionicons/icons";
+import { people, scan, trophy } from "ionicons/icons";
 
 export default function CardsPage() {
   return (
@@ -23,6 +23,7 @@ export default function CardsPage() {
       </IonHeader>
 
       <IonContent className="ion-padding">
+        <div className="page-wrap">
         <div
           style={{
             display: "flex",
@@ -100,8 +101,13 @@ export default function CardsPage() {
               <p style={{ color: "var(--ncu-muted)" }}>
                 報到後即可查看收集清單與排行榜。
               </p>
+              <IonButton expand="block" fill="outline" routerLink="/leaderboard">
+                <IonIcon icon={trophy} slot="start" />
+                查看排行榜
+              </IonButton>
             </IonCardContent>
           </IonCard>
+        </div>
         </div>
       </IonContent>
     </IonPage>
