@@ -114,7 +114,7 @@ ion-textarea textarea {
 
 /* ── Desktop: constrain page content width ─────────────────── */
 @media (min-width: 768px) {
-  .page-wrap {
+  ion-content::part(scroll) {
     max-width: 640px;
     margin-left: auto;
     margin-right: auto;

@@ -23,7 +23,6 @@ export default function CardsPage() {
       </IonHeader>
 
       <IonContent className="ion-padding">
-        <div className="page-wrap">
         <div
           style={{
             display: "flex",
@@ -107,7 +106,6 @@ export default function CardsPage() {
               </IonButton>
             </IonCardContent>
           </IonCard>
-        </div>
         </div>
       </IonContent>
     </IonPage>
