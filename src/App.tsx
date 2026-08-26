@@ -22,6 +22,7 @@ import FoodPage from "./pages/FoodPage";
 import CreditPage from "./pages/CreditPage";
 import GuidePage from "./pages/GuidePage";
 
+// skipcq: JS-0415 - Ionic React strictly requires direct nesting of IonRouterOutlet, IonTabBar, and IonTabButton inside IonTabs
 const App = () => (
   <IonApp>
     <IonReactRouter>
@@ -31,14 +32,17 @@ const App = () => (
         <Route path="/">
           <IonTabs>
             <IonRouterOutlet>
-              <Route exact path="/" component={HomePage} />
-              <Route exact path="/guide" component={GuidePage} />
-              <Route exact path="/cards" component={CardsPage} />
-              <Route exact path="/leaderboard" component={LeaderboardPage} />
-              <Route exact path="/seats" component={SeatsPage} />
-              <Route exact path="/timetable" component={TimetablePage} />
-              <Route exact path="/food" component={FoodPage} />
-              <Route exact path="/tools/credit" component={CreditPage} />
+              {/* Tab root routes */}
+              <Route exact path="/" component={HomePage} tab="home" />
+              <Route exact path="/guide" component={GuidePage} tab="guide" />
+              <Route exact path="/cards" component={CardsPage} tab="user" />
+
+              {/* Sub-routes under tabs */}
+              <Route exact path="/leaderboard" component={LeaderboardPage} tab="user" />
+              <Route exact path="/seats" component={SeatsPage} tab="home" />
+              <Route exact path="/timetable" component={TimetablePage} tab="home" />
+              <Route exact path="/food" component={FoodPage} tab="home" />
+              <Route exact path="/tools/credit" component={CreditPage} tab="home" />
             </IonRouterOutlet>
             <IonTabBar slot="bottom">
               <IonTabButton tab="home" href="/">
