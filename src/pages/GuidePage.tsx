@@ -58,91 +58,85 @@ const links: readonly ResourceItem[] = [
   { title: "雲端租屋生活網", url: "https://house.nfu.edu.tw/NCU" },
 ];
 
-function ChecklistCard({
+const ChecklistCard = ({
   completedIds,
   onToggle,
 }: Readonly<{
   completedIds: readonly string[];
   onToggle: (id: string, checked: boolean) => void;
-}>) {
-  return (
-    <IonCard
+}>) => (
+  <IonCard
+    style={{
+      margin: "0 0 var(--ncu-space-4)",
+      border: "2px solid var(--ncu-ink)",
+      boxShadow: "var(--ncu-shadow-hard)",
+    }}
+  >
+    <IonCardHeader>
+      <IonCardTitle>入學檢核清單</IonCardTitle>
+    </IonCardHeader>
+    <IonCardContent>
+      <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
+        {checklist.map((item) => {
+          const done = completedIds.includes(item.id);
+          return (
+            <IonItem key={item.id}>
+              <IonCheckbox
+                slot="start"
+                checked={done}
+                onIonChange={(event) => onToggle(item.id, event.detail.checked)}
+              />
+              <IonLabel style={{ textDecoration: done ? "line-through" : "none" }}>
+                {item.title}
+              </IonLabel>
+            </IonItem>
+          );
+        })}
+      </IonList>
+    </IonCardContent>
+  </IonCard>
+);
+
+const ResourcesSection = () => (
+  <>
+    <h3 style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: "var(--ncu-font-weight-bold)" }}>
+      校園資源直達車
+    </h3>
+    <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
+      {resources.map((res) => (
+        <IonItem key={res.title} disabled>
+          <IonLabel>{res.title}</IonLabel>
+          <IonNote slot="end">準備中</IonNote>
+        </IonItem>
+      ))}
+    </IonList>
+  </>
+);
+
+const LinksSection = () => (
+  <>
+    <h3
       style={{
-        margin: "0 0 var(--ncu-space-4)",
-        border: "2px solid var(--ncu-ink)",
-        boxShadow: "var(--ncu-shadow-hard)",
+        fontSize: "var(--ncu-font-size-lg)",
+        fontWeight: "var(--ncu-font-weight-bold)",
+        marginTop: "var(--ncu-space-4)",
       }}
     >
-      <IonCardHeader>
-        <IonCardTitle>入學檢核清單</IonCardTitle>
-      </IonCardHeader>
-      <IonCardContent>
-        <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-          {checklist.map((item) => {
-            const done = completedIds.includes(item.id);
-            return (
-              <IonItem key={item.id}>
-                <IonCheckbox
-                  slot="start"
-                  checked={done}
-                  onIonChange={(event) => onToggle(item.id, event.detail.checked)}
-                />
-                <IonLabel style={{ textDecoration: done ? "line-through" : "none" }}>
-                  {item.title}
-                </IonLabel>
-              </IonItem>
-            );
-          })}
-        </IonList>
-      </IonCardContent>
-    </IonCard>
-  );
-}
+      常用連結
+    </h3>
+    <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
+      {links.map((l) => (
+        <IonItem key={l.url} button href={l.url} target="_blank" rel="noopener noreferrer">
+          <IonIcon icon={link} slot="start" color="medium" />
+          <IonLabel>{l.title}</IonLabel>
+          <IonIcon icon={openOutline} slot="end" color="primary" />
+        </IonItem>
+      ))}
+    </IonList>
+  </>
+);
 
-function ResourcesSection() {
-  return (
-    <>
-      <h3 style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: "var(--ncu-font-weight-bold)" }}>
-        校園資源直達車
-      </h3>
-      <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-        {resources.map((res) => (
-          <IonItem key={res.title} disabled>
-            <IonLabel>{res.title}</IonLabel>
-            <IonNote slot="end">準備中</IonNote>
-          </IonItem>
-        ))}
-      </IonList>
-    </>
-  );
-}
-
-function LinksSection() {
-  return (
-    <>
-      <h3
-        style={{
-          fontSize: "var(--ncu-font-size-lg)",
-          fontWeight: "var(--ncu-font-weight-bold)",
-          marginTop: "var(--ncu-space-4)",
-        }}
-      >
-        常用連結
-      </h3>
-      <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-        {links.map((l) => (
-          <IonItem key={l.url} button href={l.url} target="_blank" rel="noopener noreferrer">
-            <IonIcon icon={link} slot="start" color="medium" />
-            <IonLabel>{l.title}</IonLabel>
-            <IonIcon icon={openOutline} slot="end" color="primary" />
-          </IonItem>
-        ))}
-      </IonList>
-    </>
-  );
-}
-
-export default function GuidePage() {
+const GuidePage = () => {
   const [completedIds, setCompletedIds] = useState<readonly string[]>([]);
   const toggleItem = (id: string, checked: boolean) =>
     setCompletedIds((ids) =>
@@ -164,4 +158,6 @@ export default function GuidePage() {
       </IonContent>
     </IonPage>
   );
-}
+};
+
+export default GuidePage;

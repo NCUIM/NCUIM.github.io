@@ -85,82 +85,76 @@ const modules: readonly ModuleCard[] = [
   },
 ];
 
-function HeroHeader() {
-  return (
-    <div
+const HeroHeader = () => (
+  <div
+    style={{
+      textAlign: "center",
+      padding: "var(--ncu-space-2) 0 var(--ncu-space-1)",
+    }}
+  >
+    <h1
       style={{
-        textAlign: "center",
-        padding: "var(--ncu-space-2) 0 var(--ncu-space-1)",
+        fontSize: "var(--ncu-font-size-3xl)",
+        fontWeight: "var(--ncu-font-weight-bold)",
+        margin: 0,
+        lineHeight: 1.2,
+        color: "var(--ncu-ink)",
       }}
     >
-      <h1
-        style={{
-          fontSize: "var(--ncu-font-size-3xl)",
-          fontWeight: "var(--ncu-font-weight-bold)",
-          margin: 0,
-          lineHeight: 1.2,
-          color: "var(--ncu-ink)",
-        }}
-      >
-        歡迎加入資管所
-      </h1>
-      <p
-        style={{
-          fontSize: "var(--ncu-font-size-base)",
-          color: "var(--ncu-muted)",
-          margin: "var(--ncu-space-1) 0 0",
-        }}
-      >
-        NCUIM 新生綜合服務與生活入口平台
-      </p>
-    </div>
-  );
-}
-
-function CardIcon({ color, icon }: Readonly<{ color: string; icon: string }>) {
-  return (
-    <div
+      歡迎加入資管所
+    </h1>
+    <p
       style={{
-        width: 48,
-        height: 48,
-        borderRadius: "var(--ncu-radius-md)",
-        background: color,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
+        fontSize: "var(--ncu-font-size-base)",
+        color: "var(--ncu-muted)",
+        margin: "var(--ncu-space-1) 0 0",
       }}
     >
-      <IonIcon icon={icon} style={{ fontSize: 24, color: "#fff" }} />
-    </div>
-  );
-}
+      NCUIM 新生綜合服務與生活入口平台
+    </p>
+  </div>
+);
 
-function CardTitleRow({
+const CardIcon = ({ color, icon }: Readonly<{ color: string; icon: string }>) => (
+  <div
+    style={{
+      width: 48,
+      height: 48,
+      borderRadius: "var(--ncu-radius-md)",
+      background: color,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    }}
+  >
+    <IonIcon icon={icon} style={{ fontSize: 24, color: "#fff" }} />
+  </div>
+);
+
+const CardTitleRow = ({
   title,
   badge,
   subtitle,
-}: Readonly<{ title: string; badge?: string; subtitle: string }>) {
-  return (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-2)" }}>
-        <IonCardTitle style={{ fontSize: "var(--ncu-font-size-lg)", margin: 0 }}>
-          {title}
-        </IonCardTitle>
-        {badge && (
-          <IonBadge color="primary" style={{ fontSize: "var(--ncu-font-size-xs)" }}>
-            {badge}
-          </IonBadge>
-        )}
-      </div>
-      <IonCardSubtitle style={{ fontSize: "var(--ncu-font-size-sm)", marginTop: "var(--ncu-space-1)" }}>
-        {subtitle}
-      </IonCardSubtitle>
+}: Readonly<{ title: string; badge?: string; subtitle: string }>) => (
+  <div style={{ flex: 1, minWidth: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-2)" }}>
+      <IonCardTitle style={{ fontSize: "var(--ncu-font-size-lg)", margin: 0 }}>
+        {title}
+      </IonCardTitle>
+      {badge && (
+        <IonBadge color="primary" style={{ fontSize: "var(--ncu-font-size-xs)" }}>
+          {badge}
+        </IonBadge>
+      )}
     </div>
-  );
-}
+    <IonCardSubtitle style={{ fontSize: "var(--ncu-font-size-sm)", marginTop: "var(--ncu-space-1)" }}>
+      {subtitle}
+    </IonCardSubtitle>
+  </div>
+);
 
-function ModuleCardItem({
+const ModuleCardItem = ({
   mod,
   isHovered,
   onHover,
@@ -170,33 +164,31 @@ function ModuleCardItem({
   isHovered: boolean;
   onHover: () => void;
   onLeave: () => void;
-}>) {
-  return (
-    <IonCard
-      routerLink={mod.route}
-      onMouseEnter={onHover}
-      onMouseLeave={onLeave}
-      style={{
-        margin: 0,
-        border: "2px solid var(--ncu-ink)",
-        boxShadow: isHovered ? "6px 6px 0 var(--ncu-ink)" : "var(--ncu-shadow-hard)",
-        transform: isHovered ? "translateY(-3px)" : "none",
-        transition: "transform 0.15s ease, box-shadow 0.15s ease",
-        cursor: "pointer",
-      }}
-      button
-    >
-      <IonCardHeader>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
-          <CardIcon color={mod.color} icon={mod.icon} />
-          <CardTitleRow title={mod.title} badge={mod.badge} subtitle={mod.subtitle} />
-        </div>
-      </IonCardHeader>
-    </IonCard>
-  );
-}
+}>) => (
+  <IonCard
+    routerLink={mod.route}
+    onMouseEnter={onHover}
+    onMouseLeave={onLeave}
+    style={{
+      margin: 0,
+      border: "2px solid var(--ncu-ink)",
+      boxShadow: isHovered ? "6px 6px 0 var(--ncu-ink)" : "var(--ncu-shadow-hard)",
+      transform: isHovered ? "translateY(-3px)" : "none",
+      transition: "transform 0.15s ease, box-shadow 0.15s ease",
+      cursor: "pointer",
+    }}
+    button
+  >
+    <IonCardHeader>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
+        <CardIcon color={mod.color} icon={mod.icon} />
+        <CardTitleRow title={mod.title} badge={mod.badge} subtitle={mod.subtitle} />
+      </div>
+    </IonCardHeader>
+  </IonCard>
+);
 
-export default function HomePage() {
+const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
@@ -223,4 +215,6 @@ export default function HomePage() {
       </IonContent>
     </IonPage>
   );
-}
+};
+
+export default HomePage;

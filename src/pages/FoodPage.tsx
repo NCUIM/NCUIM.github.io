@@ -17,59 +17,55 @@ import { useState } from "react";
 
 const areas: readonly string[] = ["後門", "宵夜街", "前門", "校內"];
 
-function AreaFilterChips({
+const AreaFilterChips = ({
   selectedArea,
   onSelectArea,
 }: Readonly<{
   selectedArea: string | null;
   onSelectArea: (area: string | null) => void;
-}>) {
-  return (
-    <div style={{ display: "flex", gap: "var(--ncu-space-2)", flexWrap: "wrap", marginBottom: "var(--ncu-space-4)" }}>
-      <IonChip
-        color={selectedArea === null ? "primary" : undefined}
-        onClick={() => onSelectArea(null)}
-      >
-        全部
-      </IonChip>
-      {areas.map((area) => (
-        <IonChip
-          key={area}
-          color={selectedArea === area ? "primary" : undefined}
-          onClick={() => onSelectArea(area)}
-        >
-          {area}
-        </IonChip>
-      ))}
-    </div>
-  );
-}
-
-function RecommendationCard() {
-  return (
-    <IonCard
-      style={{
-        margin: 0,
-        border: "2px solid var(--ncu-ink)",
-        boxShadow: "var(--ncu-shadow-hard)",
-      }}
+}>) => (
+  <div style={{ display: "flex", gap: "var(--ncu-space-2)", flexWrap: "wrap", marginBottom: "var(--ncu-space-4)" }}>
+    <IonChip
+      color={selectedArea === null ? "primary" : undefined}
+      onClick={() => onSelectArea(null)}
     >
-      <IonCardHeader>
-        <IonCardTitle>今天吃什麼？</IonCardTitle>
-      </IonCardHeader>
-      <IonCardContent>
-        <p style={{ color: "var(--ncu-muted)" }}>
-          選擇區域後，按下按鈕隨機推薦一家店！
-        </p>
-        <IonButton expand="block" color="primary" disabled>
-          🎲 隨機推薦
-        </IonButton>
-      </IonCardContent>
-    </IonCard>
-  );
-}
+      全部
+    </IonChip>
+    {areas.map((area) => (
+      <IonChip
+        key={area}
+        color={selectedArea === area ? "primary" : undefined}
+        onClick={() => onSelectArea(area)}
+      >
+        {area}
+      </IonChip>
+    ))}
+  </div>
+);
 
-export default function FoodPage() {
+const RecommendationCard = () => (
+  <IonCard
+    style={{
+      margin: 0,
+      border: "2px solid var(--ncu-ink)",
+      boxShadow: "var(--ncu-shadow-hard)",
+    }}
+  >
+    <IonCardHeader>
+      <IonCardTitle>今天吃什麼？</IonCardTitle>
+    </IonCardHeader>
+    <IonCardContent>
+      <p style={{ color: "var(--ncu-muted)" }}>
+        選擇區域後，按下按鈕隨機推薦一家店！
+      </p>
+      <IonButton expand="block" color="primary" disabled>
+        🎲 隨機推薦
+      </IonButton>
+    </IonCardContent>
+  </IonCard>
+);
+
+const FoodPage = () => {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
 
   return (
@@ -93,4 +89,6 @@ export default function FoodPage() {
       </IonContent>
     </IonPage>
   );
-}
+};
+
+export default FoodPage;

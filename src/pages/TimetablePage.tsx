@@ -62,37 +62,35 @@ const cellBase: React.CSSProperties = {
   overflow: "hidden",
 };
 
-function CourseCell({ course }: Readonly<{ course?: Course }>) {
-  return (
-    <div
-      style={{
-        ...cellBase,
-        alignItems: "center",
-        padding: "3px 4px",
-        textAlign: "center",
-        background: course ? "var(--ncu-primary-light)" : "var(--ncu-surface)",
-      }}
-    >
-      {course && (
-        <>
-          <strong style={{ fontSize: 11, lineHeight: 1.2 }}>{course.name}</strong>
-          <span style={{ fontSize: 9, color: "var(--ncu-muted)" }}>{course.teacher}</span>
-          <span style={{ fontSize: 9, color: "var(--ncu-primary)", fontWeight: 700 }}>
-            {course.room}
-          </span>
-        </>
-      )}
-    </div>
-  );
-}
+const CourseCell = ({ course }: Readonly<{ course?: Course }>) => (
+  <div
+    style={{
+      ...cellBase,
+      alignItems: "center",
+      padding: "3px 4px",
+      textAlign: "center",
+      background: course ? "var(--ncu-primary-light)" : "var(--ncu-surface)",
+    }}
+  >
+    {course && (
+      <>
+        <strong style={{ fontSize: 11, lineHeight: 1.2 }}>{course.name}</strong>
+        <span style={{ fontSize: 9, color: "var(--ncu-muted)" }}>{course.teacher}</span>
+        <span style={{ fontSize: 9, color: "var(--ncu-primary)", fontWeight: 700 }}>
+          {course.room}
+        </span>
+      </>
+    )}
+  </div>
+);
 
-function TimetableMobileView({
+const TimetableMobileView = ({
   selectedDay,
   onSelectDay,
 }: Readonly<{
   selectedDay: string;
   onSelectDay: (day: string) => void;
-}>) {
+}>) => {
   const dayIndex = Number(selectedDay);
   const dailyPeriods = periods.map((period) => ({
     period,
@@ -136,72 +134,70 @@ function TimetableMobileView({
       </IonList>
     </section>
   );
-}
+};
 
-function TimetableDesktopView() {
-  return (
-    <section className="timetable-desktop" aria-label="全週課表">
+const TimetableDesktopView = () => (
+  <section className="timetable-desktop" aria-label="全週課表">
+    <div
+      style={{
+        border: "2px solid var(--ncu-ink)",
+        borderRadius: "var(--ncu-radius-md)",
+        overflow: "hidden",
+        display: "grid",
+        gridTemplateColumns: "72px repeat(5, minmax(0, 1fr))",
+      }}
+    >
       <div
         style={{
-          border: "2px solid var(--ncu-ink)",
-          borderRadius: "var(--ncu-radius-md)",
-          overflow: "hidden",
-          display: "grid",
-          gridTemplateColumns: "72px repeat(5, minmax(0, 1fr))",
+          ...cellBase,
+          alignItems: "center",
+          background: "var(--ncu-ink)",
+          color: "#fff",
+          fontWeight: 700,
         }}
       >
+        節次
+      </div>
+      {days.map((day) => (
         <div
+          key={day}
           style={{
             ...cellBase,
             alignItems: "center",
-            background: "var(--ncu-ink)",
+            background: "var(--ncu-primary)",
             color: "#fff",
             fontWeight: 700,
           }}
         >
-          節次
+          週{day}
         </div>
-        {days.map((day) => (
+      ))}
+      {periods.map((period) => (
+        <React.Fragment key={period.id}>
           <div
-            key={day}
             style={{
               ...cellBase,
               alignItems: "center",
-              background: "var(--ncu-primary)",
-              color: "#fff",
-              fontWeight: 700,
+              background: "var(--ncu-primary-light)",
+              fontSize: 13,
             }}
           >
-            週{day}
+            <strong>第 {period.id} 節</strong>
+            <span>{period.time}</span>
           </div>
-        ))}
-        {periods.map((period) => (
-          <React.Fragment key={period.id}>
-            <div
-              style={{
-                ...cellBase,
-                alignItems: "center",
-                background: "var(--ncu-primary-light)",
-                fontSize: 13,
-              }}
-            >
-              <strong>第 {period.id} 節</strong>
-              <span>{period.time}</span>
-            </div>
-            {days.map((day, index) => (
-              <CourseCell
-                key={`${period.id}-${day}`}
-                course={timetable[`${period.id}-${index}`]}
-              />
-            ))}
-          </React.Fragment>
-        ))}
-      </div>
-    </section>
-  );
-}
+          {days.map((day, index) => (
+            <CourseCell
+              key={`${period.id}-${day}`}
+              course={timetable[`${period.id}-${index}`]}
+            />
+          ))}
+        </React.Fragment>
+      ))}
+    </div>
+  </section>
+);
 
-export default function TimetablePage() {
+const TimetablePage = () => {
   const [selectedDay, setSelectedDay] = useState("0");
 
   return (
@@ -220,4 +216,6 @@ export default function TimetablePage() {
       </IonContent>
     </IonPage>
   );
-}
+};
+
+export default TimetablePage;
