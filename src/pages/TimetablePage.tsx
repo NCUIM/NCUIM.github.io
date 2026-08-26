@@ -4,6 +4,7 @@ import {
   IonToolbar,
   IonTitle,
   IonBackButton,
+  IonButtons,
   IonContent,
 } from "@ionic/react";
 
@@ -118,7 +119,9 @@ export default function TimetablePage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonBackButton defaultHref="/" text="" slot="start" />
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/" text="" />
+          </IonButtons>
           <IonTitle>碩士班課表</IonTitle>
         </IonToolbar>
       </IonHeader>
@@ -205,7 +208,6 @@ export default function TimetablePage() {
             ))}
           </div>
         </div>
-
 
       </IonContent>
     </IonPage>

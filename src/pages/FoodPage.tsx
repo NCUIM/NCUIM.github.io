@@ -4,6 +4,7 @@ import {
   IonToolbar,
   IonTitle,
   IonBackButton,
+  IonButtons,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -23,7 +24,9 @@ export default function FoodPage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonBackButton defaultHref="/" text="" slot="start" />
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/" text="" />
+          </IonButtons>
           <IonTitle>中大美食地圖</IonTitle>
         </IonToolbar>
       </IonHeader>

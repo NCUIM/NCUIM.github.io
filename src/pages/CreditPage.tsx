@@ -4,6 +4,7 @@ import {
   IonToolbar,
   IonTitle,
   IonBackButton,
+  IonButtons,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -29,7 +30,9 @@ export default function CreditPage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonBackButton defaultHref="/" text="" slot="start" />
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/" text="" />
+          </IonButtons>
           <IonTitle>學分試算</IonTitle>
         </IonToolbar>
       </IonHeader>

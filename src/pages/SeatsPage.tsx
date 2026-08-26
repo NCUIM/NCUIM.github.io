@@ -4,6 +4,7 @@ import {
   IonToolbar,
   IonTitle,
   IonBackButton,
+  IonButtons,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -28,7 +29,9 @@ export default function SeatsPage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonBackButton defaultHref="/" text="" slot="start" />
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/" text="" />
+          </IonButtons>
           <IonTitle>研究室座位表</IonTitle>
         </IonToolbar>
       </IonHeader>

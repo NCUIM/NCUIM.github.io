@@ -4,6 +4,7 @@ import {
   IonToolbar,
   IonTitle,
   IonBackButton,
+  IonButtons,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -18,7 +19,9 @@ export default function LotteryPage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonBackButton defaultHref="/" text="" slot="start" />
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/" text="" />
+          </IonButtons>
           <IonTitle>抽籤大會</IonTitle>
         </IonToolbar>
       </IonHeader>

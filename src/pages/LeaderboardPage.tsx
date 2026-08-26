@@ -4,6 +4,7 @@ import {
   IonToolbar,
   IonTitle,
   IonBackButton,
+  IonButtons,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -88,13 +89,15 @@ export default function LeaderboardPage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonBackButton defaultHref="/cards" slot="start" />
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/cards" />
+          </IonButtons>
           <IonTitle>排行榜</IonTitle>
         </IonToolbar>
       </IonHeader>
 
       <IonContent scrollY={false}>
-        <div className="page-wrap" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
           {/* My Rank Card — fixed at top */}
           <div style={{ padding: "var(--ncu-space-4)", paddingBottom: 0, flexShrink: 0 }}>
             <IonCard
