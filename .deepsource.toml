@@ -1,0 +1,18 @@
+version = 1
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  environment = ["nodejs", "browser"]
+  module_system = "es_modules"
+  plugins = ["react"]
+
+[[analyzers]]
+name = "python"
+
+[[analyzers]]
+name = "shell"
+
+[[analyzers]]
+name = "secrets"
