@@ -1,0 +1,459 @@
+/*
+ * NCUIM 2026 Fresher — Design System Theme
+ *
+ * Color tokens from docs/archive/07-visual-design.md §4.1.
+ * All contrast ratios verified: canvas/ink 14.91:1, surface/ink 16.27:1,
+ * primary/white 6.31:1, star/ink 11.48:1, success/ink 8.41:1,
+ * danger/white 4.85:1, surface/muted 4.97:1, terminal/terminal-text 14.84:1.
+ */
+
+@font-face {
+  font-family: "Noto Sans TC";
+  src: url("../assets/fonts/noto-sans-tc-ui.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* ── Color Tokens ─────────────────────────────────────────────── */
+  --ncu-canvas: #f7f5ee;
+  --ncu-surface: #ffffff;
+  --ncu-ink: #172033;
+  --ncu-primary: #3157c8;
+  --ncu-star: #ffd45a;
+  --ncu-success: #55cfa5;
+  --ncu-danger: #cc3d4a;
+  --ncu-muted: #667085;
+  --ncu-terminal: #101522;
+  --ncu-terminal-text: #b9f6ca;
+
+  /* ── Derived Tokens ───────────────────────────────────────────── */
+  --ncu-primary-light: #e8edfb;
+  --ncu-danger-light: #fde8ea;
+  --ncu-success-light: #e6f7f1;
+  --ncu-star-light: #fef6dc;
+  --ncu-border: #d0d5dd;
+
+  /* ── Typography ───────────────────────────────────────────────── */
+  --ncu-font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
+    system-ui, -apple-system, sans-serif;
+  --ncu-font-size-xs: 12px;
+  --ncu-font-size-sm: 14px;
+  --ncu-font-size-base: 16px;
+  --ncu-font-size-lg: 18px;
+  --ncu-font-size-xl: 20px;
+  --ncu-font-size-2xl: 24px;
+  --ncu-font-size-3xl: 30px;
+  --ncu-line-height: 1.5;
+  --ncu-font-weight-regular: 400;
+  --ncu-font-weight-medium: 500;
+  --ncu-font-weight-bold: 700;
+
+  /* ── Spacing (4px base, 8px increments) ──────────────────────── */
+  --ncu-space-1: 4px;
+  --ncu-space-2: 8px;
+  --ncu-space-3: 12px;
+  --ncu-space-4: 16px;
+  --ncu-space-5: 20px;
+  --ncu-space-6: 24px;
+  --ncu-space-8: 32px;
+  --ncu-space-10: 40px;
+  --ncu-space-12: 48px;
+
+  /* ── Shape ────────────────────────────────────────────────────── */
+  --ncu-radius-sm: 4px;
+  --ncu-radius-md: 8px;
+  --ncu-radius-lg: 12px;
+  --ncu-radius-full: 9999px;
+  --ncu-shadow-hard: 4px 4px 0 var(--ncu-ink);
+
+  /* ── Ionic Theme Overrides ────────────────────────────────────── */
+  --ion-background-color: var(--ncu-canvas);
+  --ion-text-color: var(--ncu-ink);
+  --ion-color-primary: var(--ncu-primary);
+  --ion-color-primary-rgb: 49, 87, 200;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #2a4bae;
+  --ion-color-primary-tint: #4567cd;
+
+  --ion-color-success: var(--ncu-success);
+  --ion-color-success-rgb: 85, 207, 165;
+  --ion-color-success-contrast: var(--ncu-ink);
+  --ion-color-success-contrast-rgb: 23, 32, 51;
+  --ion-color-success-shade: #4bb691;
+  --ion-color-success-tint: #66d4ae;
+  --ion-color-danger: var(--ncu-danger);
+  --ion-color-danger-rgb: 204, 61, 74;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #b43641;
+  --ion-color-danger-tint: #d1505c;
+
+  --ion-toolbar-background: var(--ncu-surface);
+  --ion-toolbar-color: var(--ncu-ink);
+  --ion-tab-bar-background: var(--ncu-surface);
+  --ion-tab-bar-color: var(--ncu-muted);
+  --ion-tab-bar-color-selected: var(--ncu-primary);
+
+  --ion-card-background: var(--ncu-surface);
+  --ion-card-border-radius: var(--ncu-radius-md);
+
+  --ion-font-family: var(--ncu-font-family);
+}
+
+/* ── Global Resets ─────────────────────────────────────────────── */
+body {
+  font-family: var(--ncu-font-family);
+  font-size: var(--ncu-font-size-base);
+  line-height: var(--ncu-line-height);
+  color: var(--ncu-ink);
+  background-color: var(--ncu-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent iOS auto-zoom on inputs < 16px */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent iOS zoom on focused inputs */
+ion-input,
+ion-textarea {
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+ion-input input,
+ion-textarea textarea {
+  font-size: var(--ncu-font-size-base) !important;
+}
+
+ion-button {
+  min-height: 44px;
+}
+
+/* ── Restore text selection (ionic overrides it on mobile) ── */
+ion-content::part(scroll) {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Timetable responsive behavior */
+.timetable-mobile { display: block; }
+.timetable-desktop { display: none; }
+.timetable-course-list ion-item { --padding-top: 10px; --padding-bottom: 10px; }
+
+/* ── Desktop: constrain page content width ─────────────────── */
+@media (min-width: 768px) {
+  ion-content::part(scroll) {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Timetable page: wider content for better readability */
+  .timetable-content::part(scroll) {
+    max-width: 100%;
+    padding: 0 16px;
+  }
+
+  .timetable-mobile { display: none; }
+  .timetable-desktop { display: block; }
+}
+
+
+.lottery-stage-content {
+  --background: var(--ncu-terminal);
+  --color: var(--ncu-terminal-text);
+  --ion-font-family: "PingFang TC", "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
+  color: var(--ncu-terminal-text);
+  font-family: var(--ion-font-family);
+}
+.lottery-stage-content::part(scroll) {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Lottery stage */
+.lottery-stage-shell {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: clamp(24px, 5vw, 64px);
+}
+.lottery-stage-layout {
+  width: min(1040px, 100%);
+  margin: 0 auto;
+}
+.lottery-stage-header {
+  text-align: center;
+}
+.lottery-stage-header p {
+  margin: 0 0 8px;
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+.lottery-stage-header h1 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(34px, 5vw, 58px);
+}
+.lottery-room-progress {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin: 36px 0 28px;
+}
+.lottery-room-stat {
+  color: #94a3b8;
+  font-size: 14px;
+}
+.lottery-room-stat > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #e2e8f0;
+  font-weight: 800;
+}
+.lottery-room-stat > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lottery-room-stat i {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: #334155;
+}
+.lottery-room-stat b {
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.lottery-draw-stage {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  background: radial-gradient(circle at center, #1e3a5f 0, #162238 42%, #111827 78%);
+  text-align: center;
+  box-shadow: 0 18px 45px rgb(0 0 0 / 35%);
+}
+.lottery-draw-stage > p {
+  margin: 0 0 16px;
+  color: #fbbf24;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+.lottery-draw-stage h2 {
+  min-height: 48px;
+  margin: 0;
+  color: #dbeafe;
+  font-size: clamp(28px, 4vw, 44px);
+}
+.lottery-result {
+  width: 150px;
+  height: 150px;
+  display: grid;
+  place-items: center;
+  margin: 26px 0 16px;
+  border: 2px solid #475569;
+  border-radius: 50%;
+  background: #0f172a;
+  color: #94a3b8;
+  font-size: 92px;
+  font-weight: 900;
+  line-height: 1;
+}
+.lottery-result.is-revealed {
+  width: auto;
+  min-width: 310px;
+  border-radius: 14px;
+  padding: 26px 32px;
+  border-color: #34d399;
+  background: #065f46;
+  color: #d1fae5;
+  font-size: 36px;
+  box-shadow: 0 0 32px rgb(16 185 129 / 40%);
+}
+.lottery-stage-note {
+  color: #94a3b8;
+  font-size: 14px;
+}
+.lottery-stage-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+.lottery-floor-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+  padding: 18px 22px;
+  border-top: 1px solid #334155;
+  color: #94a3b8;
+}
+.lottery-floor-summary span {
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+.lottery-floor-summary strong {
+  color: #cbd5e1;
+}
+.lottery-floor-summary em {
+  font-style: normal;
+  white-space: nowrap;
+}
+.lottery-live-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 26px 0;
+  color: #cbd5e1;
+}
+.lottery-live-status span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+}
+.lottery-audience-meta {
+  display: grid;
+  gap: 4px;
+  margin: 18px 0 8px;
+  text-align: center;
+}
+.lottery-audience-meta span {
+  color: #94a3b8;
+  font-size: 14px;
+}
+.lottery-audience-view .lottery-room-progress {
+  margin-top: 30px;
+}
+.lottery-audience-view .lottery-room-stat b {
+  font-size: 12px;
+}
+.lottery-admin {
+  max-width: 920px;
+  margin: 0 auto;
+}
+.lottery-admin-eyebrow {
+  color: var(--ncu-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+.lottery-admin h1 {
+  margin: 0;
+}
+.lottery-admin > section {
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid var(--ncu-border);
+  border-radius: var(--ncu-radius-lg);
+  background: var(--ncu-surface);
+}
+.lottery-admin h2 {
+  margin-top: 0;
+  font-size: var(--ncu-font-size-lg);
+}
+.lottery-upload {
+  display: grid;
+  gap: 6px;
+  padding: 22px;
+  border: 2px dashed var(--ncu-border);
+  border-radius: var(--ncu-radius-md);
+  cursor: pointer;
+}
+.lottery-upload input {
+  position: absolute;
+  opacity: 0;
+}
+.lottery-upload span {
+  color: var(--ncu-muted);
+  font-size: var(--ncu-font-size-sm);
+}
+.lottery-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.lottery-admin-grid span {
+  padding: 14px;
+  border-radius: var(--ncu-radius-md);
+  background: var(--ncu-primary-light);
+}
+.lottery-admin-grid b {
+  display: block;
+  margin-top: 4px;
+}
+
+@media (max-width: 767px) {
+  .lottery-stage-shell {
+    padding: 32px 18px;
+  }
+  .lottery-room-progress {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 24px;
+    margin: 28px 0;
+  }
+  .lottery-draw-stage {
+    min-height: 360px;
+    padding: 30px 18px;
+  }
+  .lottery-result {
+    width: 124px;
+    height: 124px;
+    font-size: 76px;
+  }
+  .lottery-result.is-revealed {
+    min-width: 0;
+    width: 100%;
+    padding: 20px 12px;
+    font-size: 28px;
+  }
+  .lottery-floor-summary {
+    flex-wrap: wrap;
+    padding: 16px 0;
+    font-size: 14px;
+  }
+}
+
+/* Compact personal-result view */
+.lottery-result-screen {
+  height: 100%;
+  padding: 12px 16px;
+}
+.lottery-result-screen .lottery-stage-header p {
+  margin-bottom: 2px;
+  font-size: 10px;
+}
+.lottery-result-screen .lottery-stage-header h1 {
+  font-size: 28px;
+}
+.lottery-result-screen .lottery-stage-layout {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.lottery-result-back {
+  align-self: flex-start;
+  min-height: 32px;
+  --color: #b9f6ca;
+}
+

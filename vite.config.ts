@@ -13,9 +13,10 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
           if (id.includes("firebase")) return "firebase-vendor";
-          if (id.includes("react") || id.includes("scheduler")) return "react-vendor";
           return "vendor";
         },
+
+
       },
     },
   },

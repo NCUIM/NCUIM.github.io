@@ -1,0 +1,31 @@
+version = 1
+
+exclude_patterns = [
+  "dist/**",
+  "node_modules/**",
+]
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+  [analyzers.meta]
+  dialect = "typescript"
+  environment = ["browser", "nodejs"]
+  module_system = "es_modules"
+  plugins = ["react"]
+
+  [analyzers.rules]
+  ignore = ["JS-0415"]
+
+[[analyzers]]
+name = "python"
+enabled = true
+
+[[analyzers]]
+name = "shell"
+enabled = true
+
+[[analyzers]]
+name = "secrets"
+enabled = true
