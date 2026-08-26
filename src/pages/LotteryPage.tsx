@@ -118,28 +118,40 @@ const GroupMembersList = () => (
   </section>
 );
 
+const LotteryStageHeader = () => (
+  <>
+    <IonButtons className="lottery-result-back">
+      <IonBackButton defaultHref="/" text="返回" />
+    </IonButtons>
+    <header className="lottery-stage-header">
+      <p>NCUIM 2026 FRESHER MIXER · DEMO</p>
+      <h1>你的抽籤結果</h1>
+    </header>
+  </>
+);
+
+const LotteryStageBody = () => (
+  <div className="lottery-stage-layout">
+    <LotteryStageHeader />
+    <ResultBanner />
+    <SeatingGrid />
+    <GroupMembersList />
+    <p style={{ margin: "8px 0 0", color: "#94a3b8", fontSize: 11, textAlign: "center" }}>
+      Demo 資料 · 正式活動將依報到身分同步結果。
+    </p>
+  </div>
+);
+
+const LotteryStageShell = () => (
+  <main className="lottery-stage-shell lottery-result-screen">
+    <LotteryStageBody />
+  </main>
+);
+
 const LotteryPage = () => (
   <IonPage>
     <IonContent fullscreen scrollY={false} className="lottery-stage-content">
-      <main className="lottery-stage-shell lottery-result-screen">
-        <div className="lottery-stage-layout">
-          <IonButtons className="lottery-result-back">
-            <IonBackButton defaultHref="/" text="返回" />
-          </IonButtons>
-          <header className="lottery-stage-header">
-            <p>NCUIM 2026 FRESHER MIXER · DEMO</p>
-            <h1>你的抽籤結果</h1>
-          </header>
-
-          <ResultBanner />
-          <SeatingGrid />
-          <GroupMembersList />
-
-          <p style={{ margin: "8px 0 0", color: "#94a3b8", fontSize: 11, textAlign: "center" }}>
-            Demo 資料 · 正式活動將依報到身分同步結果。
-          </p>
-        </div>
-      </main>
+      <LotteryStageShell />
     </IonContent>
   </IonPage>
 );

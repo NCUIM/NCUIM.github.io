@@ -57,38 +57,57 @@ const RoomCard = ({ room }: Readonly<{ room: Room }>) => (
   </IonCard>
 );
 
+const SeatsHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonButtons slot="start">
+        <IonBackButton defaultHref="/" text="" />
+      </IonButtons>
+      <IonTitle>研究室座位表</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const SeatsBody = ({
+  selectedRoom,
+  currentRoom,
+  onSelectRoom,
+}: Readonly<{
+  selectedRoom: string;
+  currentRoom?: Room;
+  onSelectRoom: (roomId: string) => void;
+}>) => (
+  <IonContent className="ion-padding" scrollY={false}>
+    <IonSegment
+      value={selectedRoom}
+      onIonChange={(e) => onSelectRoom(e.detail.value as string)}
+      scrollable
+    >
+      {rooms.map((room) => (
+        <IonSegmentButton key={room.id} value={room.id}>
+          {room.id}
+        </IonSegmentButton>
+      ))}
+    </IonSegment>
+
+    <div style={{ marginTop: "var(--ncu-space-4)" }}>
+      {currentRoom && <RoomCard room={currentRoom} />}
+    </div>
+  </IonContent>
+);
+
 const SeatsPage = () => {
   const [selectedRoom, setSelectedRoom] = useState("209");
   const currentRoom = rooms.find((r) => r.id === selectedRoom);
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/" text="" />
-          </IonButtons>
-          <IonTitle>研究室座位表</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
-      <IonContent className="ion-padding" scrollY={false}>
-        <IonSegment
-          value={selectedRoom}
-          onIonChange={(e) => setSelectedRoom(e.detail.value as string)}
-          scrollable
-        >
-          {rooms.map((room) => (
-            <IonSegmentButton key={room.id} value={room.id}>
-              {room.id}
-            </IonSegmentButton>
-          ))}
-        </IonSegment>
-
-        <div style={{ marginTop: "var(--ncu-space-4)" }}>
-          {currentRoom && <RoomCard room={currentRoom} />}
-        </div>
-      </IonContent>
+      <SeatsHeader />
+      <SeatsBody
+        selectedRoom={selectedRoom}
+        currentRoom={currentRoom}
+        onSelectRoom={setSelectedRoom}
+      />
     </IonPage>
   );
 };

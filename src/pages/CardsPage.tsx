@@ -102,32 +102,45 @@ const MyCollectionCard = () => (
   </IonCard>
 );
 
+const CardsHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonTitle>活動卡片收集</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const CardsBody = ({
+  checkedIn,
+  onCheckIn,
+}: Readonly<{
+  checkedIn: boolean;
+  onCheckIn: () => void;
+}>) => (
+  <IonContent className="ion-padding">
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "var(--ncu-space-6)",
+        paddingTop: "var(--ncu-space-8)",
+      }}
+    >
+      <HeaderSection />
+      <CheckInCard checkedIn={checkedIn} onCheckIn={onCheckIn} />
+      <MyCollectionCard />
+    </div>
+  </IonContent>
+);
+
 const CardsPage = () => {
   const [checkedIn, setCheckedIn] = useState(false);
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>活動卡片收集</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
-      <IonContent className="ion-padding">
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "var(--ncu-space-6)",
-            paddingTop: "var(--ncu-space-8)",
-          }}
-        >
-          <HeaderSection />
-          <CheckInCard checkedIn={checkedIn} onCheckIn={() => setCheckedIn(true)} />
-          <MyCollectionCard />
-        </div>
-      </IonContent>
+      <CardsHeader />
+      <CardsBody checkedIn={checkedIn} onCheckIn={() => setCheckedIn(true)} />
     </IonPage>
   );
 };

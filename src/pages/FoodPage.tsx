@@ -65,28 +65,40 @@ const RecommendationCard = () => (
   </IonCard>
 );
 
+const FoodHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonButtons slot="start">
+        <IonBackButton defaultHref="/" text="" />
+      </IonButtons>
+      <IonTitle>中大美食地圖</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const FoodBody = ({
+  selectedArea,
+  onSelectArea,
+}: Readonly<{
+  selectedArea: string | null;
+  onSelectArea: (area: string | null) => void;
+}>) => (
+  <IonContent className="ion-padding">
+    <AreaFilterChips selectedArea={selectedArea} onSelectArea={onSelectArea} />
+    <RecommendationCard />
+    <div style={{ marginTop: "var(--ncu-space-4)", color: "var(--ncu-muted)", textAlign: "center" }}>
+      美食店家資料即將上線
+    </div>
+  </IonContent>
+);
+
 const FoodPage = () => {
   const [selectedArea, setSelectedArea] = useState<string | null>(null);
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/" text="" />
-          </IonButtons>
-          <IonTitle>中大美食地圖</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
-      <IonContent className="ion-padding">
-        <AreaFilterChips selectedArea={selectedArea} onSelectArea={setSelectedArea} />
-        <RecommendationCard />
-
-        <div style={{ marginTop: "var(--ncu-space-4)", color: "var(--ncu-muted)", textAlign: "center" }}>
-          美食店家資料即將上線
-        </div>
-      </IonContent>
+      <FoodHeader />
+      <FoodBody selectedArea={selectedArea} onSelectArea={setSelectedArea} />
     </IonPage>
   );
 };

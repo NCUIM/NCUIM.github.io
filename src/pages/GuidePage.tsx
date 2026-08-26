@@ -136,6 +136,28 @@ const LinksSection = () => (
   </>
 );
 
+const GuideHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonTitle>新生生存指南</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const GuideBody = ({
+  completedIds,
+  onToggle,
+}: Readonly<{
+  completedIds: readonly string[];
+  onToggle: (id: string, checked: boolean) => void;
+}>) => (
+  <IonContent className="ion-padding">
+    <ChecklistCard completedIds={completedIds} onToggle={onToggle} />
+    <ResourcesSection />
+    <LinksSection />
+  </IonContent>
+);
+
 const GuidePage = () => {
   const [completedIds, setCompletedIds] = useState<readonly string[]>([]);
   const toggleItem = (id: string, checked: boolean) =>
@@ -145,17 +167,8 @@ const GuidePage = () => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>新生生存指南</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
-      <IonContent className="ion-padding">
-        <ChecklistCard completedIds={completedIds} onToggle={toggleItem} />
-        <ResourcesSection />
-        <LinksSection />
-      </IonContent>
+      <GuideHeader />
+      <GuideBody completedIds={completedIds} onToggle={toggleItem} />
     </IonPage>
   );
 };

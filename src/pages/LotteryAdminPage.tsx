@@ -52,6 +52,37 @@ const PublishSection = () => (
   </section>
 );
 
+const LotteryAdminHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonButtons slot="start">
+        <IonBackButton defaultHref="/" text="" />
+      </IonButtons>
+      <IonTitle>抽籤控制台</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const LotteryAdminBody = ({
+  fileName,
+  onFileChange,
+}: Readonly<{
+  fileName: string;
+  onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
+}>) => (
+  <IonContent className="ion-padding">
+    <main className="lottery-admin">
+      <p className="lottery-admin-eyebrow">STAFF ONLY · DEMO UI</p>
+      <h1>研究室抽籤控制台</h1>
+      <p>匯入名單、檢查資料，再發布至與會者手機。</p>
+
+      <UploadSection fileName={fileName} onFileChange={onFileChange} />
+      <ValidationSection />
+      <PublishSection />
+    </main>
+  </IonContent>
+);
+
 const LotteryAdminPage = () => {
   const [fileName, setFileName] = useState("");
 
@@ -61,25 +92,8 @@ const LotteryAdminPage = () => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/" text="" />
-          </IonButtons>
-          <IonTitle>抽籤控制台</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        <main className="lottery-admin">
-          <p className="lottery-admin-eyebrow">STAFF ONLY · DEMO UI</p>
-          <h1>研究室抽籤控制台</h1>
-          <p>匯入名單、檢查資料，再發布至與會者手機。</p>
-
-          <UploadSection fileName={fileName} onFileChange={handleFileChange} />
-          <ValidationSection />
-          <PublishSection />
-        </main>
-      </IonContent>
+      <LotteryAdminHeader />
+      <LotteryAdminBody fileName={fileName} onFileChange={handleFileChange} />
     </IonPage>
   );
 };

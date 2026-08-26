@@ -197,23 +197,37 @@ const TimetableDesktopView = () => (
   </section>
 );
 
+const TimetableHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonButtons slot="start">
+        <IonBackButton defaultHref="/" text="" />
+      </IonButtons>
+      <IonTitle>碩士班課表</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const TimetableBody = ({
+  selectedDay,
+  onSelectDay,
+}: Readonly<{
+  selectedDay: string;
+  onSelectDay: (day: string) => void;
+}>) => (
+  <IonContent className="ion-padding timetable-content">
+    <TimetableMobileView selectedDay={selectedDay} onSelectDay={onSelectDay} />
+    <TimetableDesktopView />
+  </IonContent>
+);
+
 const TimetablePage = () => {
   const [selectedDay, setSelectedDay] = useState("0");
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/" text="" />
-          </IonButtons>
-          <IonTitle>碩士班課表</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding timetable-content">
-        <TimetableMobileView selectedDay={selectedDay} onSelectDay={setSelectedDay} />
-        <TimetableDesktopView />
-      </IonContent>
+      <TimetableHeader />
+      <TimetableBody selectedDay={selectedDay} onSelectDay={setSelectedDay} />
     </IonPage>
   );
 };

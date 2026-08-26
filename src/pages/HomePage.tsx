@@ -188,31 +188,58 @@ const ModuleCardItem = ({
   </IonCard>
 );
 
+const HomeHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonTitle>NCUIM 2026 Fresher Mixer</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const HomeModuleList = ({
+  hovered,
+  onHover,
+  onLeave,
+}: Readonly<{
+  hovered: string | null;
+  onHover: (route: string) => void;
+  onLeave: () => void;
+}>) => (
+  <div style={{ display: "flex", flexDirection: "column", gap: "var(--ncu-space-2)" }}>
+    {modules.map((mod) => (
+      <ModuleCardItem
+        key={mod.route}
+        mod={mod}
+        isHovered={hovered === mod.route}
+        onHover={() => onHover(mod.route)}
+        onLeave={onLeave}
+      />
+    ))}
+  </div>
+);
+
+const HomeBody = ({
+  hovered,
+  onHover,
+  onLeave,
+}: Readonly<{
+  hovered: string | null;
+  onHover: (route: string) => void;
+  onLeave: () => void;
+}>) => (
+  <IonContent className="ion-padding">
+    <HeroHeader />
+    <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
+  </IonContent>
+);
+
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>NCUIM 2026 Fresher Mixer</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
-      <IonContent className="ion-padding">
-        <HeroHeader />
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--ncu-space-2)" }}>
-          {modules.map((mod) => (
-            <ModuleCardItem
-              key={mod.route}
-              mod={mod}
-              isHovered={hovered === mod.route}
-              onHover={() => setHovered(mod.route)}
-              onLeave={() => setHovered(null)}
-            />
-          ))}
-        </div>
-      </IonContent>
+      <HomeHeader />
+      <HomeBody hovered={hovered} onHover={setHovered} onLeave={() => setHovered(null)} />
     </IonPage>
   );
 };
