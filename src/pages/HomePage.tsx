@@ -102,7 +102,7 @@ export default function HomePage() {
         <div
           style={{
             textAlign: "center",
-            padding: "var(--ncu-space-6) 0 var(--ncu-space-4)",
+            padding: "var(--ncu-space-2) 0 var(--ncu-space-1)",
           }}
         >
           <h1
@@ -110,6 +110,7 @@ export default function HomePage() {
               fontSize: "var(--ncu-font-size-3xl)",
               fontWeight: "var(--ncu-font-weight-bold)",
               margin: 0,
+              lineHeight: 1.2,
               color: "var(--ncu-ink)",
             }}
           >
@@ -119,7 +120,7 @@ export default function HomePage() {
             style={{
               fontSize: "var(--ncu-font-size-base)",
               color: "var(--ncu-muted)",
-              margin: "var(--ncu-space-2) 0 0",
+              margin: "var(--ncu-space-1) 0 0",
             }}
           >
             NCUIM 新生綜合服務與生活入口平台
@@ -131,7 +132,7 @@ export default function HomePage() {
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "var(--ncu-space-3)",
+            gap: "var(--ncu-space-2)",
           }}
         >
           {modules.map((mod) => (
