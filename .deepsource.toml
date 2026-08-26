@@ -15,6 +15,9 @@ enabled = true
   module_system = "es_modules"
   plugins = ["react"]
 
+  [analyzers.rules]
+  ignore = ["JS-0415"]
+
 [[analyzers]]
 name = "python"
 enabled = true
