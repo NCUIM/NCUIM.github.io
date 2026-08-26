@@ -112,6 +112,12 @@ ion-textarea textarea {
   font-size: var(--ncu-font-size-base) !important;
 }
 
+/* ── Restore text selection (ionic overrides it on mobile) ── */
+ion-content::part(scroll) {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* ── Desktop: constrain page content width ─────────────────── */
 @media (min-width: 768px) {
   ion-content::part(scroll) {
