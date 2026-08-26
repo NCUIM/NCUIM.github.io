@@ -109,7 +109,7 @@ export default function LeaderboardPage() {
             >
               <IonCardHeader>
                 <IonCardTitle style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
-                  我的排名
+                  我的排名 <IonBadge color="medium">Demo</IonBadge>
                 </IonCardTitle>
               </IonCardHeader>
               <IonCardContent>
@@ -160,7 +160,7 @@ export default function LeaderboardPage() {
                   fontWeight: "var(--ncu-font-weight-bold)",
                 }}
               >
-                排行榜
+                排行榜 <IonBadge color="medium">Demo</IonBadge>
               </h3>
               <IonNote style={{ fontSize: "var(--ncu-font-size-xs)" }}>
                 {lastUpdated.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })} 更新
@@ -216,7 +216,7 @@ export default function LeaderboardPage() {
                 marginTop: "var(--ncu-space-4)",
               }}
             >
-              只顯示前 8 名 · 工作人員不計入排名
+              Demo 資料 · 只顯示前 8 名 · 工作人員不計入排名
             </div>
           </div>
         </div>

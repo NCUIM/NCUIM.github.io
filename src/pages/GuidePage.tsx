@@ -12,8 +12,11 @@ import {
   IonItem,
   IonLabel,
   IonIcon,
+  IonCheckbox,
+  IonNote,
 } from "@ionic/react";
-import { checkmarkCircle, openOutline, link } from "ionicons/icons";
+import { openOutline, link } from "ionicons/icons";
+import { useState } from "react";
 
 const checklist = [
   { id: "1", title: "完成報到手續", done: false },
@@ -45,6 +48,9 @@ const links = [
 ];
 
 export default function GuidePage() {
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const toggleItem = (id: string, checked: boolean) => setCompletedIds((ids) => checked ? [...ids, id] : ids.filter((itemId) => itemId !== id));
+
   return (
     <IonPage>
       <IonHeader>
@@ -66,19 +72,17 @@ export default function GuidePage() {
           </IonCardHeader>
           <IonCardContent>
             <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-              {checklist.map((item) => (
+              {checklist.map((item) => {
+                const done = completedIds.includes(item.id);
+                return (
                 <IonItem key={item.id}>
-                  <IonIcon
-                    icon={checkmarkCircle}
-                    slot="start"
-                    color={item.done ? "success" : "medium"}
-                    style={{ fontSize: 20 }}
-                  />
-                  <IonLabel style={{ textDecoration: item.done ? "line-through" : "none" }}>
+                  <IonCheckbox slot="start" checked={done} onIonChange={(event) => toggleItem(item.id, event.detail.checked)} />
+                  <IonLabel style={{ textDecoration: done ? "line-through" : "none" }}>
                     {item.title}
                   </IonLabel>
                 </IonItem>
-              ))}
+                );
+              })}
             </IonList>
           </IonCardContent>
         </IonCard>
@@ -88,9 +92,9 @@ export default function GuidePage() {
         </h3>
         <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
           {resources.map((res, i) => (
-            <IonItem key={i} button detail href={res.url}>
+            <IonItem key={i} disabled>
               <IonLabel>{res.title}</IonLabel>
-              <IonIcon icon={openOutline} slot="end" color="primary" />
+              <IonNote slot="end">準備中</IonNote>
             </IonItem>
           ))}
         </IonList>

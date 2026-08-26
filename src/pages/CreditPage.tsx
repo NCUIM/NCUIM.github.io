@@ -16,6 +16,7 @@ import {
   IonCheckbox,
   IonNote,
 } from "@ionic/react";
+import { useState } from "react";
 
 const courses = [
   { id: "1", name: "計算機科學", credits: 3, category: "required" },
@@ -26,6 +27,12 @@ const courses = [
 ];
 
 export default function CreditPage() {
+  const [selectedCourseIds, setSelectedCourseIds] = useState<string[]>([]);
+  const selectedCourses = courses.filter((course) => selectedCourseIds.includes(course.id));
+  const requiredCredits = selectedCourses.filter((course) => course.category === "required").reduce((total, course) => total + course.credits, 0);
+  const electiveCredits = selectedCourses.filter((course) => course.category === "elective").reduce((total, course) => total + course.credits, 0);
+  const toggleCourse = (courseId: string, checked: boolean) => setSelectedCourseIds((ids) => checked ? [...ids, courseId] : ids.filter((id) => id !== courseId));
+
   return (
     <IonPage>
       <IonHeader>
@@ -58,15 +65,15 @@ export default function CreditPage() {
               }}
             >
               <div>
-                <div style={{ fontSize: "var(--ncu-font-size-2xl)", fontWeight: "var(--ncu-font-weight-bold)", color: "var(--ncu-primary)" }}>0</div>
+                <div style={{ fontSize: "var(--ncu-font-size-2xl)", fontWeight: "var(--ncu-font-weight-bold)", color: "var(--ncu-primary)" }}>{requiredCredits}</div>
                 <div style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>必修</div>
               </div>
               <div>
-                <div style={{ fontSize: "var(--ncu-font-size-2xl)", fontWeight: "var(--ncu-font-weight-bold)", color: "var(--ncu-success)" }}>0</div>
+                <div style={{ fontSize: "var(--ncu-font-size-2xl)", fontWeight: "var(--ncu-font-weight-bold)", color: "var(--ncu-success)" }}>{electiveCredits}</div>
                 <div style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>選修</div>
               </div>
               <div>
-                <div style={{ fontSize: "var(--ncu-font-size-2xl)", fontWeight: "var(--ncu-font-weight-bold)", color: "var(--ncu-muted)" }}>0</div>
+                <div style={{ fontSize: "var(--ncu-font-size-2xl)", fontWeight: "var(--ncu-font-weight-bold)", color: "var(--ncu-muted)" }}>{requiredCredits + electiveCredits}</div>
                 <div style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>總學分</div>
               </div>
             </div>
@@ -74,12 +81,12 @@ export default function CreditPage() {
         </IonCard>
 
         <h3 style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: "var(--ncu-font-weight-bold)" }}>
-          課程清單
+          課程清單（Demo 資料）
         </h3>
         <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
           {courses.map((course) => (
             <IonItem key={course.id}>
-              <IonCheckbox slot="start" />
+              <IonCheckbox slot="start" checked={selectedCourseIds.includes(course.id)} onIonChange={(event) => toggleCourse(course.id, event.detail.checked)} />
               <IonLabel>
                 <h2>{course.name}</h2>
                 <p>{course.category === "required" ? "必修" : "選修"} · {course.credits} 學分</p>

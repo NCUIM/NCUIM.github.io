@@ -12,8 +12,10 @@ import {
   IonIcon,
 } from "@ionic/react";
 import { people, scan, trophy } from "ionicons/icons";
+import { useState } from "react";
 
 export default function CardsPage() {
+  const [checkedIn, setCheckedIn] = useState(false);
   return (
     <IonPage>
       <IonHeader>
@@ -78,10 +80,10 @@ export default function CardsPage() {
               <IonCardTitle>報到與收集</IonCardTitle>
             </IonCardHeader>
             <IonCardContent>
-              <p>掃描 Entry Code 建立身分，填寫 Profile，開始收集卡片。</p>
-              <IonButton expand="block" color="primary">
+              <p>{checkedIn ? "Demo 報到已完成；正式活動會在掃描 Entry Code 後建立身分。" : "這是報到流程預覽；正式活動會掃描 Entry Code 建立身分。"}</p>
+              <IonButton expand="block" color="primary" onClick={() => setCheckedIn(true)} disabled={checkedIn}>
                 <IonIcon icon={scan} slot="start" />
-                掃描 Entry Code 報到
+                {checkedIn ? "Demo 報到完成" : "預覽掃碼報到"}
               </IonButton>
             </IonCardContent>
           </IonCard>
