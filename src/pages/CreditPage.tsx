@@ -33,6 +33,56 @@ const courses: readonly Course[] = [
   { id: "5", name: "計算機網路", credits: 3, category: "elective" },
 ];
 
+const StatBlock = ({
+  value,
+  label,
+  color,
+}: Readonly<{
+  value: number;
+  label: string;
+  color: string;
+}>) => (
+  <div>
+    <div
+      style={{
+        fontSize: "var(--ncu-font-size-2xl)",
+        fontWeight: "var(--ncu-font-weight-bold)",
+        color,
+      }}
+    >
+      {value}
+    </div>
+    <div style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
+      {label}
+    </div>
+  </div>
+);
+
+const StatsGrid = ({
+  requiredCredits,
+  electiveCredits,
+}: Readonly<{
+  requiredCredits: number;
+  electiveCredits: number;
+}>) => (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(3, 1fr)",
+      gap: "var(--ncu-space-3)",
+      textAlign: "center",
+    }}
+  >
+    <StatBlock value={requiredCredits} label="必修" color="var(--ncu-primary)" />
+    <StatBlock value={electiveCredits} label="選修" color="var(--ncu-success)" />
+    <StatBlock
+      value={requiredCredits + electiveCredits}
+      label="總學分"
+      color="var(--ncu-muted)"
+    />
+  </div>
+);
+
 const CreditSummaryCard = ({
   requiredCredits,
   electiveCredits,
@@ -51,51 +101,10 @@ const CreditSummaryCard = ({
       <IonCardTitle>畢業學分概覽</IonCardTitle>
     </IonCardHeader>
     <IonCardContent>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "var(--ncu-space-3)",
-          textAlign: "center",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: "var(--ncu-font-size-2xl)",
-              fontWeight: "var(--ncu-font-weight-bold)",
-              color: "var(--ncu-primary)",
-            }}
-          >
-            {requiredCredits}
-          </div>
-          <div style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>必修</div>
-        </div>
-        <div>
-          <div
-            style={{
-              fontSize: "var(--ncu-font-size-2xl)",
-              fontWeight: "var(--ncu-font-weight-bold)",
-              color: "var(--ncu-success)",
-            }}
-          >
-            {electiveCredits}
-          </div>
-          <div style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>選修</div>
-        </div>
-        <div>
-          <div
-            style={{
-              fontSize: "var(--ncu-font-size-2xl)",
-              fontWeight: "var(--ncu-font-weight-bold)",
-              color: "var(--ncu-muted)",
-            }}
-          >
-            {requiredCredits + electiveCredits}
-          </div>
-          <div style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>總學分</div>
-        </div>
-      </div>
+      <StatsGrid
+        requiredCredits={requiredCredits}
+        electiveCredits={electiveCredits}
+      />
     </IonCardContent>
   </IonCard>
 );
@@ -110,13 +119,36 @@ const CourseItemRow = ({
   onToggle: (checked: boolean) => void;
 }>) => (
   <IonItem>
-    <IonCheckbox slot="start" checked={isChecked} onIonChange={(event) => onToggle(event.detail.checked)} />
+    <IonCheckbox
+      slot="start"
+      checked={isChecked}
+      onIonChange={(event) => onToggle(event.detail.checked)}
+    />
     <IonLabel>
       <h2>{course.name}</h2>
       <p>{course.category === "required" ? "必修" : "選修"} · {course.credits} 學分</p>
     </IonLabel>
     <IonNote slot="end">{course.credits} 學分</IonNote>
   </IonItem>
+);
+
+const CourseList = ({
+  selectedCourseIds,
+  onToggleCourse,
+}: Readonly<{
+  selectedCourseIds: readonly string[];
+  onToggleCourse: (courseId: string, checked: boolean) => void;
+}>) => (
+  <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
+    {courses.map((course) => (
+      <CourseItemRow
+        key={course.id}
+        course={course}
+        isChecked={selectedCourseIds.includes(course.id)}
+        onToggle={(checked) => onToggleCourse(course.id, checked)}
+      />
+    ))}
+  </IonList>
 );
 
 const CreditPage = () => {
@@ -146,21 +178,17 @@ const CreditPage = () => {
       </IonHeader>
 
       <IonContent className="ion-padding">
-        <CreditSummaryCard requiredCredits={requiredCredits} electiveCredits={electiveCredits} />
-
+        <CreditSummaryCard
+          requiredCredits={requiredCredits}
+          electiveCredits={electiveCredits}
+        />
         <h3 style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: "var(--ncu-font-weight-bold)" }}>
           課程清單（Demo 資料）
         </h3>
-        <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-          {courses.map((course) => (
-            <CourseItemRow
-              key={course.id}
-              course={course}
-              isChecked={selectedCourseIds.includes(course.id)}
-              onToggle={(checked) => toggleCourse(course.id, checked)}
-            />
-          ))}
-        </IonList>
+        <CourseList
+          selectedCourseIds={selectedCourseIds}
+          onToggleCourse={toggleCourse}
+        />
       </IonContent>
     </IonPage>
   );

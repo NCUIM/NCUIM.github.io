@@ -73,6 +73,42 @@ const RankIcon = ({ rank }: Readonly<{ rank: number }>) => {
   );
 };
 
+const UserRankDetails = ({ userRank }: Readonly<{ userRank: Player }>) => (
+  <div style={{ flex: 1 }}>
+    <div style={{ fontWeight: "var(--ncu-font-weight-bold)", fontSize: "var(--ncu-font-size-lg)" }}>
+      {userRank.name}
+    </div>
+    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
+      {userRank.cards} 張卡片
+    </div>
+  </div>
+);
+
+const UserRankScore = ({ userRank }: Readonly<{ userRank: Player }>) => (
+  <div style={{ textAlign: "right" }}>
+    <div
+      style={{
+        fontSize: "var(--ncu-font-size-2xl)",
+        fontWeight: "var(--ncu-font-weight-bold)",
+        color: "var(--ncu-primary)",
+      }}
+    >
+      #{userRank.rank}
+    </div>
+    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
+      {userRank.score} 分
+    </div>
+  </div>
+);
+
+const UserRankRow = ({ userRank }: Readonly<{ userRank: Player }>) => (
+  <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
+    <span style={{ fontSize: 36 }}>{userRank.emoji}</span>
+    <UserRankDetails userRank={userRank} />
+    <UserRankScore userRank={userRank} />
+  </div>
+);
+
 const MyRankCard = ({ userRank }: Readonly<{ userRank: Player }>) => (
   <div style={{ padding: "var(--ncu-space-4)", paddingBottom: 0, flexShrink: 0 }}>
     <IonCard
@@ -88,33 +124,26 @@ const MyRankCard = ({ userRank }: Readonly<{ userRank: Player }>) => (
         </IonCardTitle>
       </IonCardHeader>
       <IonCardContent>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
-          <span style={{ fontSize: 36 }}>{userRank.emoji}</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: "var(--ncu-font-weight-bold)", fontSize: "var(--ncu-font-size-lg)" }}>
-              {userRank.name}
-            </div>
-            <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-              {userRank.cards} 張卡片
-            </div>
-          </div>
-          <div style={{ textAlign: "right" }}>
-            <div
-              style={{
-                fontSize: "var(--ncu-font-size-2xl)",
-                fontWeight: "var(--ncu-font-weight-bold)",
-                color: "var(--ncu-primary)",
-              }}
-            >
-              #{userRank.rank}
-            </div>
-            <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-              {userRank.score} 分
-            </div>
-          </div>
-        </div>
+        <UserRankRow userRank={userRank} />
       </IonCardContent>
     </IonCard>
+  </div>
+);
+
+const PlayerScoreBadge = ({ score }: Readonly<{ score: number }>) => (
+  <div slot="end" style={{ textAlign: "right" }}>
+    <span
+      style={{
+        fontWeight: "var(--ncu-font-weight-bold)",
+        color: "var(--ncu-primary)",
+        fontSize: "var(--ncu-font-size-md)",
+      }}
+    >
+      {score}
+    </span>
+    <span style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-xs)", marginLeft: 2 }}>
+      分
+    </span>
   </div>
 );
 
@@ -132,21 +161,31 @@ const RankingItem = ({ player }: Readonly<{ player: Player }>) => (
         {player.cards} 張卡片
       </div>
     </IonLabel>
-    <div slot="end" style={{ textAlign: "right" }}>
-      <span
-        style={{
-          fontWeight: "var(--ncu-font-weight-bold)",
-          color: "var(--ncu-primary)",
-          fontSize: "var(--ncu-font-size-md)",
-        }}
-      >
-        {player.score}
-      </span>
-      <span style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-xs)", marginLeft: 2 }}>
-        分
-      </span>
-    </div>
+    <PlayerScoreBadge score={player.score} />
   </IonItem>
+);
+
+const LeaderboardList = ({ players }: Readonly<{ players: readonly Player[] }>) => (
+  <IonList lines="full">
+    {players.map((player) => (
+      <RankingItem key={player.rank} player={player} />
+    ))}
+  </IonList>
+);
+
+const LeaderboardCard = ({ players }: Readonly<{ players: readonly Player[] }>) => (
+  <div style={{ flex: 1, padding: "var(--ncu-space-4)", minHeight: 0 }}>
+    <IonCard style={{ margin: 0, height: "100%", display: "flex", flexDirection: "column" }}>
+      <IonCardHeader style={{ paddingBottom: "var(--ncu-space-2)", flexShrink: 0 }}>
+        <IonCardTitle style={{ fontSize: "var(--ncu-font-size-md)" }}>
+          全體排名
+        </IonCardTitle>
+      </IonCardHeader>
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        <LeaderboardList players={players} />
+      </div>
+    </IonCard>
+  </div>
 );
 
 const LeaderboardPage = () => {
@@ -166,23 +205,7 @@ const LeaderboardPage = () => {
 
       <IonContent fullscreen className="ncu-leaderboard-content" style={{ display: "flex", flexDirection: "column" }}>
         <MyRankCard userRank={userRank} />
-
-        <div style={{ flex: 1, padding: "var(--ncu-space-4)", minHeight: 0 }}>
-          <IonCard style={{ margin: 0, height: "100%", display: "flex", flexDirection: "column" }}>
-            <IonCardHeader style={{ paddingBottom: "var(--ncu-space-2)", flexShrink: 0 }}>
-              <IonCardTitle style={{ fontSize: "var(--ncu-font-size-md)" }}>
-                全體排名
-              </IonCardTitle>
-            </IonCardHeader>
-            <div style={{ flex: 1, overflowY: "auto" }}>
-              <IonList lines="full">
-                {players.map((player) => (
-                  <RankingItem key={player.rank} player={player} />
-                ))}
-              </IonList>
-            </div>
-          </IonCard>
-        </div>
+        <LeaderboardCard players={players} />
       </IonContent>
     </IonPage>
   );
