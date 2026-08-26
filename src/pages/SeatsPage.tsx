@@ -15,15 +15,53 @@ import {
 } from "@ionic/react";
 import { useState } from "react";
 
-const rooms = [
+interface Room {
+  readonly id: string;
+  readonly name: string;
+  readonly seats: number;
+}
+
+const rooms: readonly Room[] = [
   { id: "209", name: "209 研究室", seats: 20 },
   { id: "310", name: "310 研究室", seats: 27 },
   { id: "313", name: "313 研究室", seats: 23 },
   { id: "919", name: "919 研究室", seats: 9 },
 ];
 
+function RoomCard({ room }: Readonly<{ room: Room }>) {
+  return (
+    <IonCard
+      style={{
+        margin: 0,
+        border: "2px solid var(--ncu-ink)",
+        boxShadow: "var(--ncu-shadow-hard)",
+      }}
+    >
+      <IonCardHeader>
+        <IonCardTitle>{room.name}</IonCardTitle>
+      </IonCardHeader>
+      <IonCardContent>
+        <p>總席數：{room.seats} 席</p>
+        <div
+          style={{
+            padding: "var(--ncu-space-8)",
+            textAlign: "center",
+            color: "var(--ncu-muted)",
+            background: "var(--ncu-canvas)",
+            borderRadius: "var(--ncu-radius-md)",
+            border: "1px dashed var(--ncu-border)",
+          }}
+        >
+          座位圖即將上線
+        </div>
+      </IonCardContent>
+    </IonCard>
+  );
+}
+
 export default function SeatsPage() {
   const [selectedRoom, setSelectedRoom] = useState("209");
+  const currentRoom = rooms.find((r) => r.id === selectedRoom);
 
   return (
     <IonPage>
@@ -50,37 +88,7 @@ export default function SeatsPage() {
         </IonSegment>
 
         <div style={{ marginTop: "var(--ncu-space-4)" }}>
-          {rooms
-            .filter((r) => r.id === selectedRoom)
-            .map((room) => (
-              <IonCard
-                key={room.id}
-                style={{
-                  margin: 0,
-                  border: "2px solid var(--ncu-ink)",
-                  boxShadow: "var(--ncu-shadow-hard)",
-                }}
-              >
-                <IonCardHeader>
-                  <IonCardTitle>{room.name}</IonCardTitle>
-                </IonCardHeader>
-                <IonCardContent>
-                  <p>總席數：{room.seats} 席</p>
-                  <div
-                    style={{
-                      padding: "var(--ncu-space-8)",
-                      textAlign: "center",
-                      color: "var(--ncu-muted)",
-                      background: "var(--ncu-canvas)",
-                      borderRadius: "var(--ncu-radius-md)",
-                      border: "1px dashed var(--ncu-border)",
-                    }}
-                  >
-                    座位圖即將上線
-                  </div>
-                </IonCardContent>
-              </IonCard>
-            ))}
+          {currentRoom && <RoomCard room={currentRoom} />}
         </div>
       </IonContent>
     </IonPage>
