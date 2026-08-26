@@ -8,7 +8,7 @@ import {
   IonLabel,
 } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
-import { Route } from "react-router-dom";
+import { Route, Switch } from "react-router-dom";
 import { home, book, person } from "ionicons/icons";
 
 import HomePage from "./pages/HomePage";
@@ -25,8 +25,11 @@ export default function App() {
   return (
     <IonApp>
       <IonReactRouter>
-        <IonTabs>
-          <IonRouterOutlet>
+        <Switch>
+          <Route exact path="/stage/lottery" component={LotteryPage} />
+          <Route path="/">
+            <IonTabs>
+              <IonRouterOutlet>
             {/* Tab root routes */}
             <Route exact path="/" component={HomePage} tab="home" />
             <Route exact path="/guide" component={GuidePage} tab="guide" />
@@ -35,11 +38,11 @@ export default function App() {
             {/* Sub-routes under user tab */}
             <Route exact path="/leaderboard" component={LeaderboardPage} tab="user" />
             <Route exact path="/seats" component={SeatsPage} tab="home" />
-            <Route exact path="/stage/lottery" component={LotteryPage} tab="home" />
             <Route exact path="/timetable" component={TimetablePage} tab="home" />
             <Route exact path="/food" component={FoodPage} tab="home" />
             <Route exact path="/tools/credit" component={CreditPage} tab="home" />
-          </IonRouterOutlet>            <IonTabBar slot="bottom">
+              </IonRouterOutlet>
+              <IonTabBar slot="bottom">
             <IonTabButton tab="home" href="/">
               <IonIcon icon={home} />
               <IonLabel>首頁</IonLabel>
@@ -52,8 +55,10 @@ export default function App() {
               <IonIcon icon={person} />
               <IonLabel>使用者</IonLabel>
             </IonTabButton>
-          </IonTabBar>
-        </IonTabs>
+              </IonTabBar>
+            </IonTabs>
+          </Route>
+        </Switch>
       </IonReactRouter>
     </IonApp>
   );
