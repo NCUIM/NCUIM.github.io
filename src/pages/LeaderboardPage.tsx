@@ -3,6 +3,7 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonBackButton,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -87,133 +88,133 @@ export default function LeaderboardPage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+          <IonBackButton defaultHref="/cards" slot="start" />
           <IonTitle>排行榜</IonTitle>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
-        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
-          <IonRefresherContent pullingText="下拉刷新" refreshingText="更新中..." />
-        </IonRefresher>
-
-        {/* My Rank Card */}
-        <div style={{ padding: "var(--ncu-space-4)" }}>
-          <IonCard
-            style={{
-              margin: 0,
-              border: "2px solid var(--ncu-primary)",
-              background: "var(--ncu-primary-light)",
-            }}
-          >
-            <IonCardHeader>
-              <IonCardTitle style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
-                我的排名
-              </IonCardTitle>
-            </IonCardHeader>
-            <IonCardContent>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
-                <span style={{ fontSize: 36 }}>{myRank.emoji}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: "var(--ncu-font-weight-bold)", fontSize: "var(--ncu-font-size-lg)" }}>
-                    {myRank.name}
-                  </div>
-                  <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-                    {myRank.cards} 張卡片
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <div
-                    style={{
-                      fontSize: "var(--ncu-font-size-2xl)",
-                      fontWeight: "var(--ncu-font-weight-bold)",
-                      color: "var(--ncu-primary)",
-                    }}
-                  >
-                    #{myRank.rank}
-                  </div>
-                  <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-                    {myRank.score} 分
-                  </div>
-                </div>
-              </div>
-            </IonCardContent>
-          </IonCard>
-        </div>
-
-        {/* Rankings List */}
-        <div style={{ padding: "0 var(--ncu-space-4) var(--ncu-space-4)" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "var(--ncu-space-3)",
-            }}
-          >
-            <h3
+      <IonContent scrollY={false}>
+        <div className="page-wrap" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          {/* My Rank Card — fixed at top */}
+          <div style={{ padding: "var(--ncu-space-4)", paddingBottom: 0, flexShrink: 0 }}>
+            <IonCard
               style={{
                 margin: 0,
-                fontSize: "var(--ncu-font-size-lg)",
-                fontWeight: "var(--ncu-font-weight-bold)",
+                border: "2px solid var(--ncu-primary)",
+                background: "var(--ncu-primary-light)",
               }}
             >
-              排行榜
-            </h3>
-            <IonNote style={{ fontSize: "var(--ncu-font-size-xs)" }}>
-              {lastUpdated.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })} 更新
-            </IonNote>
-          </div>
-
-          <IonCard style={{ margin: 0, border: "1px solid var(--ncu-border)" }}>
-            <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-              {rankings.map((player) => (
-                <IonItem key={player.rank} lines="full">
-                  <div slot="start" style={{ marginRight: "var(--ncu-space-3)", minWidth: 32 }}>
-                    <RankIcon rank={player.rank} />
+              <IonCardHeader>
+                <IonCardTitle style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
+                  我的排名
+                </IonCardTitle>
+              </IonCardHeader>
+              <IonCardContent>
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
+                  <span style={{ fontSize: 36 }}>{myRank.emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: "var(--ncu-font-weight-bold)", fontSize: "var(--ncu-font-size-lg)" }}>
+                      {myRank.name}
+                    </div>
+                    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
+                      {myRank.cards} 張卡片
+                    </div>
                   </div>
-                  <IonAvatar slot="start" style={{ marginRight: "var(--ncu-space-2)" }}>
+                  <div style={{ textAlign: "right" }}>
                     <div
                       style={{
-                        width: "100%",
-                        height: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 20,
-                        background: "var(--ncu-canvas)",
+                        fontSize: "var(--ncu-font-size-2xl)",
+                        fontWeight: "var(--ncu-font-weight-bold)",
+                        color: "var(--ncu-primary)",
                       }}
                     >
-                      {player.emoji}
+                      #{myRank.rank}
                     </div>
-                  </IonAvatar>
-                  <IonLabel>
-                    <h2 style={{ fontWeight: "var(--ncu-font-weight-medium)" }}>{player.name}</h2>
-                    <p style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
-                      {player.cards} 張卡片
-                    </p>
-                  </IonLabel>
-                  <IonBadge
-                    color="primary"
-                    slot="end"
-                    style={{ fontSize: "var(--ncu-font-size-base)", padding: "4px 8px" }}
-                  >
-                    {player.score} 分
-                  </IonBadge>
-                </IonItem>
-              ))}
-            </IonList>
-          </IonCard>
+                    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
+                      {myRank.score} 分
+                    </div>
+                  </div>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          </div>
 
-          {/* Footer note */}
-          <div
-            style={{
-              textAlign: "center",
-              color: "var(--ncu-muted)",
-              fontSize: "var(--ncu-font-size-xs)",
-              marginTop: "var(--ncu-space-4)",
-            }}
-          >
-            只顯示前 8 名 · 工作人員不計入排名
+          {/* Rankings List — scrollable */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "var(--ncu-space-4)" }}>
+            <div style={{ height: 1, background: "var(--ncu-border)" }} />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "var(--ncu-space-3)",
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "var(--ncu-font-size-lg)",
+                  fontWeight: "var(--ncu-font-weight-bold)",
+                }}
+              >
+                排行榜
+              </h3>
+              <IonNote style={{ fontSize: "var(--ncu-font-size-xs)" }}>
+                {lastUpdated.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })} 更新
+              </IonNote>
+            </div>
+
+            <IonCard style={{ margin: 0, border: "1px solid var(--ncu-border)" }}>
+              <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
+                {rankings.map((player) => (
+                  <IonItem key={player.rank} lines="full">
+                    <div slot="start" style={{ marginRight: "var(--ncu-space-3)", minWidth: 32 }}>
+                      <RankIcon rank={player.rank} />
+                    </div>
+                    <IonAvatar slot="start" style={{ marginRight: "var(--ncu-space-2)" }}>
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 20,
+                          background: "var(--ncu-canvas)",
+                        }}
+                      >
+                        {player.emoji}
+                      </div>
+                    </IonAvatar>
+                    <IonLabel>
+                      <h2 style={{ fontWeight: "var(--ncu-font-weight-medium)" }}>{player.name}</h2>
+                      <p style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
+                        {player.cards} 張卡片
+                      </p>
+                    </IonLabel>
+                    <IonBadge
+                      color="primary"
+                      slot="end"
+                      style={{ fontSize: "var(--ncu-font-size-base)", padding: "4px 8px" }}
+                    >
+                      {player.score} 分
+                    </IonBadge>
+                  </IonItem>
+                ))}
+              </IonList>
+            </IonCard>
+
+            {/* Footer note */}
+            <div
+              style={{
+                textAlign: "center",
+                color: "var(--ncu-muted)",
+                fontSize: "var(--ncu-font-size-xs)",
+                marginTop: "var(--ncu-space-4)",
+              }}
+            >
+              只顯示前 8 名 · 工作人員不計入排名
+            </div>
           </div>
         </div>
       </IonContent>
