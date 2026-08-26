@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   IonPage,
   IonHeader,
@@ -86,6 +87,8 @@ const modules: ModuleCard[] = [
 ];
 
 export default function HomePage() {
+  const [hovered, setHovered] = useState<string | null>(null);
+
   return (
     <IonPage>
       <IonHeader>
@@ -136,12 +139,15 @@ export default function HomePage() {
             <IonCard
               key={mod.route}
               routerLink={mod.route}
+              onMouseEnter={() => setHovered(mod.route)}
+              onMouseLeave={() => setHovered(null)}
               style={{
                 margin: 0,
                 border: "2px solid var(--ncu-ink)",
-                boxShadow: "var(--ncu-shadow-hard)",
+                boxShadow: hovered === mod.route ? "6px 6px 0 var(--ncu-ink)" : "var(--ncu-shadow-hard)",
+                transform: hovered === mod.route ? "translateY(-3px)" : "none",
+                transition: "transform 0.15s ease, box-shadow 0.15s ease",
                 cursor: "pointer",
-                transition: "transform 0.1s",
               }}
               button
             >
