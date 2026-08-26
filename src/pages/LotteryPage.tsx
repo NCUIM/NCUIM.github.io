@@ -23,7 +23,7 @@ export default function LotteryPage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
+      <IonContent className="ion-padding" scrollY={false} scrollX={false}>
         <div
           style={{
             display: "flex",

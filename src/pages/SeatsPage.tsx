@@ -33,7 +33,7 @@ export default function SeatsPage() {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
+      <IonContent className="ion-padding" scrollY={false}>
         <IonSegment
           value={selectedRoom}
           onIonChange={(e) => setSelectedRoom(e.detail.value as string)}
