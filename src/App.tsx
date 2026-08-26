@@ -16,6 +16,7 @@ import CardsPage from "./pages/CardsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import SeatsPage from "./pages/SeatsPage";
 import LotteryPage from "./pages/LotteryPage";
+import LotteryAdminPage from "./pages/LotteryAdminPage";
 import TimetablePage from "./pages/TimetablePage";
 import FoodPage from "./pages/FoodPage";
 import CreditPage from "./pages/CreditPage";
@@ -27,6 +28,7 @@ export default function App() {
       <IonReactRouter>
         <Switch>
           <Route exact path="/stage/lottery" component={LotteryPage} />
+          <Route exact path="/admin/lottery" component={LotteryAdminPage} />
           <Route path="/">
             <IonTabs>
               <IonRouterOutlet>
