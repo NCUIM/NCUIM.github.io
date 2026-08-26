@@ -13,10 +13,11 @@ import { useState, ChangeEvent } from "react";
 function UploadSection({
   fileName,
   onFileChange,
-}: {
+}: Readonly<{
   fileName: string;
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
-}) {
+}>) {
+
   return (
     <section>
       <h2>1. 匯入 XLSX 名單</h2>

@@ -9,7 +9,6 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonCardSubtitle,
-  IonCardContent,
   IonIcon,
   IonBadge,
 } from "@ionic/react";

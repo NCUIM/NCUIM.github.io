@@ -17,8 +17,9 @@ const timetable: Record<string, Course> = {
 
 const cellBase: React.CSSProperties = { border: "1px solid var(--ncu-border)", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 48, overflow: "hidden" };
 
-function CourseCell({ course }: { course?: Course }) {
+function CourseCell({ course }: Readonly<{ course?: Course }>) {
   return <div style={{ ...cellBase, alignItems: "center", padding: "3px 4px", textAlign: "center", background: course ? "var(--ncu-primary-light)" : "var(--ncu-surface)" }}>
+
     {course && <><strong style={{ fontSize: 11, lineHeight: 1.2 }}>{course.name}</strong><span style={{ fontSize: 9, color: "var(--ncu-muted)" }}>{course.teacher}</span><span style={{ fontSize: 9, color: "var(--ncu-primary)", fontWeight: 700 }}>{course.room}</span></>}
   </div>;
 }

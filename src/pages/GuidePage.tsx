@@ -91,8 +91,8 @@ export default function GuidePage() {
           校園資源直達車
         </h3>
         <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-          {resources.map((res, i) => (
-            <IonItem key={i} disabled>
+          {resources.map((res) => (
+            <IonItem key={res.title} disabled>
               <IonLabel>{res.title}</IonLabel>
               <IonNote slot="end">準備中</IonNote>
             </IonItem>
@@ -103,14 +103,15 @@ export default function GuidePage() {
           常用連結
         </h3>
         <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-          {links.map((l, i) => (
-            <IonItem key={i} button href={l.url} target="_blank" rel="noopener noreferrer">
+          {links.map((l) => (
+            <IonItem key={l.url} button href={l.url} target="_blank" rel="noopener noreferrer">
               <IonIcon icon={link} slot="start" color="medium" />
               <IonLabel>{l.title}</IonLabel>
               <IonIcon icon={openOutline} slot="end" color="primary" />
             </IonItem>
           ))}
         </IonList>
+
       </IonContent>
     </IonPage>
   );

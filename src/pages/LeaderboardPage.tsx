@@ -43,7 +43,7 @@ interface Player {
   emoji: string;
 }
 
-function RankIcon({ rank }: { rank: number }) {
+function RankIcon({ rank }: Readonly<{ rank: number }>) {
   if (rank === 1)
     return <IonIcon icon={trophy} style={{ fontSize: 24, color: "var(--ncu-star)" }} />;
   if (rank === 2)
@@ -70,7 +70,7 @@ function RankIcon({ rank }: { rank: number }) {
   );
 }
 
-function MyRankCard({ userRank }: { userRank: Player }) {
+function MyRankCard({ userRank }: Readonly<{ userRank: Player }>) {
   return (
     <div style={{ padding: "var(--ncu-space-4)", paddingBottom: 0, flexShrink: 0 }}>
       <IonCard
@@ -117,7 +117,8 @@ function MyRankCard({ userRank }: { userRank: Player }) {
   );
 }
 
-function RankingItem({ player }: { player: Player }) {
+function RankingItem({ player }: Readonly<{ player: Player }>) {
+
   return (
     <IonItem lines="full">
       <div slot="start" style={{ marginRight: "var(--ncu-space-3)", minWidth: 32 }}>
