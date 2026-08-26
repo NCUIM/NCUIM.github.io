@@ -111,3 +111,12 @@ ion-input input,
 ion-textarea textarea {
   font-size: var(--ncu-font-size-base) !important;
 }
+
+/* ── Desktop: constrain page content width ─────────────────── */
+@media (min-width: 768px) {
+  .page-wrap {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

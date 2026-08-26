@@ -95,6 +95,7 @@ export default function HomePage() {
       </IonHeader>
 
       <IonContent className="ion-padding">
+        <div className="page-wrap">
         {/* Hero Section */}
         <div
           style={{
@@ -207,6 +208,7 @@ export default function HomePage() {
               </IonCardHeader>
             </IonCard>
           ))}
+        </div>
         </div>
       </IonContent>
     </IonPage>

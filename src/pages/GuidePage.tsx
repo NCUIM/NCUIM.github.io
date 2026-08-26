@@ -43,6 +43,7 @@ export default function GuidePage() {
       </IonHeader>
 
       <IonContent className="ion-padding">
+        <div className="page-wrap">
         <IonCard
           style={{
             margin: "0 0 var(--ncu-space-4)",
@@ -83,6 +84,7 @@ export default function GuidePage() {
             </IonItem>
           ))}
         </IonList>
+        </div>
       </IonContent>
     </IonPage>
   );
