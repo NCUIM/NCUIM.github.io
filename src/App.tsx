@@ -22,50 +22,40 @@ import FoodPage from "./pages/FoodPage";
 import CreditPage from "./pages/CreditPage";
 import GuidePage from "./pages/GuidePage";
 
-const TabRoutes = () => (
-  <IonRouterOutlet>
-    <Route exact path="/" component={HomePage} tab="home" />
-    <Route exact path="/guide" component={GuidePage} tab="guide" />
-    <Route exact path="/cards" component={CardsPage} tab="user" />
-    <Route exact path="/leaderboard" component={LeaderboardPage} tab="user" />
-    <Route exact path="/seats" component={SeatsPage} tab="home" />
-    <Route exact path="/timetable" component={TimetablePage} tab="home" />
-    <Route exact path="/food" component={FoodPage} tab="home" />
-    <Route exact path="/tools/credit" component={CreditPage} tab="home" />
-  </IonRouterOutlet>
-);
-
-const AppTabBar = () => (
-  <IonTabBar slot="bottom">
-    <IonTabButton tab="home" href="/">
-      <IonIcon icon={home} />
-      <IonLabel>首頁</IonLabel>
-    </IonTabButton>
-    <IonTabButton tab="guide" href="/guide">
-      <IonIcon icon={book} />
-      <IonLabel>指南</IonLabel>
-    </IonTabButton>
-    <IonTabButton tab="user" href="/cards">
-      <IonIcon icon={person} />
-      <IonLabel>使用者</IonLabel>
-    </IonTabButton>
-  </IonTabBar>
-);
-
-const MainTabs = () => (
-  <IonTabs>
-    <TabRoutes />
-    <AppTabBar />
-  </IonTabs>
-);
-
 const App = () => (
   <IonApp>
     <IonReactRouter>
       <Switch>
         <Route exact path="/stage/lottery" component={LotteryPage} />
         <Route exact path="/admin/lottery" component={LotteryAdminPage} />
-        <Route path="/" component={MainTabs} />
+        <Route path="/">
+          <IonTabs>
+            <IonRouterOutlet>
+              <Route exact path="/" component={HomePage} />
+              <Route exact path="/guide" component={GuidePage} />
+              <Route exact path="/cards" component={CardsPage} />
+              <Route exact path="/leaderboard" component={LeaderboardPage} />
+              <Route exact path="/seats" component={SeatsPage} />
+              <Route exact path="/timetable" component={TimetablePage} />
+              <Route exact path="/food" component={FoodPage} />
+              <Route exact path="/tools/credit" component={CreditPage} />
+            </IonRouterOutlet>
+            <IonTabBar slot="bottom">
+              <IonTabButton tab="home" href="/">
+                <IonIcon icon={home} />
+                <IonLabel>首頁</IonLabel>
+              </IonTabButton>
+              <IonTabButton tab="guide" href="/guide">
+                <IonIcon icon={book} />
+                <IonLabel>指南</IonLabel>
+              </IonTabButton>
+              <IonTabButton tab="user" href="/cards">
+                <IonIcon icon={person} />
+                <IonLabel>使用者</IonLabel>
+              </IonTabButton>
+            </IonTabBar>
+          </IonTabs>
+        </Route>
       </Switch>
     </IonReactRouter>
   </IonApp>
