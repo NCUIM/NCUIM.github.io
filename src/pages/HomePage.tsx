@@ -93,7 +93,7 @@ export default function HomePage() {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>NCUIM 2026 Fresher</IonTitle>
+          <IonTitle>NCUIM 2026 Fresher Mixer</IonTitle>
         </IonToolbar>
       </IonHeader>
 
