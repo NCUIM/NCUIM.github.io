@@ -16,13 +16,10 @@ import {
   IonAvatar,
   IonBadge,
   IonNote,
-  IonRefresher,
-  IonRefresherContent,
   IonIcon,
-  IonButton,
 } from "@ionic/react";
 import { trophy, medal, ribbon } from "ionicons/icons";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 // Mock data — will be replaced with Firestore queries
 const MOCK_RANKINGS = [
@@ -37,6 +34,14 @@ const MOCK_RANKINGS = [
 ];
 
 const MY_RANK = { rank: 15, name: "我", score: 12, cards: 4, emoji: "🐰" };
+
+interface Player {
+  rank: number;
+  name: string;
+  score: number;
+  cards: number;
+  emoji: string;
+}
 
 function RankIcon({ rank }: { rank: number }) {
   if (rank === 1)
@@ -65,9 +70,94 @@ function RankIcon({ rank }: { rank: number }) {
   );
 }
 
+function MyRankCard({ userRank }: { userRank: Player }) {
+  return (
+    <div style={{ padding: "var(--ncu-space-4)", paddingBottom: 0, flexShrink: 0 }}>
+      <IonCard
+        style={{
+          margin: 0,
+          border: "2px solid var(--ncu-primary)",
+          background: "var(--ncu-primary-light)",
+        }}
+      >
+        <IonCardHeader>
+          <IonCardTitle style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
+            我的排名 <IonBadge color="medium">Demo</IonBadge>
+          </IonCardTitle>
+        </IonCardHeader>
+        <IonCardContent>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
+            <span style={{ fontSize: 36 }}>{userRank.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: "var(--ncu-font-weight-bold)", fontSize: "var(--ncu-font-size-lg)" }}>
+                {userRank.name}
+              </div>
+              <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
+                {userRank.cards} 張卡片
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div
+                style={{
+                  fontSize: "var(--ncu-font-size-2xl)",
+                  fontWeight: "var(--ncu-font-weight-bold)",
+                  color: "var(--ncu-primary)",
+                }}
+              >
+                #{userRank.rank}
+              </div>
+              <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
+                {userRank.score} 分
+              </div>
+            </div>
+          </div>
+        </IonCardContent>
+      </IonCard>
+    </div>
+  );
+}
+
+function RankingItem({ player }: { player: Player }) {
+  return (
+    <IonItem lines="full">
+      <div slot="start" style={{ marginRight: "var(--ncu-space-3)", minWidth: 32 }}>
+        <RankIcon rank={player.rank} />
+      </div>
+      <IonAvatar slot="start" style={{ marginRight: "var(--ncu-space-2)" }}>
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 20,
+            background: "var(--ncu-canvas)",
+          }}
+        >
+          {player.emoji}
+        </div>
+      </IonAvatar>
+      <IonLabel>
+        <h2 style={{ fontWeight: "var(--ncu-font-weight-medium)" }}>{player.name}</h2>
+        <p style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
+          {player.cards} 張卡片
+        </p>
+      </IonLabel>
+      <IonBadge
+        color="primary"
+        slot="end"
+        style={{ fontSize: "var(--ncu-font-size-base)", padding: "4px 8px" }}
+      >
+        {player.score} 分
+      </IonBadge>
+    </IonItem>
+  );
+}
+
 export default function LeaderboardPage() {
-  const [rankings, setRankings] = useState(MOCK_RANKINGS);
-  const [myRank, setMyRank] = useState(MY_RANK);
+  const [rankings] = useState(MOCK_RANKINGS);
+  const [myRank] = useState(MY_RANK);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Auto-refresh every 30s
@@ -76,13 +166,6 @@ export default function LeaderboardPage() {
       setLastUpdated(new Date());
     }, 30000);
     return () => clearInterval(timer);
-  }, []);
-
-  const handleRefresh = useCallback((e: CustomEvent) => {
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      (e.target as HTMLIonRefresherElement).complete();
-    }, 800);
   }, []);
 
   return (
@@ -98,49 +181,7 @@ export default function LeaderboardPage() {
 
       <IonContent scrollY={false}>
         <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-          {/* My Rank Card — fixed at top */}
-          <div style={{ padding: "var(--ncu-space-4)", paddingBottom: 0, flexShrink: 0 }}>
-            <IonCard
-              style={{
-                margin: 0,
-                border: "2px solid var(--ncu-primary)",
-                background: "var(--ncu-primary-light)",
-              }}
-            >
-              <IonCardHeader>
-                <IonCardTitle style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
-                  我的排名 <IonBadge color="medium">Demo</IonBadge>
-                </IonCardTitle>
-              </IonCardHeader>
-              <IonCardContent>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
-                  <span style={{ fontSize: 36 }}>{myRank.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: "var(--ncu-font-weight-bold)", fontSize: "var(--ncu-font-size-lg)" }}>
-                      {myRank.name}
-                    </div>
-                    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-                      {myRank.cards} 張卡片
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div
-                      style={{
-                        fontSize: "var(--ncu-font-size-2xl)",
-                        fontWeight: "var(--ncu-font-weight-bold)",
-                        color: "var(--ncu-primary)",
-                      }}
-                    >
-                      #{myRank.rank}
-                    </div>
-                    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-                      {myRank.score} 分
-                    </div>
-                  </div>
-                </div>
-              </IonCardContent>
-            </IonCard>
-          </div>
+          <MyRankCard userRank={myRank} />
 
           {/* Rankings List — scrollable */}
           <div style={{ flex: 1, overflowY: "auto", padding: "var(--ncu-space-4)" }}>
@@ -170,44 +211,11 @@ export default function LeaderboardPage() {
             <IonCard style={{ margin: 0, border: "1px solid var(--ncu-border)" }}>
               <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
                 {rankings.map((player) => (
-                  <IonItem key={player.rank} lines="full">
-                    <div slot="start" style={{ marginRight: "var(--ncu-space-3)", minWidth: 32 }}>
-                      <RankIcon rank={player.rank} />
-                    </div>
-                    <IonAvatar slot="start" style={{ marginRight: "var(--ncu-space-2)" }}>
-                      <div
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 20,
-                          background: "var(--ncu-canvas)",
-                        }}
-                      >
-                        {player.emoji}
-                      </div>
-                    </IonAvatar>
-                    <IonLabel>
-                      <h2 style={{ fontWeight: "var(--ncu-font-weight-medium)" }}>{player.name}</h2>
-                      <p style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
-                        {player.cards} 張卡片
-                      </p>
-                    </IonLabel>
-                    <IonBadge
-                      color="primary"
-                      slot="end"
-                      style={{ fontSize: "var(--ncu-font-size-base)", padding: "4px 8px" }}
-                    >
-                      {player.score} 分
-                    </IonBadge>
-                  </IonItem>
+                  <RankingItem key={player.rank} player={player} />
                 ))}
               </IonList>
             </IonCard>
 
-            {/* Footer note */}
             <div
               style={{
                 textAlign: "center",
@@ -224,3 +232,4 @@ export default function LeaderboardPage() {
     </IonPage>
   );
 }
+
