@@ -138,6 +138,11 @@ ion-content::part(scroll) {
   -webkit-user-select: text;
 }
 
+/* Timetable responsive behavior */
+.timetable-mobile { display: block; }
+.timetable-desktop { display: none; }
+.timetable-course-list ion-item { --padding-top: 10px; --padding-bottom: 10px; }
+
 /* ── Desktop: constrain page content width ─────────────────── */
 @media (min-width: 768px) {
   ion-content::part(scroll) {
@@ -151,11 +156,11 @@ ion-content::part(scroll) {
     max-width: 100%;
     padding: 0 16px;
   }
+
+  .timetable-mobile { display: none; }
+  .timetable-desktop { display: block; }
 }
 
-.timetable-mobile { display: block; }
-.timetable-desktop { display: none; }
-.timetable-course-list ion-item { --padding-top: 10px; --padding-bottom: 10px; }
 
 .lottery-stage-content {
   --background: var(--ncu-terminal);
