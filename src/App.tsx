@@ -22,8 +22,8 @@ import FoodPage from "./pages/FoodPage";
 import CreditPage from "./pages/CreditPage";
 import GuidePage from "./pages/GuidePage";
 
-// skipcq: JS-0415 - Ionic React strictly requires direct nesting of IonRouterOutlet, IonTabBar, and IonTabButton inside IonTabs
 const App = () => (
+  // skipcq: JS-0415 - Ionic React requires IonRouterOutlet and IonTabBar as direct children of IonTabs
   <IonApp>
     <IonReactRouter>
       <Switch>
