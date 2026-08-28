@@ -385,7 +385,17 @@ const MobilePeriodItem = ({
           </div>
         )}
       </IonLabel>
-      <IonNote slot="end">
+      <IonNote
+        slot="end"
+        style={{
+          alignSelf: "center",
+          margin: "auto 0",
+          textAlign: "right",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
         {isCurrent && (
           <span
             style={{
