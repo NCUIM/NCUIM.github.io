@@ -637,7 +637,7 @@ const TimetableMobileView = ({
   );
 };
 
-// ── Desktop View: 5-Day Weekly Grid with Spanning Continuous Cards ────
+// ── Desktop View: 5-Day Weekly Grid (Zero-Gap Flush Cards) ──────
 
 const TimetableDesktopView = ({
   timetableData,
@@ -650,7 +650,7 @@ const TimetableDesktopView = ({
     return days.map((_, dayIdx) => getDesktopCourseSpans(timetableData, dayIdx));
   }, [timetableData]);
 
-  // Calculate dynamic period heights (shrink rows that are completely empty across all 5 days)
+  // Dynamic period heights (shrink rows that are empty across all 5 days)
   const periodHeights = useMemo(() => {
     return periods.map((p) => {
       const hasCourse = days.some((_, dayIdx) => {
@@ -702,7 +702,7 @@ const TimetableDesktopView = ({
               color: "#fff",
               fontWeight: 800,
               fontSize: 16,
-              borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+              borderRight: "2px solid var(--ncu-ink)",
             }}
           >
             節次
@@ -721,7 +721,10 @@ const TimetableDesktopView = ({
                   color: "#fff",
                   fontWeight: 800,
                   fontSize: 17,
-                  borderRight: "1px solid rgba(255, 255, 255, 0.2)",
+                  borderRight:
+                    dayIdx === days.length - 1
+                      ? "none"
+                      : "1px solid rgba(0, 0, 0, 0.2)",
                   boxShadow: isTodayCol
                     ? "inset 0 -3.5px 0 #fbbf24"
                     : "none",
@@ -793,7 +796,7 @@ const TimetableDesktopView = ({
             })}
           </div>
 
-          {/* Columns 2-6: Day Columns with Spanning Cards (No horizontal slot borders inside!) */}
+          {/* Columns 2-6: Day Columns (無間距無圓角 Flush 格線樣式) */}
           {days.map((day, dayIdx) => {
             const spans = daySpans[dayIdx];
             const isTodayCol = dayIdx === todayDayIndex;
@@ -811,15 +814,17 @@ const TimetableDesktopView = ({
                   background: isTodayCol ? "rgba(49, 87, 200, 0.02)" : "var(--ncu-surface)",
                 }}
               >
-                {/* Spanning Course Cards */}
+                {/* 緊貼無間隙、無圓角的純格線卡片 */}
                 {spans.map((span) => {
                   const isMine = span.course.isMyCourse ?? false;
                   const isRequired = span.course.courseType === "REQUIRED";
-                  const startTop = periodTops[span.startIdx] + 3;
+                  const startTop = periodTops[span.startIdx];
                   const spanHeight =
                     periodTops[span.endIdx + 1] -
-                    periodTops[span.startIdx] -
-                    6;
+                    periodTops[span.startIdx];
+
+                  const leftPct = (span.colIndex / span.totalCols) * 100;
+                  const widthPct = 100 / span.totalCols;
 
                   const titleFontSize =
                     span.totalCols === 1
@@ -851,15 +856,12 @@ const TimetableDesktopView = ({
                         position: "absolute",
                         top: startTop,
                         height: spanHeight,
-                        left: `calc(${(span.colIndex / span.totalCols) * 100}% + 3px)`,
-                        width: `calc(${100 / span.totalCols}% - 6px)`,
+                        left: `${leftPct}%`,
+                        width: `${widthPct}%`,
                         background: isMine
                           ? "var(--ncu-star-light)"
                           : "#ffffff",
-                        border: isMine
-                          ? "2px solid var(--ncu-star)"
-                          : "1px solid var(--ncu-border)",
-                        borderRadius: "var(--ncu-radius-sm)",
+                        border: "1px solid var(--ncu-border)",
                         padding: "8px 6px",
                         display: "flex",
                         flexDirection: "column",
@@ -868,10 +870,11 @@ const TimetableDesktopView = ({
                         textAlign: "center",
                         gap: 4,
                         boxShadow: isMine
-                          ? "0 2px 8px rgba(255, 212, 90, 0.4)"
-                          : "0 1px 3px rgba(0, 0, 0, 0.05)",
+                          ? "inset 0 0 0 2px var(--ncu-star)"
+                          : "none",
                         zIndex: isMine ? 3 : 2,
                         overflow: "hidden",
+                        boxSizing: "border-box",
                       }}
                     >
                       <div
