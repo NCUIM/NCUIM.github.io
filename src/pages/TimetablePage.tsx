@@ -41,31 +41,33 @@ const periods: readonly Period[] = [
   { id: "9", time: "17:10-18:00" },
 ];
 
-/** Get today's weekday index (0=Mon … 4=Fri, -1=weekend) */
-function getTodayIndex(): number {
-  const d = new Date().getDay(); // 0=Sun
-  return d >= 1 && d <= 5 ? d - 1 : -1;
+/** Get the default tab index: today if weekday, next working day if weekend. */
+function getDefaultDayIndex(): number {
+  const d = new Date().getDay(); // 0=Sun … 6=Sat
+  if (d >= 1 && d <= 5) return d - 1; // Mon–Fri
+  return 0; // Sat/Sun → 週一
 }
 
-/** Return the index of the current/nearest period, or -1 if none match. */
-function getCurrentPeriodIndex(): number {
+/** Return { current, next } period indices. current=index if in a period, next=nearest upcoming with a course. */
+function getTimeIndicators(dayIndex: number): { current: number; next: number } {
   const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
+  let current = -1;
+  let next = -1;
   for (let i = 0; i < periods.length; i++) {
     const [startStr, endStr] = periods[i].time.split("-");
     const [sh, sm] = startStr.split(":").map(Number);
     const [eh, em] = endStr.split(":").map(Number);
     const start = sh * 60 + sm;
     const end = eh * 60 + em;
-    if (mins >= start && mins < end) return i; // currently in this period
+    const hasCourse = !!timetable[`${periods[i].id}-${dayIndex}`];
+    if (mins >= start && mins < end && hasCourse) {
+      current = i;
+    } else if (next === -1 && mins < start && hasCourse) {
+      next = i;
+    }
   }
-  // Not in any period — find the nearest upcoming one
-  for (let i = 0; i < periods.length; i++) {
-    const [startStr] = periods[i].time.split("-");
-    const [sh, sm] = startStr.split(":").map(Number);
-    if (mins < sh * 60 + sm) return i;
-  }
-  return -1;
+  return { current, next };
 }
 
 const timetable: Readonly<Record<string, Course>> = {
@@ -124,13 +126,16 @@ const TimetableMobileView = ({
   selectedDay,
   onSelectDay,
   currentPeriodIndex,
+  nextPeriodIndex,
+  isToday,
 }: Readonly<{
   selectedDay: string;
   onSelectDay: (day: string) => void;
   currentPeriodIndex: number;
+  nextPeriodIndex: number;
+  isToday: boolean;
 }>) => {
   const dayIndex = Number(selectedDay);
-  const isToday = Number(selectedDay) === getTodayIndex();
   const periodRefs = useRef<(HTMLIonItemElement | null)[]>([]);
   const dailyPeriods = periods.map((period, i) => ({
     period,
@@ -138,17 +143,18 @@ const TimetableMobileView = ({
     idx: i,
   }));
 
-  // Auto-scroll to current period on mount / day switch
+  // Auto-scroll to current or next period on mount / day switch
+  const scrollToIndex = currentPeriodIndex >= 0 ? currentPeriodIndex : nextPeriodIndex;
   useEffect(() => {
-    if (!isToday || currentPeriodIndex < 0) return;
+    if (!isToday || scrollToIndex < 0) return;
     const timer = setTimeout(() => {
-      periodRefs.current[currentPeriodIndex]?.scrollIntoView({
+      periodRefs.current[scrollToIndex]?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
     }, 150);
     return () => clearTimeout(timer);
-  }, [isToday, currentPeriodIndex, selectedDay]);
+  }, [isToday, scrollToIndex, selectedDay]);
 
   return (
     <section className="timetable-mobile" aria-label="依日課表">
@@ -166,6 +172,7 @@ const TimetableMobileView = ({
       <IonList className="timetable-course-list" inset>
         {dailyPeriods.map(({ period, course, idx }) => {
           const isCurrent = isToday && idx === currentPeriodIndex;
+          const isNext = isToday && idx === nextPeriodIndex && idx !== currentPeriodIndex;
           return (
             <IonItem
               key={period.id}
@@ -173,6 +180,7 @@ const TimetableMobileView = ({
               style={{
                 ...(course?.isMyCourse ? { "--background": "var(--ncu-star-light)" } : {}),
                 ...(isCurrent ? { borderLeft: "3px solid var(--ncu-primary)", "--min-height": "56px" } : {}),
+                ...(isNext ? { borderLeft: "4px solid #0d7a3e", "--min-height": "56px" } : {}),
               } as React.CSSProperties}
             >
               <IonLabel>
@@ -194,6 +202,7 @@ const TimetableMobileView = ({
               </IonLabel>
               <IonNote slot="end">
                 {isCurrent && <span style={{ color: "var(--ncu-primary)", fontWeight: 700, fontSize: 12, display: "block", marginBottom: 2 }}>● NOW</span>}
+                {isNext && <span style={{ color: "#0d7a3e", fontWeight: 700, fontSize: 12, display: "block", marginBottom: 2 }}>&#9654; NEXT</span>}
                 第 {period.id} 節<br />
                 {period.time}
               </IonNote>
@@ -281,26 +290,35 @@ const TimetableBody = ({
   selectedDay,
   onSelectDay,
   currentPeriodIndex,
+  nextPeriodIndex,
+  isToday,
 }: Readonly<{
   selectedDay: string;
   onSelectDay: (day: string) => void;
   currentPeriodIndex: number;
+  nextPeriodIndex: number;
+  isToday: boolean;
 }>) => (
   <IonContent className="ion-padding timetable-content">
-    <TimetableMobileView selectedDay={selectedDay} onSelectDay={onSelectDay} currentPeriodIndex={currentPeriodIndex} />
+    <TimetableMobileView selectedDay={selectedDay} onSelectDay={onSelectDay} currentPeriodIndex={currentPeriodIndex} nextPeriodIndex={nextPeriodIndex} isToday={isToday} />
     <TimetableDesktopView />
   </IonContent>
 );
 
 const TimetablePage = () => {
-  const todayIdx = getTodayIndex();
-  const [selectedDay, setSelectedDay] = useState(String(todayIdx >= 0 ? todayIdx : 0));
-  const currentPeriodIndex = useMemo(() => getCurrentPeriodIndex(), []);
+  const defaultDay = getDefaultDayIndex();
+  const [selectedDay, setSelectedDay] = useState(String(defaultDay));
+  const dayIndex = Number(selectedDay);
+  const { current: currentPeriodIndex, next: nextPeriodIndex } = useMemo(() => getTimeIndicators(dayIndex), [dayIndex]);
+  const isToday = useMemo(() => {
+    const d = new Date().getDay();
+    return d >= 1 && d <= 5 && Number(selectedDay) === d - 1;
+  }, [selectedDay]);
 
   return (
     <IonPage>
       <TimetableHeader />
-      <TimetableBody selectedDay={selectedDay} onSelectDay={setSelectedDay} currentPeriodIndex={currentPeriodIndex} />
+      <TimetableBody selectedDay={selectedDay} onSelectDay={setSelectedDay} currentPeriodIndex={currentPeriodIndex} nextPeriodIndex={nextPeriodIndex} isToday={isToday} />
     </IonPage>
   );
 };
