@@ -36,8 +36,6 @@ export const IM_CLASSROOM_MAP: Record<string, string> = {
   "IM5038-*": "I1-404", // 進階區塊鏈應用與隱私防護
   "IM5041-*": "I1-405-1", // 現代與後量子密碼學導論
   "IM6002-*": "I1-404", // 資訊系統專案管理
-  "IM6003-*": "I1-404", // 軟體工程Ⅰ
-  "IM6012-*": "I1-404", // 管理資訊系統
   "IM6041-*": "I1-404", // 生產與作業管理
   "IM6053-*": "I1-404", // 多變量分析
   "IM6055-*": "I1-405-1", // 電腦網路安全
@@ -46,11 +44,11 @@ export const IM_CLASSROOM_MAP: Record<string, string> = {
   "IM7043-*": "I1-404", // 書報研討Ⅰ
   "IM7071-*": "I1-405-1", // 企業電腦網路
   "IM7082-*": "I1-404", // 智慧型資訊系統
-  "IM8011-*": "I1-404", // 資訊管理研究Ⅰ
 };
 
 /**
- * Fetch all NCU courses from S3 and filter for IM Graduate / Master courses (IM5000+).
+ * Fetch all NCU courses from S3 and filter for IM Fresher / Master 1st year relevant courses.
+ * Excludes 碩二必修 (IM6003 軟體工程Ⅰ, IM6012 管理資訊系統) and doctoral courses (IM8xxx).
  * Falls back to bundled static json if network fails or offline.
  */
 export async function fetchImMasterCourses(): Promise<MasterCourseItem[]> {
@@ -80,11 +78,16 @@ export async function fetchImMasterCourses(): Promise<MasterCourseItem[]> {
         (c.classNo && c.classNo.startsWith("IM"));
       if (!isIm) return false;
 
-      // Master courses are numbered IM5xxx - IM8xxx (regular daytime graduate courses)
+      // Exclude 碩二必修 (IM6003 軟體工程Ⅰ, IM6012 管理資訊系統)
+      if (c.classNo?.startsWith("IM6003") || c.classNo?.startsWith("IM6012")) {
+        return false;
+      }
+
+      // Master courses are numbered IM5xxx - IM7xxx (regular daytime graduate courses)
       const match = c.classNo?.match(/IM([0-9]{4})/);
       if (match) {
         const num = parseInt(match[1], 10);
-        return num >= 5000;
+        return num >= 5000 && num < 8000;
       }
       return false;
     });

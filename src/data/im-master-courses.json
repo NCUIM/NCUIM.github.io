@@ -190,44 +190,6 @@
     "admitCnt": 13
   },
   {
-    "serialNo": 43032,
-    "classNo": "IM6003-*",
-    "title": "軟體工程Ⅰ",
-    "credit": 3,
-    "teachers": [
-      "許智誠"
-    ],
-    "classTimes": [
-      "3-6",
-      "3-7",
-      "3-8"
-    ],
-    "room": "I1-404",
-    "courseType": "REQUIRED",
-    "passwordCard": "OPTIONAL",
-    "limitCnt": 50,
-    "admitCnt": 17
-  },
-  {
-    "serialNo": 43033,
-    "classNo": "IM6012-*",
-    "title": "管理資訊系統",
-    "credit": 3,
-    "teachers": [
-      "許文錦"
-    ],
-    "classTimes": [
-      "1-5",
-      "1-6",
-      "1-7"
-    ],
-    "room": "I1-404",
-    "courseType": "REQUIRED",
-    "passwordCard": "OPTIONAL",
-    "limitCnt": 50,
-    "admitCnt": 18
-  },
-  {
     "serialNo": 43034,
     "classNo": "IM6041-*",
     "title": "生產與作業管理",
@@ -378,24 +340,5 @@
     "passwordCard": "NONE",
     "limitCnt": null,
     "admitCnt": 13
-  },
-  {
-    "serialNo": 43042,
-    "classNo": "IM8011-*",
-    "title": "資訊管理研究Ⅰ",
-    "credit": 3,
-    "teachers": [
-      "王存國"
-    ],
-    "classTimes": [
-      "3-5",
-      "3-6",
-      "3-7"
-    ],
-    "room": "I1-404",
-    "courseType": "ELECTIVE",
-    "passwordCard": "NONE",
-    "limitCnt": null,
-    "admitCnt": 1
   }
 ]
