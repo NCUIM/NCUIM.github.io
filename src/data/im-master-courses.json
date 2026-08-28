@@ -57,44 +57,6 @@
     "admitCnt": 27
   },
   {
-    "serialNo": 43025,
-    "classNo": "IM5019-A",
-    "title": "管理溝通",
-    "credit": 2,
-    "teachers": [
-      "黃子菱"
-    ],
-    "classTimes": [
-      "4-2",
-      "4-3",
-      "4-4"
-    ],
-    "room": "I1-404",
-    "courseType": "REQUIRED",
-    "passwordCard": "NONE",
-    "limitCnt": 60,
-    "admitCnt": 39
-  },
-  {
-    "serialNo": 43026,
-    "classNo": "IM5019-B",
-    "title": "管理溝通",
-    "credit": 2,
-    "teachers": [
-      "何迪亞"
-    ],
-    "classTimes": [
-      "4-2",
-      "4-3",
-      "4-4"
-    ],
-    "room": "I1-404",
-    "courseType": "REQUIRED",
-    "passwordCard": "NONE",
-    "limitCnt": 60,
-    "admitCnt": 31
-  },
-  {
     "serialNo": 43027,
     "classNo": "IM5022-*",
     "title": "多媒體資料庫",
@@ -190,6 +152,44 @@
     "admitCnt": 13
   },
   {
+    "serialNo": 43032,
+    "classNo": "IM6003-*",
+    "title": "軟體工程Ⅰ",
+    "credit": 3,
+    "teachers": [
+      "許智誠"
+    ],
+    "classTimes": [
+      "3-6",
+      "3-7",
+      "3-8"
+    ],
+    "room": "I1-404",
+    "courseType": "REQUIRED",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 50,
+    "admitCnt": 17
+  },
+  {
+    "serialNo": 43033,
+    "classNo": "IM6012-*",
+    "title": "管理資訊系統",
+    "credit": 3,
+    "teachers": [
+      "許文錦"
+    ],
+    "classTimes": [
+      "1-5",
+      "1-6",
+      "1-7"
+    ],
+    "room": "I1-404",
+    "courseType": "REQUIRED",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 50,
+    "admitCnt": 18
+  },
+  {
     "serialNo": 43034,
     "classNo": "IM6041-*",
     "title": "生產與作業管理",
@@ -283,25 +283,6 @@
     "passwordCard": "OPTIONAL",
     "limitCnt": 20,
     "admitCnt": 1
-  },
-  {
-    "serialNo": 43039,
-    "classNo": "IM7043-*",
-    "title": "書報研討Ⅰ",
-    "credit": 1,
-    "teachers": [
-      "王存國"
-    ],
-    "classTimes": [
-      "2-5",
-      "2-6",
-      "2-7"
-    ],
-    "room": "I1-404",
-    "courseType": "ELECTIVE",
-    "passwordCard": "NONE",
-    "limitCnt": null,
-    "admitCnt": 7
   },
   {
     "serialNo": 43040,

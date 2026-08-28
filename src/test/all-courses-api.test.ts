@@ -48,12 +48,23 @@ describe("all-courses-api service", () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network offline"));
     const courses = await fetchImMasterCourses();
     expect(courses.length).toBeGreaterThan(0);
-    expect(courses.some((c) => c.title === "管理溝通")).toBe(true);
+    expect(courses.some((c) => c.title === "商業智慧")).toBe(true);
+    expect(courses.some((c) => c.title === "管理溝通")).toBe(false);
   });
 
-  it("fetchImMasterCourses successfully filters IM master courses from API response", async () => {
+  it("fetchImMasterCourses successfully filters IM master courses and excludes 碩二必修", async () => {
     const mockApiResponse = {
       courses: [
+        {
+          serialNo: 43024,
+          classNo: "IM5008-*",
+          title: "商業智慧",
+          credit: 3,
+          teachers: ["陳彥良"],
+          classTimes: ["5-2", "5-3"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
         {
           serialNo: 43025,
           classNo: "IM5019-A",
@@ -84,6 +95,6 @@ describe("all-courses-api service", () => {
 
     const courses = await fetchImMasterCourses();
     expect(courses.length).toBe(1);
-    expect(courses[0].title).toBe("管理溝通");
+    expect(courses[0].title).toBe("商業智慧");
   });
 });
