@@ -145,6 +145,69 @@ const cellBase: React.CSSProperties = {
 
 // ── Sub-components ────────────────────────────────────────────
 
+const SingleCourseCell = ({ course }: Readonly<{ course: Course }>) => {
+  const isMine = course.isMyCourse ?? false;
+  const isRequired = course.courseType === "REQUIRED";
+  return (
+    <div
+      style={{
+        ...cellBase,
+        alignItems: "center",
+        padding: "8px 6px",
+        textAlign: "center",
+        background: isMine
+          ? "var(--ncu-star-light)"
+          : isRequired
+            ? "var(--ncu-primary-light)"
+            : "var(--ncu-surface)",
+        border: isMine
+          ? "2px solid var(--ncu-star)"
+          : "1px solid var(--ncu-border)",
+        gap: 3,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+        {isMine && (
+          <IonIcon
+            icon={star}
+            style={{ color: "var(--ncu-star)", fontSize: 13, flexShrink: 0 }}
+          />
+        )}
+        <strong
+          style={{
+            fontSize: 13,
+            lineHeight: 1.3,
+            color: isMine
+              ? "var(--ncu-ink)"
+              : isRequired
+                ? "var(--ncu-primary)"
+                : "var(--ncu-ink)",
+          }}
+        >
+          {course.name}
+        </strong>
+      </div>
+      <span style={{ fontSize: 11, color: "var(--ncu-muted)" }}>
+        {course.teacher}
+      </span>
+      {course.room && (
+        <span
+          style={{
+            fontSize: 11,
+            color: "var(--ncu-primary)",
+            fontWeight: 700,
+            background: "rgba(49, 87, 200, 0.08)",
+            padding: "1px 6px",
+            borderRadius: 4,
+          }}
+        >
+          {course.room}
+        </span>
+      )}
+    </div>
+  );
+};
+
 const CourseMiniCard = ({ course }: Readonly<{ course: Course }>) => {
   const isMine = course.isMyCourse ?? false;
   const isRequired = course.courseType === "REQUIRED";
@@ -213,30 +276,36 @@ const CourseMiniCard = ({ course }: Readonly<{ course: Course }>) => {
   );
 };
 
+const MultiCourseCell = ({ courses }: Readonly<{ courses: readonly Course[] }>) => (
+  <div
+    style={{
+      ...cellBase,
+      padding: "4px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      background: "var(--ncu-surface)",
+    }}
+  >
+    {courses.map((course) => (
+      <CourseMiniCard
+        key={course.id || `${course.name}-${course.teacher}`}
+        course={course}
+      />
+    ))}
+  </div>
+);
+
 const CourseCell = ({ courses }: Readonly<{ courses?: readonly Course[] }>) => {
   if (!courses || courses.length === 0) {
     return <div style={{ ...cellBase, background: "var(--ncu-surface)" }} />;
   }
 
-  return (
-    <div
-      style={{
-        ...cellBase,
-        padding: "4px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        background: "var(--ncu-canvas)",
-      }}
-    >
-      {courses.map((course) => (
-        <CourseMiniCard
-          key={course.id || `${course.name}-${course.teacher}`}
-          course={course}
-        />
-      ))}
-    </div>
-  );
+  if (courses.length === 1) {
+    return <SingleCourseCell course={courses[0]} />;
+  }
+
+  return <MultiCourseCell courses={courses} />;
 };
 
 // ── Timetable Views ───────────────────────────────────────────
