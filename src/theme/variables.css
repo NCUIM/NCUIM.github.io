@@ -140,6 +140,7 @@ ion-content::part(scroll) {
 }
 .timetable-course-list ion-note {
   align-self: center !important;
+  text-align: center !important;
   margin: auto 0;
 }
 

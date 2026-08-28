@@ -390,10 +390,12 @@ const MobilePeriodItem = ({
         style={{
           alignSelf: "center",
           margin: "auto 0",
-          textAlign: "right",
+          textAlign: "center",
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
+          minWidth: 72,
         }}
       >
         {isCurrent && (
