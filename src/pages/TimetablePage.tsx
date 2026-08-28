@@ -19,6 +19,7 @@ interface Course {
   readonly name: string;
   readonly teacher: string;
   readonly room: string;
+  readonly isMyCourse?: boolean;
 }
 
 interface Period {
@@ -41,12 +42,12 @@ const periods: readonly Period[] = [
 ];
 
 const timetable: Readonly<Record<string, Course>> = {
-  "1-0": { name: "計算機科學", teacher: "王志明", room: "313" },
-  "1-2": { name: "計算機科學", teacher: "王志明", room: "313" },
+  "1-0": { name: "計算機科學", teacher: "王志明", room: "313", isMyCourse: true },
+  "1-2": { name: "計算機科學", teacher: "王志明", room: "313", isMyCourse: true },
   "3-1": { name: "資料庫系統", teacher: "李怡萱", room: "209" },
   "3-3": { name: "資料庫系統", teacher: "李怡萱", room: "209" },
-  "5-0": { name: "機器學習", teacher: "陳俊廷", room: "919" },
-  "5-2": { name: "機器學習", teacher: "陳俊廷", room: "919" },
+  "5-0": { name: "機器學習", teacher: "陳俊廷", room: "919", isMyCourse: true },
+  "5-2": { name: "機器學習", teacher: "陳俊廷", room: "919", isMyCourse: true },
   "7-1": { name: "演算法設計", teacher: "張文慧", room: "310" },
   "7-4": { name: "計算機網路", teacher: "林家豪", room: "313" },
   "9-3": { name: "軟體工程", teacher: "黃雅琪", room: "209" },
@@ -62,27 +63,35 @@ const cellBase: React.CSSProperties = {
   overflow: "hidden",
 };
 
-const CourseCell = ({ course }: Readonly<{ course?: Course }>) => (
-  <div
-    style={{
-      ...cellBase,
-      alignItems: "center",
-      padding: "3px 4px",
-      textAlign: "center",
-      background: course ? "var(--ncu-primary-light)" : "var(--ncu-surface)",
-    }}
-  >
-    {course && (
-      <>
-        <strong style={{ fontSize: 11, lineHeight: 1.2 }}>{course.name}</strong>
-        <span style={{ fontSize: 9, color: "var(--ncu-muted)" }}>{course.teacher}</span>
-        <span style={{ fontSize: 9, color: "var(--ncu-primary)", fontWeight: 700 }}>
-          {course.room}
-        </span>
-      </>
-    )}
-  </div>
-);
+const CourseCell = ({ course }: Readonly<{ course?: Course }>) => {
+  const isMine = course?.isMyCourse ?? false;
+  return (
+    <div
+      style={{
+        ...cellBase,
+        alignItems: "center",
+        padding: "3px 4px",
+        textAlign: "center",
+        background: isMine
+          ? "var(--ncu-star-light)"
+          : course
+            ? "var(--ncu-primary-light)"
+            : "var(--ncu-surface)",
+        border: isMine ? "2px solid var(--ncu-star)" : "1px solid var(--ncu-border)",
+      }}
+    >
+      {course && (
+        <>
+          <strong style={{ fontSize: 11, lineHeight: 1.2 }}>{course.name}</strong>
+          <span style={{ fontSize: 9, color: "var(--ncu-muted)" }}>{course.teacher}</span>
+          <span style={{ fontSize: 9, color: "var(--ncu-primary)", fontWeight: 700 }}>
+            {course.room}
+          </span>
+        </>
+      )}
+    </div>
+  );
+};
 
 const TimetableMobileView = ({
   selectedDay,
@@ -112,11 +121,19 @@ const TimetableMobileView = ({
       </IonSegment>
       <IonList className="timetable-course-list" inset>
         {dailyPeriods.map(({ period, course }) => (
-          <IonItem key={period.id}>
+          <IonItem
+            key={period.id}
+            style={course?.isMyCourse ? { "--background": "var(--ncu-star-light)" } as React.CSSProperties : undefined}
+          >
             <IonLabel>
               {course ? (
                 <>
-                  <h2>{course.name}</h2>
+                  <h2>
+                    {course.isMyCourse && (
+                      <span style={{ color: "var(--ncu-star)", marginRight: 4 }}>&#9733;</span>
+                    )}
+                    {course.name}
+                  </h2>
                   <p>
                     {course.teacher} · 研究室 {course.room}
                   </p>
