@@ -14,7 +14,6 @@ import {
   IonSegment,
   IonSegmentButton,
   IonSpinner,
-  IonText,
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
@@ -25,7 +24,7 @@ import {
   buildTimetableMapFromMasterCourses,
   type MasterCourseItem,
 } from "../services/all-courses-api";
-import { star, person, gridOutline } from "ionicons/icons";
+import { star, swapHorizontalOutline, linkOutline } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
 
 // ── Types ─────────────────────────────────────────────────────
@@ -97,15 +96,12 @@ function getTimeIndicators(
 
 function matchCisCourse(master: MasterCourseItem, myCourses: readonly CisCourse[]): { isMine: boolean; room?: string } {
   const matched = myCourses.find((c) => {
-    // 1. Match by serialNo if both present
     if (c.serialNo && String(master.serialNo) === String(c.serialNo)) {
       return true;
     }
-    // 2. Match by classNo prefix (e.g. IM5019-A)
     if (c.classNo && master.classNo && c.classNo === master.classNo) {
       return true;
     }
-    // 3. Match by exact Title AND Instructor name
     const sameTitle = c.name.trim() === master.title.trim();
     const sameTeacher = master.teachers.some(
       (t) => t.trim() && (c.teacher.includes(t.trim()) || t.trim().includes(c.teacher.trim())),
@@ -287,6 +283,7 @@ const TimetableMobileView = ({
         value={selectedDay}
         onIonChange={(event) => onSelectDay(String(event.detail.value ?? "0"))}
         scrollable
+        style={{ marginBottom: 8 }}
       >
         {days.map((day, index) => (
           <IonSegmentButton key={day} value={String(index)}>
@@ -502,30 +499,47 @@ const TimetableDesktopView = ({
 
 const TimetableHeader = ({
   cisAuthenticated,
+  viewScope,
+  enrolledCount,
+  onToggleViewScope,
+  onOpenCisModal,
   onLogout,
-  onRelinkCis,
 }: Readonly<{
   cisAuthenticated: boolean;
+  viewScope: "all" | "mine";
+  enrolledCount: number;
+  onToggleViewScope: () => void;
+  onOpenCisModal: () => void;
   onLogout: () => void;
-  onRelinkCis: () => void;
 }>) => (
   <IonHeader>
     <IonToolbar>
       <IonButtons slot="start">
         <IonBackButton defaultHref="/" text="" />
       </IonButtons>
-      <IonTitle>碩士班課表</IonTitle>
+      <IonTitle>{viewScope === "mine" ? "我的課表" : "碩士班課表"}</IonTitle>
       <IonButtons slot="end">
         {cisAuthenticated ? (
           <>
-            <IonButton size="small" onClick={onRelinkCis}>
-              重新連結
+            <IonButton
+              fill={viewScope === "mine" ? "solid" : "outline"}
+              size="small"
+              onClick={onToggleViewScope}
+              style={{ fontSize: 12, marginRight: 4 }}
+            >
+              <IonIcon slot="start" icon={swapHorizontalOutline} />
+              {viewScope === "mine" ? `我的 (${enrolledCount})` : "切換我的課表"}
             </IonButton>
-            <IonButton size="small" onClick={onLogout}>
+            <IonButton size="small" fill="clear" onClick={onLogout} color="medium">
               登出
             </IonButton>
           </>
-        ) : null}
+        ) : (
+          <IonButton size="small" fill="outline" onClick={onOpenCisModal}>
+            <IonIcon slot="start" icon={linkOutline} />
+            連結課表
+          </IonButton>
+        )}
       </IonButtons>
     </IonToolbar>
   </IonHeader>
@@ -607,7 +621,6 @@ const TimetablePage = () => {
 
     for (const [key, list] of Object.entries(map)) {
       const mapped = list.map((c) => mapMasterCourseToCourse(c, myCisCourses));
-      // If in "mine" (我的課表) mode, only keep courses that belong to the user
       result[key] = viewScope === "mine" ? mapped.filter((c) => c.isMyCourse) : mapped;
     }
 
@@ -628,13 +641,17 @@ const TimetablePage = () => {
     return d >= 1 && d <= 5 && Number(selectedDay) === d - 1;
   }, [selectedDay]);
 
+  const handleToggleViewScope = useCallback(() => {
+    setViewScope((v) => (v === "mine" ? "all" : "mine"));
+  }, []);
+
   const handleCisLoginSuccess = useCallback(() => {
     setApiError(null);
     setCisAuthenticated(true);
-    setViewScope("mine"); // Auto-switch to personal schedule on successful login
+    setViewScope("mine");
   }, []);
 
-  const handleRelinkCis = useCallback(() => {
+  const handleOpenCisModal = useCallback(() => {
     setShowCisLogin(true);
   }, []);
 
@@ -650,71 +667,14 @@ const TimetablePage = () => {
     <IonPage>
       <TimetableHeader
         cisAuthenticated={cisAuthenticated}
+        viewScope={viewScope}
+        enrolledCount={enrolledCount}
+        onToggleViewScope={handleToggleViewScope}
+        onOpenCisModal={handleOpenCisModal}
         onLogout={handleLogout}
-        onRelinkCis={handleRelinkCis}
       />
       <IonContent className="ion-padding timetable-content">
         <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-          {!cisAuthenticated && (
-            <div
-              style={{
-                padding: "12px 16px",
-                marginBottom: 12,
-                borderRadius: "var(--ncu-radius-md)",
-                background: "var(--ncu-primary-light)",
-                border: "1px solid var(--ncu-primary)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <IonText>
-                <p style={{ margin: 0, fontSize: 14 }}>
-                  <strong>連結課務系統查看個人課表</strong>
-                  <br />
-                  <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
-                    貼上 JSESSIONID 即可於全系課表中標示你的個人已選課程（★
-                    金星標記），或一鍵切換個人課表
-                  </span>
-                </p>
-              </IonText>
-              <IonButton size="small" onClick={() => setShowCisLogin(true)}>
-                連結
-              </IonButton>
-            </div>
-          )}
-
-          {cisAuthenticated && (
-            <div
-              style={{
-                marginBottom: 14,
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              <IonSegment
-                value={viewScope}
-                onIonChange={(e) =>
-                  setViewScope((e.detail.value as "all" | "mine") || "all")
-                }
-              >
-                <IonSegmentButton value="mine">
-                  <IonLabel style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    <IonIcon icon={person} style={{ fontSize: 16 }} />
-                    我的課表 ({enrolledCount}門)
-                  </IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="all">
-                  <IonLabel style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    <IonIcon icon={gridOutline} style={{ fontSize: 16 }} />
-                    碩士班全所開課
-                  </IonLabel>
-                </IonSegmentButton>
-              </IonSegment>
-            </div>
-          )}
-
           {loading && (
             <div style={{ textAlign: "center", padding: 16 }}>
               <IonSpinner name="crescent" />
