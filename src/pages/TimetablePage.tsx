@@ -525,10 +525,13 @@ const TimetableHeader = ({
               fill={viewScope === "mine" ? "solid" : "outline"}
               size="small"
               onClick={onToggleViewScope}
-              style={{ fontSize: 12, marginRight: 4 }}
+              style={{ fontSize: 12 }}
             >
               <IonIcon slot="start" icon={swapHorizontalOutline} />
-              {viewScope === "mine" ? `我的 (${enrolledCount})` : "切換我的課表"}
+              {viewScope === "mine" ? `我的 (${enrolledCount})` : "全所開課"}
+            </IonButton>
+            <IonButton size="small" fill="clear" onClick={onOpenCisModal}>
+              重新連結
             </IonButton>
             <IonButton size="small" fill="clear" onClick={onLogout} color="medium">
               登出
