@@ -13,7 +13,6 @@ import {
   IonBadge,
 } from "@ionic/react";
 import {
-  people,
   map,
   calendar,
   restaurant,
@@ -31,14 +30,6 @@ interface ModuleCard {
 }
 
 const modules: readonly ModuleCard[] = [
-  {
-    title: "活動卡片收集",
-    subtitle: "QR 掃碼互換 · Profile · 成就 · 排行榜",
-    icon: people,
-    route: "/cards",
-    color: "var(--ncu-primary)",
-    badge: "活動",
-  },
   {
     title: "研究室座位表",
     subtitle: "209 · 310 · 313 · 919 擬真格局圖",
