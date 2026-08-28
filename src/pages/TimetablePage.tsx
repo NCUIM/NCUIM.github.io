@@ -18,19 +18,26 @@ import {
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
-import { isLoggedIn, clearToken } from "../services/ncu-oauth";
-import { fetchSelectedCourses, parseNcuTime, type NcuCourse } from "../services/ncu-course-api";
 import { isCisLoggedIn, cisLogout } from "../services/cis-login";
 import { fetchCisSelectedCourses } from "../services/cis-course-api";
+import {
+  fetchImMasterCourses,
+  buildTimetableMapFromMasterCourses,
+  type MasterCourseItem,
+} from "../services/all-courses-api";
 import { star } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
 
 // ── Types ─────────────────────────────────────────────────────
 
-interface Course {
+export interface Course {
+  readonly id?: string;
+  readonly classNo?: string;
   readonly name: string;
   readonly teacher: string;
-  readonly room: string;
+  readonly room?: string;
+  readonly courseType?: "REQUIRED" | "ELECTIVE" | string;
+  readonly credit?: number;
   readonly isMyCourse?: boolean;
 }
 
@@ -55,20 +62,6 @@ const periods: readonly Period[] = [
   { id: "9", time: "17:10-18:00" },
 ];
 
-/** Mock timetable data (fallback when API is unavailable) */
-const MOCK_TIMETABLE: Record<string, Course> = {
-  "1-0": { name: "計算機科學", teacher: "王志明", room: "313", isMyCourse: true },
-  "1-2": { name: "計算機科學", teacher: "王志明", room: "313", isMyCourse: true },
-  "3-1": { name: "資料庫系統", teacher: "李怡萱", room: "209" },
-  "3-3": { name: "資料庫系統", teacher: "李怡萱", room: "209" },
-  "5-0": { name: "機器學習", teacher: "陳俊廷", room: "919", isMyCourse: true },
-  "5-2": { name: "機器學習", teacher: "陳俊廷", room: "919", isMyCourse: true },
-  "7-1": { name: "演算法設計", teacher: "張文慧", room: "310" },
-  "7-4": { name: "計算機網路", teacher: "林家豪", room: "313" },
-  "9-3": { name: "軟體工程", teacher: "黃雅琪", room: "209" },
-  "9-4": { name: "資訊安全", teacher: "劉承恩", room: "310" },
-};
-
 // ── Helpers ───────────────────────────────────────────────────
 
 function getDefaultDayIndex(): number {
@@ -77,7 +70,10 @@ function getDefaultDayIndex(): number {
   return 0;
 }
 
-function getTimeIndicators(timetableData: Record<string, Course>, dayIndex: number): { current: number; next: number } {
+function getTimeIndicators(
+  timetableData: Record<string, Course[]>,
+  dayIndex: number,
+): { current: number; next: number } {
   const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
   let current = -1;
@@ -88,7 +84,8 @@ function getTimeIndicators(timetableData: Record<string, Course>, dayIndex: numb
     const [eh, em] = endStr.split(":").map(Number);
     const start = sh * 60 + sm;
     const end = eh * 60 + em;
-    const hasCourse = !!timetableData[`${periods[i].id}-${dayIndex}`];
+    const courses = timetableData[`${periods[i].id}-${dayIndex}`];
+    const hasCourse = Boolean(courses && courses.length > 0);
     if (mins >= start && mins < end && hasCourse) {
       current = i;
     } else if (next === -1 && mins < start && hasCourse) {
@@ -98,35 +95,17 @@ function getTimeIndicators(timetableData: Record<string, Course>, dayIndex: numb
   return { current, next };
 }
 
-/** Convert NCU API courses to our timetable Record format */
-function buildTimetableFromApi(courses: NcuCourse[]): Record<string, Course> {
-  const result: Record<string, Course> = {};
-  for (const c of courses) {
-    const parsed = parseNcuTime(c.time);
-    for (const t of parsed) {
-      if (t.dayIndex < 0) continue;
-      for (let i = 0; i < periods.length; i++) {
-        const [pStartStr, pEndStr] = periods[i].time.split("-");
-        const [psh, psm] = pStartStr.split(":").map(Number);
-        const [peh, pem] = pEndStr.split(":").map(Number);
-        const [csh, csm] = t.start.split(":").map(Number);
-        const [ceh, cem] = t.end.split(":").map(Number);
-        const pStart = psh * 60 + psm;
-        const pEnd = peh * 60 + pem;
-        const cStart = csh * 60 + csm;
-        if (cStart >= pStart && cStart < pEnd) {
-          const key = `${periods[i].id}-${t.dayIndex}`;
-          result[key] = {
-            name: c.name,
-            teacher: c.teacher,
-            room: c.room,
-            isMyCourse: true,
-          };
-        }
-      }
-    }
-  }
-  return result;
+function mapMasterCourseToCourse(c: MasterCourseItem, isMine = false): Course {
+  return {
+    id: String(c.serialNo),
+    classNo: c.classNo,
+    name: c.title,
+    teacher: c.teachers.join(", "),
+    room: c.room,
+    courseType: c.courseType,
+    credit: c.credit,
+    isMyCourse: isMine,
+  };
 }
 
 // ── Styles ────────────────────────────────────────────────────
@@ -136,52 +115,102 @@ const cellBase: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
-  minHeight: 68,
+  minHeight: 76,
   overflow: "hidden",
 };
 
 // ── Sub-components ────────────────────────────────────────────
 
-const CourseCell = ({ course }: Readonly<{ course?: Course }>) => {
-  const isMine = course?.isMyCourse ?? false;
+const CourseMiniCard = ({ course }: Readonly<{ course: Course }>) => {
+  const isMine = course.isMyCourse ?? false;
+  const isRequired = course.courseType === "REQUIRED";
+  return (
+    <div
+      style={{
+        padding: "4px 6px",
+        borderRadius: "var(--ncu-radius-sm)",
+        background: isMine
+          ? "var(--ncu-star-light)"
+          : isRequired
+            ? "var(--ncu-primary-light)"
+            : "var(--ncu-surface)",
+        border: isMine
+          ? "1.5px solid var(--ncu-star)"
+          : isRequired
+            ? "1.5px solid var(--ncu-primary)"
+            : "1px solid var(--ncu-border)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        textAlign: "center",
+        boxShadow: isMine ? "0 1px 3px rgba(255, 212, 90, 0.4)" : "none",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}>
+        {isMine && (
+          <IonIcon
+            icon={star}
+            style={{ color: "var(--ncu-star)", fontSize: 11, flexShrink: 0 }}
+          />
+        )}
+        <strong
+          style={{
+            fontSize: 12,
+            lineHeight: 1.25,
+            color: isMine
+              ? "var(--ncu-ink)"
+              : isRequired
+                ? "var(--ncu-primary)"
+                : "var(--ncu-ink)",
+          }}
+        >
+          {course.name}
+        </strong>
+      </div>
+      <span style={{ fontSize: 10, color: "var(--ncu-muted)" }}>
+        {course.teacher}
+      </span>
+      {course.room && (
+        <span
+          style={{
+            fontSize: 9,
+            color: "var(--ncu-primary)",
+            fontWeight: 700,
+            background: "rgba(49, 87, 200, 0.08)",
+            padding: "1px 4px",
+            borderRadius: 2,
+            alignSelf: "center",
+          }}
+        >
+          {course.room}
+        </span>
+      )}
+    </div>
+  );
+};
+
+const CourseCell = ({ courses }: Readonly<{ courses?: readonly Course[] }>) => {
+  if (!courses || courses.length === 0) {
+    return <div style={{ ...cellBase, background: "var(--ncu-surface)" }} />;
+  }
+
   return (
     <div
       style={{
         ...cellBase,
-        alignItems: "center",
-        padding: "6px 8px",
-        textAlign: "center",
-        background: isMine
-          ? "var(--ncu-star-light)"
-          : course
-            ? "var(--ncu-primary-light)"
-            : "var(--ncu-surface)",
-        border: isMine ? "2px solid var(--ncu-star)" : "1px solid var(--ncu-border)",
-        gap: 2,
+        padding: "4px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        background: "var(--ncu-canvas)",
       }}
     >
-      {course && (
-        <>
-          <strong style={{ fontSize: 13, lineHeight: 1.3, color: "var(--ncu-ink)" }}>
-            {course.name}
-          </strong>
-          <span style={{ fontSize: 11, color: "var(--ncu-muted)" }}>{course.teacher}</span>
-          {course.room && (
-            <span
-              style={{
-                fontSize: 11,
-                color: "var(--ncu-primary)",
-                fontWeight: 700,
-                background: "rgba(49, 87, 200, 0.08)",
-                padding: "1px 6px",
-                borderRadius: 4,
-              }}
-            >
-              {course.room}
-            </span>
-          )}
-        </>
-      )}
+      {courses.map((course) => (
+        <CourseMiniCard
+          key={course.id || `${course.name}-${course.teacher}`}
+          course={course}
+        />
+      ))}
     </div>
   );
 };
@@ -196,7 +225,7 @@ const TimetableMobileView = ({
   nextPeriodIndex,
   isToday,
 }: Readonly<{
-  timetableData: Record<string, Course>;
+  timetableData: Record<string, Course[]>;
   selectedDay: string;
   onSelectDay: (day: string) => void;
   currentPeriodIndex: number;
@@ -207,11 +236,12 @@ const TimetableMobileView = ({
   const periodRefs = useRef<(HTMLIonItemElement | null)[]>([]);
   const dailyPeriods = periods.map((period, i) => ({
     period,
-    course: timetableData[`${period.id}-${dayIndex}`],
+    courses: timetableData[`${period.id}-${dayIndex}`] || [],
     idx: i,
   }));
 
-  const scrollToIndex = currentPeriodIndex >= 0 ? currentPeriodIndex : nextPeriodIndex;
+  const scrollToIndex =
+    currentPeriodIndex >= 0 ? currentPeriodIndex : nextPeriodIndex;
   useEffect(() => {
     if (!isToday || scrollToIndex < 0) return;
     const timer = setTimeout(() => {
@@ -237,55 +267,138 @@ const TimetableMobileView = ({
         ))}
       </IonSegment>
       <IonList className="timetable-course-list" inset>
-        {dailyPeriods.map(({ period, course, idx }) => {
+        {dailyPeriods.map(({ period, courses, idx }) => {
           const isCurrent = isToday && idx === currentPeriodIndex;
-          const isNext = isToday && idx === nextPeriodIndex && idx !== currentPeriodIndex;
-          return (
+          const isNext =
+            isToday && idx === nextPeriodIndex && idx !== currentPeriodIndex;
+
+          if (courses.length === 0) {
+            return (
+              <IonItem
+                key={period.id}
+                ref={(el) => {
+                  periodRefs.current[idx] = el;
+                }}
+              >
+                <IonLabel>
+                  <h2 style={{ color: "var(--ncu-muted)", fontWeight: 400 }}>
+                    空堂
+                  </h2>
+                </IonLabel>
+                <IonNote slot="end">
+                  {period.id === "N" ? "午休" : `第 ${period.id} 節`}
+                  <br />
+                  {period.time}
+                </IonNote>
+              </IonItem>
+            );
+          }
+
+          return courses.map((course, cIdx) => (
             <IonItem
-              key={period.id}
-              ref={(el) => { periodRefs.current[idx] = el; }}
-              style={{
-                ...(course?.isMyCourse ? { "--background": "var(--ncu-star-light)" } : {}),
-                ...(isCurrent ? { borderLeft: "3px solid var(--ncu-primary)", "--min-height": "56px" } : {}),
-                ...(isNext ? { borderLeft: "4px solid #0d7a3e", "--min-height": "56px" } : {}),
-              } as React.CSSProperties}
+              key={`${period.id}-${course.name}-${course.teacher}`}
+              ref={(el) => {
+                if (cIdx === 0) periodRefs.current[idx] = el;
+              }}
+              style={
+                {
+                  ...(course.isMyCourse
+                    ? { "--background": "var(--ncu-star-light)" }
+                    : {}),
+                  ...(isCurrent
+                    ? {
+                        borderLeft: "3px solid var(--ncu-primary)",
+                        "--min-height": "56px",
+                      }
+                    : {}),
+                  ...(isNext
+                    ? {
+                        borderLeft: "4px solid #0d7a3e",
+                        "--min-height": "56px",
+                      }
+                    : {}),
+                } as React.CSSProperties
+              }
             >
               <IonLabel>
-                {course ? (
-                  <>
-                    <h2>
-                      {course.isMyCourse && (
-                        <IonIcon icon={star} style={{ color: "var(--ncu-star)", marginRight: 4, fontSize: "0.85em", verticalAlign: "middle" }} />
-                      )}
-                      {course.name}
-                    </h2>
-                    <p>
-                      {course.teacher}{course.room ? ` · ${course.room}` : ""}
-                    </p>
-                  </>
-                ) : (
-                  <h2 style={{ color: "var(--ncu-muted)", fontWeight: 400 }}>空堂</h2>
-                )}
+                <h2>
+                  {course.isMyCourse && (
+                    <IonIcon
+                      icon={star}
+                      style={{
+                        color: "var(--ncu-star)",
+                        marginRight: 4,
+                        fontSize: "0.85em",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                  )}
+                  {course.name}
+                  {course.courseType === "REQUIRED" && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: "var(--ncu-primary)",
+                        marginLeft: 6,
+                        fontWeight: 700,
+                      }}
+                    >
+                      [必修]
+                    </span>
+                  )}
+                </h2>
+                <p>
+                  {course.teacher}
+                  {course.room ? ` · ${course.room}` : ""}
+                  {course.credit ? ` (${course.credit}學分)` : ""}
+                </p>
               </IonLabel>
               <IonNote slot="end">
-                {isCurrent && <span style={{ color: "var(--ncu-primary)", fontWeight: 700, fontSize: 12, display: "block", marginBottom: 2 }}>● NOW</span>}
-                {isNext && <span style={{ color: "#0d7a3e", fontWeight: 700, fontSize: 12, display: "block", marginBottom: 2 }}>&#9654; NEXT</span>}
-                {period.id === "N" ? "午休" : `第 ${period.id} 節`}<br />
+                {isCurrent && (
+                  <span
+                    style={{
+                      color: "var(--ncu-primary)",
+                      fontWeight: 700,
+                      fontSize: 12,
+                      display: "block",
+                      marginBottom: 2,
+                    }}
+                  >
+                    ● NOW
+                  </span>
+                )}
+                {isNext && (
+                  <span
+                    style={{
+                      color: "#0d7a3e",
+                      fontWeight: 700,
+                      fontSize: 12,
+                      display: "block",
+                      marginBottom: 2,
+                    }}
+                  >
+                    &#9654; NEXT
+                  </span>
+                )}
+                {period.id === "N" ? "午休" : `第 ${period.id} 節`}
+                <br />
                 {period.time}
               </IonNote>
             </IonItem>
-          );
+          ));
         })}
       </IonList>
     </section>
   );
 };
 
-const TimetableDesktopView = ({ timetableData }: Readonly<{ timetableData: Record<string, Course> }>) => (
+const TimetableDesktopView = ({
+  timetableData,
+}: Readonly<{ timetableData: Record<string, Course[]> }>) => (
   <section
     className="timetable-desktop"
     aria-label="全週課表"
-    style={{ maxWidth: 1140, margin: "0 auto", padding: "8px 0 32px" }}
+    style={{ maxWidth: 1180, margin: "0 auto", padding: "8px 0 32px" }}
   >
     <div
       style={{
@@ -297,26 +410,58 @@ const TimetableDesktopView = ({ timetableData }: Readonly<{ timetableData: Recor
         boxShadow: "var(--ncu-shadow-hard)",
       }}
     >
-      <div style={{ ...cellBase, minHeight: 44, alignItems: "center", background: "var(--ncu-ink)", color: "#fff", fontWeight: 700, fontSize: 14 }}>
+      <div
+        style={{
+          ...cellBase,
+          minHeight: 44,
+          alignItems: "center",
+          background: "var(--ncu-ink)",
+          color: "#fff",
+          fontWeight: 700,
+          fontSize: 14,
+        }}
+      >
         節次
       </div>
       {days.map((day) => (
-        <div key={day} style={{ ...cellBase, minHeight: 44, alignItems: "center", background: "var(--ncu-primary)", color: "#fff", fontWeight: 700, fontSize: 15 }}>
+        <div
+          key={day}
+          style={{
+            ...cellBase,
+            minHeight: 44,
+            alignItems: "center",
+            background: "var(--ncu-primary)",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 15,
+          }}
+        >
           週{day}
         </div>
       ))}
       {periods.map((period) => (
         <React.Fragment key={period.id}>
-          <div style={{ ...cellBase, alignItems: "center", background: "var(--ncu-primary-light)", fontSize: 12, textAlign: "center", padding: "4px 2px" }}>
+          <div
+            style={{
+              ...cellBase,
+              alignItems: "center",
+              background: "var(--ncu-primary-light)",
+              fontSize: 12,
+              textAlign: "center",
+              padding: "6px 2px",
+            }}
+          >
             <strong style={{ fontSize: 13, color: "var(--ncu-ink)" }}>
               {period.id === "N" ? "午休" : `第 ${period.id} 節`}
             </strong>
-            <span style={{ color: "var(--ncu-muted)", marginTop: 2 }}>{period.time}</span>
+            <span style={{ color: "var(--ncu-muted)", marginTop: 2 }}>
+              {period.time}
+            </span>
           </div>
           {days.map((day, index) => (
             <CourseCell
               key={`${period.id}-${day}`}
-              course={timetableData[`${period.id}-${index}`]}
+              courses={timetableData[`${period.id}-${index}`]}
             />
           ))}
         </React.Fragment>
@@ -328,28 +473,31 @@ const TimetableDesktopView = ({ timetableData }: Readonly<{ timetableData: Recor
 // ── Main Page ─────────────────────────────────────────────────
 
 const TimetableHeader = ({
-  authenticated,
   cisAuthenticated,
   onLogout,
   onRelinkCis,
-}: Readonly<{ authenticated: boolean; cisAuthenticated: boolean; onLogout: () => void; onRelinkCis: () => void }>) => (
+}: Readonly<{
+  cisAuthenticated: boolean;
+  onLogout: () => void;
+  onRelinkCis: () => void;
+}>) => (
   <IonHeader>
     <IonToolbar>
       <IonButtons slot="start">
         <IonBackButton defaultHref="/" text="" />
       </IonButtons>
-      <IonTitle>碩士班課表</IonTitle>
+      <IonTitle>碩士班全系課表</IonTitle>
       <IonButtons slot="end">
-        {cisAuthenticated && (
-          <IonButton size="small" onClick={onRelinkCis}>
-            重新連結
-          </IonButton>
-        )}
-        {authenticated && (
-          <IonButton size="small" onClick={onLogout}>
-            登出
-          </IonButton>
-        )}
+        {cisAuthenticated ? (
+          <>
+            <IonButton size="small" onClick={onRelinkCis}>
+              重新連結
+            </IonButton>
+            <IonButton size="small" onClick={onLogout}>
+              登出
+            </IonButton>
+          </>
+        ) : null}
       </IonButtons>
     </IonToolbar>
   </IonHeader>
@@ -358,50 +506,40 @@ const TimetableHeader = ({
 const TimetablePage = () => {
   const defaultDay = getDefaultDayIndex();
   const [selectedDay, setSelectedDay] = useState(String(defaultDay));
-  const [authenticated, setAuthenticated] = useState(isLoggedIn());
 
-  const [timetableData, setTimetableData] = useState<Record<string, Course>>(MOCK_TIMETABLE);
+  const [masterCourses, setMasterCourses] = useState<MasterCourseItem[]>([]);
+  const [myCourseNames, setMyCourseNames] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [cisAuthenticated, setCisAuthenticated] = useState(isCisLoggedIn());
   const [showCisLogin, setShowCisLogin] = useState(false);
 
-  const dayIndex = Number(selectedDay);
-  const { current: currentPeriodIndex, next: nextPeriodIndex } = useMemo(
-    () => getTimeIndicators(timetableData, dayIndex),
-    [timetableData, dayIndex],
-  );
-  const isToday = useMemo(() => {
-    const d = new Date().getDay();
-    return d >= 1 && d <= 5 && Number(selectedDay) === d - 1;
-  }, [selectedDay]);
-
+  // Load default master courses (IM5000+ from S3 all.json)
   useEffect(() => {
-    if (!authenticated) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
-      setApiError(null);
       try {
-        const courses = await fetchSelectedCourses();
+        const courses = await fetchImMasterCourses();
         if (!cancelled && courses.length > 0) {
-          setTimetableData(buildTimetableFromApi(courses));
+          setMasterCourses(courses);
         }
       } catch (err) {
         if (!cancelled) {
-          setApiError(err instanceof Error ? err.message : "Failed to load courses");
+          setApiError(
+            err instanceof Error ? err.message : "載入碩士班課程資料失敗",
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, [authenticated]);
-
-  useEffect(() => {
-    setAuthenticated(isLoggedIn());
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  // Fetch courses from CIS session when user links their session
   useEffect(() => {
     if (!cisAuthenticated) return;
     let cancelled = false;
@@ -411,42 +549,8 @@ const TimetablePage = () => {
       try {
         const courses = await fetchCisSelectedCourses();
         if (!cancelled && courses.length > 0) {
-          const DAY_MAP: Record<string, number> = {
-            "一": 0, "二": 1, "三": 2, "四": 3, "五": 4,
-            "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4,
-          };
-          const result: Record<string, Course> = {};
-          for (const c of courses) {
-            for (const ct of c.classTimes) {
-              let dayIdx = -1;
-              let periodChars = "";
-              if (ct.length >= 2 && ct[0] >= "1" && ct[0] <= "5") {
-                dayIdx = parseInt(ct[0], 10) - 1;
-                periodChars = ct.slice(1);
-              } else {
-                const dayMatch = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/);
-                if (dayMatch) {
-                  dayIdx = DAY_MAP[dayMatch[1]] ?? -1;
-                  periodChars = ct.slice(dayMatch[0].length);
-                }
-              }
-              if (dayIdx < 0) continue;
-              for (const ch of periodChars) {
-                const period = periods.find((p) => p.id === ch);
-                if (!period) continue;
-                result[`${period.id}-${dayIdx}`] = {
-                  name: c.name, teacher: c.teacher, room: c.room, isMyCourse: true,
-                };
-              }
-            }
-          }
-          if (Object.keys(result).length > 0) {
-            setTimetableData(result);
-          } else {
-            cisLogout();
-            setCisAuthenticated(false);
-            setApiError("CIS 回傳的課程資料格式無法解析，請重新連結");
-          }
+          const names = new Set(courses.map((c) => c.name.trim()));
+          setMyCourseNames(names);
         } else if (!cancelled) {
           cisLogout();
           setCisAuthenticated(false);
@@ -463,8 +567,35 @@ const TimetablePage = () => {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [cisAuthenticated]);
+
+  // Combine master courses with user selection
+  const timetableData = useMemo(() => {
+    const map = buildTimetableMapFromMasterCourses(masterCourses);
+    const result: Record<string, Course[]> = {};
+
+    for (const [key, list] of Object.entries(map)) {
+      result[key] = list.map((c) => {
+        const isMine = myCourseNames.has(c.title.trim());
+        return mapMasterCourseToCourse(c, isMine);
+      });
+    }
+
+    return result;
+  }, [masterCourses, myCourseNames]);
+
+  const dayIndex = Number(selectedDay);
+  const { current: currentPeriodIndex, next: nextPeriodIndex } = useMemo(
+    () => getTimeIndicators(timetableData, dayIndex),
+    [timetableData, dayIndex],
+  );
+  const isToday = useMemo(() => {
+    const d = new Date().getDay();
+    return d >= 1 && d <= 5 && Number(selectedDay) === d - 1;
+  }, [selectedDay]);
 
   const handleCisLoginSuccess = useCallback(() => {
     setApiError(null);
@@ -477,23 +608,20 @@ const TimetablePage = () => {
 
   const handleLogout = useCallback(() => {
     cisLogout();
-    clearToken();
-    setAuthenticated(false);
     setCisAuthenticated(false);
-    setTimetableData(MOCK_TIMETABLE);
+    setMyCourseNames(new Set());
     setApiError(null);
   }, []);
 
   return (
     <IonPage>
       <TimetableHeader
-        authenticated={authenticated}
         cisAuthenticated={cisAuthenticated}
         onLogout={handleLogout}
         onRelinkCis={handleRelinkCis}
       />
       <IonContent className="ion-padding timetable-content">
-        <div style={{ maxWidth: 1140, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto" }}>
           {!cisAuthenticated && (
             <div
               style={{
@@ -509,10 +637,11 @@ const TimetablePage = () => {
             >
               <IonText>
                 <p style={{ margin: 0, fontSize: 14 }}>
-                  <strong>連結課務系統</strong>
+                  <strong>連結課務系統標記已選課程</strong>
                   <br />
                   <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
-                    貼上 JSESSIONID 以載入你的已選課程
+                    貼上 JSESSIONID 即可於全系課表中標示你的個人已選課程（★
+                    金星標記）
                   </span>
                 </p>
               </IonText>
@@ -521,20 +650,48 @@ const TimetablePage = () => {
               </IonButton>
             </div>
           )}
-          {authenticated && !cisAuthenticated && (
-            <div style={{ padding: "8px 12px", marginBottom: 8, borderRadius: "var(--ncu-radius-sm)", background: "var(--ncu-surface)", fontSize: 12, color: "var(--ncu-muted)" }}>
-              已登入 Portal（OAuth API 暫不可用）
+          {cisAuthenticated && (
+            <div
+              style={{
+                padding: "8px 12px",
+                marginBottom: 10,
+                borderRadius: "var(--ncu-radius-sm)",
+                background: "var(--ncu-star-light)",
+                border: "1px solid var(--ncu-star)",
+                fontSize: 12,
+                color: "var(--ncu-ink)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <IonIcon icon={star} style={{ color: "var(--ncu-star)" }} />
+              <span>
+                已連結課務系統：已選修課程已標上金星（共標記{" "}
+                {myCourseNames.size} 門課程）
+              </span>
             </div>
           )}
           {loading && (
             <div style={{ textAlign: "center", padding: 16 }}>
               <IonSpinner name="crescent" />
-              <p style={{ fontSize: 12, color: "var(--ncu-muted)" }}>載入課程中…</p>
+              <p style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
+                載入碩士班全系課表中…
+              </p>
             </div>
           )}
           {apiError && (
-            <div style={{ padding: "8px 12px", marginBottom: 8, borderRadius: "var(--ncu-radius-sm)", background: "var(--ncu-danger-light)", fontSize: 12, color: "var(--ncu-danger)" }}>
-              ⚠ {apiError}（使用範例資料）
+            <div
+              style={{
+                padding: "8px 12px",
+                marginBottom: 8,
+                borderRadius: "var(--ncu-radius-sm)",
+                background: "var(--ncu-danger-light)",
+                fontSize: 12,
+                color: "var(--ncu-danger)",
+              }}
+            >
+              ⚠ {apiError}
             </div>
           )}
           <TimetableMobileView
