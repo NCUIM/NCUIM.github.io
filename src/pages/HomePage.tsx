@@ -18,7 +18,6 @@ import {
   calendar,
   restaurant,
   calculator,
-  gift,
   sparkles,
 } from "ionicons/icons";
 
@@ -75,13 +74,6 @@ const modules: readonly ModuleCard[] = [
     icon: calculator,
     route: "/tools/credit",
     color: "var(--ncu-muted)",
-  },
-  {
-    title: "新生生存指南",
-    subtitle: "入學檢核 · 校園資源 · 時程規劃",
-    icon: gift,
-    route: "/guide",
-    color: "var(--ncu-success)",
   },
 ];
 
