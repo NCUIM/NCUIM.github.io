@@ -130,6 +130,23 @@ const CardsBody = ({
       <HeaderSection />
       <CheckInCard checkedIn={checkedIn} onCheckIn={onCheckIn} />
       <MyCollectionCard />
+
+      <div
+        style={{
+          marginTop: 20,
+          padding: "16px",
+          borderRadius: "var(--ncu-radius-md)",
+          border: "2px dashed var(--ncu-border)",
+          textAlign: "center",
+          color: "var(--ncu-muted)",
+          width: "100%",
+        }}
+      >
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>📇 電子名片</p>
+        <p style={{ margin: "4px 0 0", fontSize: 12 }}>
+          此區塊預留給電子名片模組整合
+        </p>
+      </div>
     </div>
   </IonContent>
 );
