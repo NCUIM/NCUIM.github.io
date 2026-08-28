@@ -19,7 +19,35 @@ export interface MasterCourseItem {
   readonly isMyCourse?: boolean;
 }
 
-export const ALL_COURSES_API_URL = "https://ncucf-data.s3.amazonaws.com/data/dynamic/all.json";
+export const ALL_COURSES_API_URL =
+  "https://ncucf-data.s3.amazonaws.com/data/dynamic/all.json";
+
+/**
+ * Known classroom mapping for NCU IM Master's courses
+ */
+export const IM_CLASSROOM_MAP: Record<string, string> = {
+  "IM5001-*": "I1-405-1", // 社會網路分析
+  "IM5007-*": "I1-405-1", // 資訊檢索
+  "IM5008-*": "I1-404", // 商業智慧
+  "IM5019-A": "I1-404", // 管理溝通 (黃子菱)
+  "IM5019-B": "I1-404", // 管理溝通 (何迪亞)
+  "IM5022-*": "I1-405-1", // 多媒體資料庫
+  "IM5032-*": "I1-405-1", // 物聯網實務應用
+  "IM5038-*": "I1-404", // 進階區塊鏈應用與隱私防護
+  "IM5041-*": "I1-405-1", // 現代與後量子密碼學導論
+  "IM6002-*": "I1-404", // 資訊系統專案管理
+  "IM6003-*": "I1-404", // 軟體工程Ⅰ
+  "IM6012-*": "I1-404", // 管理資訊系統
+  "IM6041-*": "I1-404", // 生產與作業管理
+  "IM6053-*": "I1-404", // 多變量分析
+  "IM6055-*": "I1-405-1", // 電腦網路安全
+  "IM6082-*": "I1-404", // 行銷管理
+  "IM6103-*": "I1-405-1", // 網路經濟與賽局智慧
+  "IM7043-*": "I1-404", // 書報研討Ⅰ
+  "IM7071-*": "I1-405-1", // 企業電腦網路
+  "IM7082-*": "I1-404", // 智慧型資訊系統
+  "IM8011-*": "I1-404", // 資訊管理研究Ⅰ
+};
 
 /**
  * Fetch all NCU courses from S3 and filter for IM Graduate / Master courses (IM5000+).
@@ -73,6 +101,7 @@ export async function fetchImMasterCourses(): Promise<MasterCourseItem[]> {
         passwordCard: c.passwordCard,
         limitCnt: c.limitCnt,
         admitCnt: c.admitCnt,
+        room: IM_CLASSROOM_MAP[c.classNo] || "I1-404",
       }));
     }
 
