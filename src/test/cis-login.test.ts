@@ -9,6 +9,8 @@ import {
   isCisLoggedIn,
 } from "../services/cis-login";
 
+const SAMPLE_SESSION = "7DFF50FF6F2B55531B6A803D2DEAEF4C";
+
 describe("cis-login service", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -16,75 +18,44 @@ describe("cis-login service", () => {
   });
 
   describe("sanitizeJsessionId", () => {
-    it("returns empty string for empty input", () => {
-      expect(sanitizeJsessionId("")).toBe("");
-      expect(sanitizeJsessionId("   ")).toBe("");
-    });
-
-    it("trims whitespace from standard JSESSIONID", () => {
-      expect(sanitizeJsessionId("  7DFF50FF6F2B55531B6A803D2DEAEF4C  ")).toBe(
-        "7DFF50FF6F2B55531B6A803D2DEAEF4C",
-      );
-    });
-
-    it("extracts session ID from key-value format (JSESSIONID=...)", () => {
-      expect(
-        sanitizeJsessionId("JSESSIONID=7DFF50FF6F2B55531B6A803D2DEAEF4C"),
-      ).toBe("7DFF50FF6F2B55531B6A803D2DEAEF4C");
-    });
-
-    it("extracts session ID from Cookie header with multiple cookies", () => {
-      expect(
-        sanitizeJsessionId(
-          "Cookie: other=123; JSESSIONID=7DFF50FF6F2B55531B6A803D2DEAEF4C; path=/",
-        ),
-      ).toBe("7DFF50FF6F2B55531B6A803D2DEAEF4C");
-    });
-
-    it("strips wrapping quotes", () => {
-      expect(
-        sanitizeJsessionId('"7DFF50FF6F2B55531B6A803D2DEAEF4C"'),
-      ).toBe("7DFF50FF6F2B55531B6A803D2DEAEF4C");
+    it.each([
+      ["", ""],
+      ["   ", ""],
+      [`  ${SAMPLE_SESSION}  `, SAMPLE_SESSION],
+      [`JSESSIONID=${SAMPLE_SESSION}`, SAMPLE_SESSION],
+      [`Cookie: other=123; JSESSIONID=${SAMPLE_SESSION}; path=/`, SAMPLE_SESSION],
+      [`"${SAMPLE_SESSION}"`, SAMPLE_SESSION],
+    ])("sanitizes %s to %s", (input, expected) => {
+      expect(sanitizeJsessionId(input)).toBe(expected);
     });
   });
 
   describe("validateJsessionIdFormat", () => {
-    it("rejects empty string", () => {
-      const res = validateJsessionIdFormat("");
+    it.each([
+      ["", "請輸入 JSESSIONID"],
+      ["12345", "長度不符"],
+      [`${SAMPLE_SESSION}@#$`, "包含不合法字元"],
+    ])("rejects invalid input %s with expected error", (input, expectedError) => {
+      const res = validateJsessionIdFormat(input);
       expect(res.valid).toBe(false);
-      expect(res.error).toContain("請輸入 JSESSIONID");
+      expect(res.error).toContain(expectedError);
     });
 
-    it("rejects strings shorter than 16 characters", () => {
-      const res = validateJsessionIdFormat("12345");
-      expect(res.valid).toBe(false);
-      expect(res.error).toContain("長度不符");
-    });
-
-    it("rejects strings containing invalid characters (e.g. spaces, symbols)", () => {
-      const res = validateJsessionIdFormat("7DFF50FF6F2B55531B6A803D2DEAEF4C@#$");
-      expect(res.valid).toBe(false);
-      expect(res.error).toContain("包含不合法字元");
-    });
-
-    it("accepts valid 32-character hex session ID", () => {
-      const res = validateJsessionIdFormat("7DFF50FF6F2B55531B6A803D2DEAEF4C");
-      expect(res.valid).toBe(true);
-      expect(res.error).toBeUndefined();
-    });
-
-    it("accepts valid session ID with node suffix", () => {
-      const res = validateJsessionIdFormat("7DFF50FF6F2B55531B6A803D2DEAEF4C.jvm1");
-      expect(res.valid).toBe(true);
-      expect(res.error).toBeUndefined();
-    });
+    it.each([SAMPLE_SESSION, `${SAMPLE_SESSION}.jvm1`])(
+      "accepts valid format %s",
+      (input) => {
+        const res = validateJsessionIdFormat(input);
+        expect(res.valid).toBe(true);
+        expect(res.error).toBeUndefined();
+      },
+    );
   });
 
   describe("cisLogin", () => {
-    const mockFetch = (response: { ok: boolean; body: Record<string, unknown> }) =>
+    const mockFetch = (ok: boolean, body: Record<string, unknown>) =>
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-        ok: response.ok,
-        json: () => Promise.resolve(response.body),
+        ok,
+        json: () => Promise.resolve(body),
       } as Response);
 
     it("fails early without network request if format is invalid", async () => {
@@ -96,16 +67,16 @@ describe("cis-login service", () => {
     });
 
     it("makes network request and saves session when valid", async () => {
-      mockFetch({ ok: true, body: { valid: true } });
-      const result = await cisLogin("7DFF50FF6F2B55531B6A803D2DEAEF4C");
+      mockFetch(true, { valid: true });
+      const result = await cisLogin(SAMPLE_SESSION);
       expect(result.ok).toBe(true);
-      expect(getCisSession()).toBe("7DFF50FF6F2B55531B6A803D2DEAEF4C");
+      expect(getCisSession()).toBe(SAMPLE_SESSION);
       expect(isCisLoggedIn()).toBe(true);
     });
 
     it("handles server-side invalid session response", async () => {
-      mockFetch({ ok: true, body: { valid: false, error: "Session 過期" } });
-      const result = await cisLogin("7DFF50FF6F2B55531B6A803D2DEAEF4C");
+      mockFetch(true, { valid: false, error: "Session 過期" });
+      const result = await cisLogin(SAMPLE_SESSION);
       expect(result.ok).toBe(false);
       expect(result.error).toContain("Session 過期");
     });
