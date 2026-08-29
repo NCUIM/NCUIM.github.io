@@ -316,12 +316,6 @@ function sumCredits(ids: readonly string[], courses: readonly CurriculumCourse[]
   return courses.filter((c) => ids.includes(c.id)).reduce((s, c) => s + c.credits, 0);
 }
 
-function reqHint(isMet: boolean, msgs: [boolean, string, string]): string | undefined {
-  if (isMet) return undefined;
-  const [a, msgA] = msgs[0] ? [false, ""] : [true, msgs[1]];
-  return a ? msgA : msgs[2];
-}
-
 function calcMgmtTrackSections(ids: readonly string[]): Record<string, SectionCreditResult> {
   const hasMulti = ids.includes("IM6053");
   const cnt6 = countSelected(ids, ["IM6014", "IM7071", "IM6041", "IM6082", "IM6069", "IM7065"]);
