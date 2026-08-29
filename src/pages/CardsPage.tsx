@@ -203,59 +203,68 @@ const UnavailableOverlay = () => (
   </div>
 );
 
+const CardsPageBackground = ({
+  checkedIn,
+  onCheckIn,
+}: Readonly<{
+  checkedIn: boolean;
+  onCheckIn: () => void;
+}>) => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "var(--ncu-space-6)",
+      paddingTop: "var(--ncu-space-8)",
+      filter: "grayscale(0.6)",
+      pointerEvents: "none",
+      userSelect: "none",
+    }}
+  >
+    <HeaderSection />
+    <CheckInCard checkedIn={checkedIn} onCheckIn={onCheckIn} />
+    <MyCollectionCard />
+    <div
+      style={{
+        marginTop: 20,
+        padding: "16px",
+        borderRadius: "var(--ncu-radius-md)",
+        border: "2px dashed var(--ncu-border)",
+        textAlign: "center",
+        color: "var(--ncu-muted)",
+        width: "100%",
+      }}
+    >
+      <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>📇 電子名片</p>
+      <p style={{ margin: "4px 0 0", fontSize: 12 }}>此區塊預留給電子名片模組整合</p>
+    </div>
+  </div>
+);
+
+const CardsPageBody = ({
+  checkedIn,
+  onCheckIn,
+}: Readonly<{
+  checkedIn: boolean;
+  onCheckIn: () => void;
+}>) => (
+  <IonContent
+    className="ion-padding"
+    style={{ position: "relative", "--background": "var(--ncu-canvas)" }}
+  >
+    <CardsPageBackground checkedIn={checkedIn} onCheckIn={onCheckIn} />
+    <UnavailableOverlay />
+  </IonContent>
+);
+
 const CardsPage = () => {
   const [checkedIn, setCheckedIn] = useState(false);
 
   return (
     <IonPage>
       <CardsHeader />
-      <IonContent
-        className="ion-padding"
-        style={{ position: "relative", "--background": "var(--ncu-canvas)" }}
-      >
-        {/* Background dimmed content */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "var(--ncu-space-6)",
-            paddingTop: "var(--ncu-space-8)",
-            filter: "grayscale(0.6)",
-            pointerEvents: "none",
-            userSelect: "none",
-          }}
-        >
-          <HeaderSection />
-          <CheckInCard
-            checkedIn={checkedIn}
-            onCheckIn={() => setCheckedIn(true)}
-          />
-          <MyCollectionCard />
-
-          <div
-            style={{
-              marginTop: 20,
-              padding: "16px",
-              borderRadius: "var(--ncu-radius-md)",
-              border: "2px dashed var(--ncu-border)",
-              textAlign: "center",
-              color: "var(--ncu-muted)",
-              width: "100%",
-            }}
-          >
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>
-              📇 電子名片
-            </p>
-            <p style={{ margin: "4px 0 0", fontSize: 12 }}>
-              此區塊預留給電子名片模組整合
-            </p>
-          </div>
-        </div>
-
-        {/* Global Unavailable Overlay */}
-        <UnavailableOverlay />
-      </IonContent>
+      <CardsPageBody checkedIn={checkedIn} onCheckIn={() => setCheckedIn(true)} />
     </IonPage>
   );
 };
