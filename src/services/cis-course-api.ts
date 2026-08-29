@@ -66,7 +66,8 @@ const parseSemesters = (html: string): string[] => {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const options = Array.from(doc.querySelectorAll<HTMLOptionElement>('select[name="semester"] option'));
   const current = options.find((option) => option.selected)?.value;
-  const studentId = doc.body.textContent?.match(/Student ID Number:\s*(\d{3})/)?.[1];
+  const studentIdMatch = /Student ID Number:\s*(\d{3})/.exec(doc.body.textContent || "");
+  const studentId = studentIdMatch?.[1];
   const startYear = studentId ? Number(studentId) : undefined;
 
   return options
@@ -82,10 +83,20 @@ const isValidStatusTableRow = (cells: string[]): boolean => {
   return /^[A-Z]{2,}\d+/.test(cells[2] || "");
 };
 
+const cleanCourseName = (raw: string): string => {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  const match = /^([^\t\n\rA-Za-z]+)/u.exec(trimmed);
+  if (match && match[1].trim().length > 0) {
+    return match[1].trim();
+  }
+  return trimmed;
+};
+
 const parseStatusItem = (cells: string[], semester: string): CisCourse => ({
   serialNo: cells[1],
   classNo: cells[2],
-  name: (cells[4] || "").replace(/\s+[A-Za-z][A-Za-z\d .,&'()/-]*$/, "").trim(),
+  name: cleanCourseName(cells[4] || ""),
   teacher: cells[5] || "",
   room: "",
   credit: Number(cells[6] || 0),
@@ -115,6 +126,18 @@ export const parseCisCourseStatusPage = (html: string, semester: string): CisCou
   });
 };
 
+const parseRoomCell = (text: string): { teacher: string; room: string } | null => {
+  const openParen = text.lastIndexOf("(");
+  const closeParen = text.lastIndexOf(")");
+  if (openParen <= 0 || closeParen <= openParen) return null;
+  const room = text.slice(openParen + 1, closeParen).trim();
+  const rest = text.slice(0, openParen).trim();
+  const lastSpace = rest.lastIndexOf(" ");
+  if (lastSpace <= 0) return null;
+  const teacher = rest.slice(lastSpace + 1).trim();
+  return { teacher, room };
+};
+
 const fetchRoomMap = async (): Promise<Map<string, string>> => {
   const rooms = new Map<string, string>();
   try {
@@ -123,8 +146,10 @@ const fetchRoomMap = async (): Promise<Map<string, string>> => {
       "text/html",
     );
     doc.querySelectorAll("td").forEach((cell) => {
-      const match = toText(cell).match(/^(.+?)\s+(\S+?)\s*\(([^)]+)\)$/);
-      if (match) rooms.set(match[2], match[3]);
+      const parsed = parseRoomCell(toText(cell));
+      if (parsed) {
+        rooms.set(parsed.teacher, parsed.room);
+      }
     });
   } catch {
     // A room lookup must not hide an otherwise valid current timetable.

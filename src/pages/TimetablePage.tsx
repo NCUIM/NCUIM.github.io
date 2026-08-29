@@ -194,7 +194,7 @@ const areSameCourse = (a: Course, b: Course): boolean =>
 const parseHyphenTime = (ct: string): { dayIdx: number; periodChars: string } | null => {
   if (!ct.includes("-")) return null;
   const parts = ct.split("-");
-  const dNum = parseInt(parts[0], 10);
+  const dNum = Number.parseInt(parts[0], 10);
   const dayIdx = dNum >= 1 && dNum <= 5 ? dNum - 1 : -1;
   return { dayIdx, periodChars: parts[1] || "" };
 };
@@ -202,7 +202,7 @@ const parseHyphenTime = (ct: string): { dayIdx: number; periodChars: string } | 
 const parseDigitTime = (ct: string): { dayIdx: number; periodChars: string } | null => {
   const first = ct[0];
   if (ct.length >= 2 && first >= "1" && first <= "5") {
-    return { dayIdx: parseInt(first, 10) - 1, periodChars: ct.slice(1) };
+    return { dayIdx: Number.parseInt(first, 10) - 1, periodChars: ct.slice(1) };
   }
   return null;
 };
@@ -211,7 +211,7 @@ const parseNamedDayTime = (
   ct: string,
   dayMap: Record<string, number>,
 ): { dayIdx: number; periodChars: string } => {
-  const match = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/u);
+  const match = /^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/u.exec(ct);
   if (match) {
     return { dayIdx: dayMap[match[1]] ?? -1, periodChars: ct.slice(match[0].length) };
   }
@@ -359,7 +359,7 @@ const getDayFixedTracks = (
   const maxTracks = Math.max(1, ...spans.map((s) => s.trackIndex + 1));
   const rows = periods.map((period, idx) => {
     const activeSpans = spans.filter((s) => s.startIdx === idx);
-    const tracks: (Course | null)[] = Array(maxTracks).fill(null);
+    const tracks: (Course | null)[] = new Array(maxTracks).fill(null);
     for (const s of activeSpans) {
       tracks[s.trackIndex] = s.course;
     }
@@ -404,6 +404,34 @@ const assignClusterTracks = (
   return assignedTracks;
 };
 
+const expandCluster = (
+  initialIdx: number,
+  spans: { course: Course; startIdx: number; endIdx: number }[],
+  visited: Set<number>,
+): number[] => {
+  const clusterIndices = [initialIdx];
+  visited.add(initialIdx);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let j = 0; j < spans.length; j++) {
+      if (!visited.has(j)) {
+        const overlaps = clusterIndices.some(
+          (cIdx) =>
+            Math.max(spans[cIdx].startIdx, spans[j].startIdx) <=
+            Math.min(spans[cIdx].endIdx, spans[j].endIdx),
+        );
+        if (overlaps) {
+          clusterIndices.push(j);
+          visited.add(j);
+          changed = true;
+        }
+      }
+    }
+  }
+  return clusterIndices;
+};
+
 // skipcq: JS-R1005
 const getDesktopCourseSpans = (
   timetableData: Record<string, Course[]>,
@@ -416,28 +444,7 @@ const getDesktopCourseSpans = (
   for (let i = 0; i < spans.length; i++) {
     if (visited.has(i)) continue;
 
-    const clusterIndices: number[] = [i];
-    visited.add(i);
-
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (let j = 0; j < spans.length; j++) {
-        if (!visited.has(j)) {
-          const overlapsCluster = clusterIndices.some(
-            (cIdx) =>
-              Math.max(spans[cIdx].startIdx, spans[j].startIdx) <=
-              Math.min(spans[cIdx].endIdx, spans[j].endIdx),
-          );
-          if (overlapsCluster) {
-            clusterIndices.push(j);
-            visited.add(j);
-            changed = true;
-          }
-        }
-      }
-    }
-
+    const clusterIndices = expandCluster(i, spans, visited);
     clusterIndices.sort((a, b) => spans[a].startIdx - spans[b].startIdx);
     const assignedTracks = assignClusterTracks(clusterIndices, spans);
     const clusterTotalCols = Math.max(
@@ -1028,6 +1035,23 @@ const TimetableHeader = ({
   </IonHeader>
 );
 
+const mergeCisCoursesIntoResult = (
+  result: Record<string, Course[]>,
+  myCisCourses: CisCourse[],
+): void => {
+  const cisMap = buildTimetableFromCisCourses(myCisCourses);
+  for (const [key, cisList] of Object.entries(cisMap)) {
+    if (!result[key]) {
+      result[key] = [];
+    }
+    for (const cc of cisList) {
+      if (!result[key].some((x) => x.name.trim() === cc.name.trim())) {
+        result[key].push(cc);
+      }
+    }
+  }
+};
+
 // skipcq: JS-R1005
 const computeMergedTimetableData = (
   masterCourses: MasterCourseItem[],
@@ -1045,17 +1069,7 @@ const computeMergedTimetableData = (
   }
 
   if (myCisCourses.length > 0) {
-    const cisMap = buildTimetableFromCisCourses(myCisCourses);
-    for (const [key, cisList] of Object.entries(cisMap)) {
-      if (!result[key]) {
-        result[key] = [];
-      }
-      for (const cc of cisList) {
-        if (!result[key].some((x) => x.name.trim() === cc.name.trim())) {
-          result[key].push(cc);
-        }
-      }
-    }
+    mergeCisCoursesIntoResult(result, myCisCourses);
   }
 
   return result;

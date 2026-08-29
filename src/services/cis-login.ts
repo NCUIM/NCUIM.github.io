@@ -30,7 +30,7 @@ export const cisLogout = (): void => {
 export const sanitizeJsessionId = (raw: string): string => {
   if (!raw) return "";
   const clean = raw.trim();
-  const cookieMatch = clean.match(/(?:^|;\s*|\b)JSESSIONID=([^;\s"']+)/i);
+  const cookieMatch = /(?:^|;\s*|\b)JSESSIONID=([^;\s"']+)/i.exec(clean);
   if (cookieMatch) {
     return cookieMatch[1];
   }

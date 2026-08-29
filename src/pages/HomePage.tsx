@@ -85,11 +85,10 @@ const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
       alignItems: "center",
     }}
   >
-    <div
+    <button
+      type="button"
       onClick={onLogoClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onLogoClick(); }}
-      tabIndex={0}
-      role="button"
+      aria-label="NCUIM Logo"
       style={{
         width: 72,
         height: 72,
@@ -105,6 +104,7 @@ const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
         cursor: "pointer",
         transition: "transform 0.1s ease",
         userSelect: "none",
+        padding: 0,
       }}
       title="NCUIM"
     >
@@ -113,7 +113,7 @@ const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
         alt="NCUIM Logo"
         style={{ width: "100%", height: "100%", objectFit: "contain" }}
       />
-    </div>
+    </button>
     <h1
       style={{
         fontSize: "var(--ncu-font-size-3xl)",

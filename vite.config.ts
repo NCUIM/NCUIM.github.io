@@ -1,10 +1,10 @@
 import { configDefaults, defineConfig, type Plugin } from "vitest/config";
 import type { ViteDevServer } from "vite";
-import type { IncomingMessage, ServerResponse } from "http";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import react from "@vitejs/plugin-react";
-import https from "https";
-import fs from "fs";
-import path from "path";
+import https from "node:https";
+import fs from "node:fs";
+import path from "node:path";
 
 const getQuerySession = (req: IncomingMessage): string => {
   const host = req.headers.host || "localhost";

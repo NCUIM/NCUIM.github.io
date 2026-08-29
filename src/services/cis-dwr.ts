@@ -1,82 +1,53 @@
 /**
- * NCU CIS DWR Client
+ * Direct Web Remoting (DWR) Protocol Client for NCU CIS
  *
- * Communicates with the CIS system's DWR (Direct Web Remoting) endpoints.
- * DWR is a Java AJAX framework that exposes server-side Java methods as
- * JavaScript functions via a specific HTTP protocol.
- *
- * Flow:
- * 1. Login to CIS → get JSESSIONID
- * 2. GET /Course/dwr/engine.js → extract dwr.engine.DEFAULT + scriptSessionId
- * 3. POST /Course/dwr/call/plaincall/{Service}.{method}.dwr → invoke Java methods
+ * CIS uses DWR 2.x to fetch dynamic course data, classroom info,
+ * and conflict checks. This client implements the minimum DWR
+ * wire protocol needed to talk to the SelectCourseService.
  */
 
 import { cisFetch } from "./cis-login";
-
-// ── Types ─────────────────────────────────────────────────────
 
 export interface DwrCourseData {
   title: string;
   serial: string;
   classNo: string;
   teacher: string;
-  status: string; // "ready" | "register" | "tracking" | "default"
+  status: string;
   classTimes: string[];
   classTimesAlt: string;
   credit: number;
 }
 
-// ── DWR Engine Initialization ─────────────────────────────────
+// ── DWR Session State ─────────────────────────────────────────
 
-let scriptSessionId = "";
+let scriptSessionId: string | null = null;
 
 /**
- * Initialize the DWR engine by fetching engine.js and extracting
+ * Initialize the DWR engine by fetching /Course/dwr/engine.js and extracting
  * the scriptSessionId needed for subsequent calls.
  */
-export async function initDwrEngine(): Promise<void> {
+export const initDwrEngine = async (): Promise<void> => {
   const res = await cisFetch("/Course/dwr/engine.js");
   const js = await res.text();
 
-  // Extract scriptSessionId from engine.js
-  // Typical pattern: dwr.engine.setScriptSessionId("xxx");
-  const match = js.match(/setScriptSessionId\s*\(\s*["']([^"']+)["']\s*\)/);
+  const match = /setScriptSessionId\s*\(\s*["']([^"']+)["']\s*\)/.exec(js);
   if (match) {
     scriptSessionId = match[1];
   } else {
-    // Generate a random one if not found
     const array = new Uint8Array(16);
     crypto.getRandomValues(array);
     scriptSessionId = Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
   }
-}
+};
 
 // ── DWR Call Protocol ─────────────────────────────────────────
 
-/**
- * Make a DWR plain call to a Java service method.
- *
- * DWR plain call format:
- *   POST /Course/dwr/call/plaincall/{ServiceName}.{methodName}.dwr
- *   Content-Type: text/plain
- *
- *   callCount=1
- *   scriptSessionId={id}
- *   c0-scriptName={ServiceName}
- *   c0-methodName={methodName}
- *   c0-id=0
- *   c0-param0=string:{arg0}
- *   ...
- *   batchId=1
- *
- * Response format:
- *   //|骄|0|4|... (DWR proprietary format)
- */
-async function dwrCall(
+const dwrCall = async (
   serviceName: string,
   methodName: string,
   params: unknown[],
-): Promise<string> {
+): Promise<string> => {
   if (!scriptSessionId) {
     await initDwrEngine();
   }
@@ -95,7 +66,6 @@ async function dwrCall(
   });
 
   lines.push("batchId=1");
-
   const body = lines.join("\n");
 
   const res = await cisFetch(
@@ -108,42 +78,32 @@ async function dwrCall(
   );
 
   const text = await res.text();
-
-  // Parse DWR response
-  // DWR responses look like:
-  //   //|骄|0|4|return-value|...|0|骄|
-  // The actual return value is between specific markers
-  const returnValueMatch = text.match(/\|4\|([^|]*)\|/);
+  const returnValueMatch = /\|4\|([^|]*)\|/.exec(text);
   if (returnValueMatch) {
     return returnValueMatch[1];
   }
 
-  // Try alternative parsing — sometimes the response has s0= prefix
-  const s0Match = text.match(/s0=(.*)/);
+  const s0Match = /s0=(.*)/.exec(text);
   if (s0Match) {
     return s0Match[1];
   }
 
   return text;
-}
+};
 
 // ── Course Data API ───────────────────────────────────────────
 
 /**
  * Get course data for a specific serial number via DWR.
- * This is the same call the CIS frontend makes.
- *
- * Response array: [title, serial, classNo, teacher, status, classTimes, classTimesAlt, credit]
  */
-export async function getCourseDataArray(
+export const getCourseDataArray = async (
   serialNo: string,
-): Promise<DwrCourseData | null> {
+): Promise<DwrCourseData | null> => {
   const raw = await dwrCall("SelectCourseService", "getCourseDataArray", [
     serialNo,
   ]);
 
   try {
-    // DWR serializes arrays as: ["val1","val2",...]
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr) || arr.length < 8) return null;
 
@@ -160,4 +120,4 @@ export async function getCourseDataArray(
   } catch {
     return null;
   }
-}
+};

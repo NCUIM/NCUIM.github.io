@@ -13,8 +13,8 @@ import {
   generateCodeChallenge,
 } from "./ncu-oauth";
 
-export async function startNcuLogin(): Promise<void> {
-  const codeVerifier = await generateCodeVerifier();
+export const startNcuLogin = async (): Promise<void> => {
+  const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
 
   // Pack the PKCE verifier into the state param so it survives the
@@ -33,4 +33,4 @@ export async function startNcuLogin(): Promise<void> {
   });
 
   window.location.href = `${NCU_OAUTH.authorizationEndpoint}?${params.toString()}`;
-}
+};

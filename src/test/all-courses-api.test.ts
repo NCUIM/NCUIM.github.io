@@ -36,12 +36,12 @@ describe("all-courses-api service", () => {
 
     // Friday (day 5 -> index 4) period 2
     expect(map["2-4"]).toBeDefined();
-    expect(map["2-4"].length).toBe(2);
+    expect(map["2-4"]).toHaveLength(2);
     expect(map["2-4"].map((c) => c.title)).toContain("社會網路分析");
     expect(map["2-4"].map((c) => c.title)).toContain("商業智慧");
 
     // Friday period 3
-    expect(map["3-4"].length).toBe(2);
+    expect(map["3-4"]).toHaveLength(2);
   });
 
   it("fetchImMasterCourses falls back to bundled JSON when network request fails", async () => {
@@ -94,7 +94,7 @@ describe("all-courses-api service", () => {
     } as Response);
 
     const courses = await fetchImMasterCourses();
-    expect(courses.length).toBe(1);
+    expect(courses).toHaveLength(1);
     expect(courses[0].title).toBe("商業智慧");
   });
 });

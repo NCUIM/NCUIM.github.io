@@ -11,7 +11,7 @@ export interface MasterCourseItem {
   readonly credit: number;
   readonly teachers: readonly string[];
   readonly classTimes: readonly string[];
-  readonly courseType: "REQUIRED" | "ELECTIVE" | string;
+  readonly courseType: "REQUIRED" | "ELECTIVE";
   readonly passwordCard?: string;
   readonly limitCnt?: number | null;
   readonly admitCnt?: number | null;
@@ -84,9 +84,9 @@ const isExcludedMasterCourse = (c: RawCourse): boolean =>
   EXCLUDED_MASTER_KEYWORDS.some((kw) => c.title?.includes(kw));
 
 const isMasterLevelCourse = (c: RawCourse): boolean => {
-  const match = c.classNo?.match(/IM([0-9]{4})/);
+  const match = /IM(\d{4})/.exec(c.classNo || "");
   if (!match) return false;
-  const num = parseInt(match[1], 10);
+  const num = Number.parseInt(match[1], 10);
   return num >= 5000 && num < 8000;
 };
 
@@ -140,7 +140,7 @@ export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
 const parseDayAndPeriod = (ct: string): { dayIdx: number; periodId: string } | null => {
   const parts = ct.split("-");
   if (parts.length !== 2) return null;
-  const dayNum = parseInt(parts[0], 10);
+  const dayNum = Number.parseInt(parts[0], 10);
   if (dayNum < 1 || dayNum > 5) return null;
   return { dayIdx: dayNum - 1, periodId: parts[1] };
 };
