@@ -53,6 +53,19 @@ export interface TrackCurriculum {
   };
 }
 
+// ── Compact Course Builder ────────────────────────────────────
+// Reduces structural duplication in course data definitions.
+// Format: [id, code, name, credits, semester, schedule?, note?]
+type CourseTuple = readonly [
+  id: string, code: string, name: string,
+  credits: number, semester: CurriculumCourse["semester"],
+  schedule?: string, note?: string,
+];
+const cc = (t: CourseTuple): CurriculumCourse => ({
+  id: t[0], code: t[1], name: t[2], credits: t[3],
+  semester: t[4], schedule: t[5], note: t[6],
+});
+
 // ── Common Courses (兩組共同) ──────────────────────────────────
 
 export const COMMON_PREREQUISITES: readonly PrereqCourse[] = [
@@ -71,46 +84,11 @@ export const COMMON_PREREQUISITES: readonly PrereqCourse[] = [
 ];
 
 export const COMMON_REQUIRED_COURSES: readonly CurriculumCourse[] = [
-  {
-    id: "IM6003",
-    code: "IM6003",
-    name: "軟體工程",
-    credits: 3,
-    semester: "一上",
-    schedule: "週三 6、7、8 節",
-  },
-  {
-    id: "IM6012",
-    code: "IM6012",
-    name: "管理資訊系統",
-    credits: 3,
-    semester: "一上",
-    schedule: "週一 5、6、7 節",
-  },
-  {
-    id: "IM6016",
-    code: "IM6016",
-    name: "研究方法",
-    credits: 3,
-    semester: "一下",
-    schedule: "週三 6、7、8 節",
-  },
-  {
-    id: "IM5019",
-    code: "IM5019",
-    name: "管理溝通",
-    credits: 2,
-    semester: "二上",
-    schedule: "週四 2、3、4 節",
-  },
-  {
-    id: "IM5026",
-    code: "IM5026",
-    name: "書報研討",
-    credits: 1,
-    semester: "二下",
-    schedule: "週二 A、B、C 節",
-  },
+  cc(["IM6003", "IM6003", "軟體工程", 3, "一上", "週三 6、7、8 節"]),
+  cc(["IM6012", "IM6012", "管理資訊系統", 3, "一上", "週一 5、6、7 節"]),
+  cc(["IM6016", "IM6016", "研究方法", 3, "一下", "週三 6、7、8 節"]),
+  cc(["IM5019", "IM5019", "管理溝通", 2, "二上", "週四 2、3、4 節"]),
+  cc(["IM5026", "IM5026", "書報研討", 1, "二下", "週二 A、B、C 節"]),
 ];
 
 // ── Management Track (管理組 33 學分) ───────────────────────────
@@ -137,168 +115,28 @@ export const MGMT_PREREQUISITES: readonly PrereqCourse[] = [
 ];
 
 export const MGMT_TRACK_REQUIRED: readonly CurriculumCourse[] = [
-  {
-    id: "IM6053",
-    code: "IM6053",
-    name: "多變量分析",
-    credits: 3,
-    semester: "上",
-    schedule: "週三 2、3、4 節",
-    note: "必修",
-  },
-  {
-    id: "IM6014",
-    code: "IM6014",
-    name: "企業策略",
-    credits: 3,
-    semester: "下",
-    schedule: "週三 2、3、4 節",
-    note: "六選三 (9學分)",
-  },
-  {
-    id: "IM7071",
-    code: "IM7071",
-    name: "企業電腦網路",
-    credits: 3,
-    semester: "上",
-    schedule: "週二 6、7、8 節",
-    note: "六選三 (9學分)",
-  },
-  {
-    id: "IM6041",
-    code: "IM6041",
-    name: "生產與作業管理",
-    credits: 3,
-    semester: "上",
-    schedule: "週一 2、3、4 節",
-    note: "六選三 (9學分)",
-  },
-  {
-    id: "IM6082",
-    code: "IM6082",
-    name: "行銷管理",
-    credits: 3,
-    semester: "一上",
-    schedule: "週四 2、3、4 節",
-    note: "六選三 (9學分)",
-  },
-  {
-    id: "IM6069",
-    code: "IM6069",
-    name: "財務管理",
-    credits: 3,
-    semester: "下",
-    schedule: "週一 5、6、7 節",
-    note: "六選三 (9學分)",
-  },
-  {
-    id: "IM7065",
-    code: "IM7065",
-    name: "人力資源管理",
-    credits: 3,
-    semester: "下",
-    schedule: "週二 2、3、4 節",
-    note: "六選三 (9學分)",
-  },
+  cc(["IM6053", "IM6053", "多變量分析", 3, "上", "週三 2、3、4 節", "必修"]),
+  cc(["IM6014", "IM6014", "企業策略", 3, "下", "週三 2、3、4 節", "六選三 (9學分)"]),
+  cc(["IM7071", "IM7071", "企業電腦網路", 3, "上", "週二 6、7、8 節", "六選三 (9學分)"]),
+  cc(["IM6041", "IM6041", "生產與作業管理", 3, "上", "週一 2、3、4 節", "六選三 (9學分)"]),
+  cc(["IM6082", "IM6082", "行銷管理", 3, "一上", "週四 2、3、4 節", "六選三 (9學分)"]),
+  cc(["IM6069", "IM6069", "財務管理", 3, "下", "週一 5、6、7 節", "六選三 (9學分)"]),
+  cc(["IM7065", "IM7065", "人力資源管理", 3, "下", "週二 2、3、4 節", "六選三 (9學分)"]),
 ];
 
 export const MGMT_TRACK_ELECTIVES: readonly CurriculumCourse[] = [
-  {
-    id: "IM5001",
-    code: "IM5001",
-    name: "社會網路分析",
-    credits: 3,
-    semester: "上",
-    schedule: "週五 2、3、4 節",
-  },
-  {
-    id: "IM5021-m",
-    code: "IM5021",
-    name: "智慧醫療",
-    credits: 3,
-    semester: "上",
-    schedule: "週一 6、7、8 節",
-  },
-  {
-    id: "IM6103",
-    code: "IM6103",
-    name: "網路經濟與賽局智慧",
-    credits: 3,
-    semester: "上",
-    schedule: "週四 5、6、7 節",
-  },
-  {
-    id: "IM6002",
-    code: "IM6002",
-    name: "資訊系統專案管理",
-    credits: 3,
-    semester: "上",
-    schedule: "週四 5、6、7 節",
-  },
-  {
-    id: "IM5009",
-    code: "IM5009",
-    name: "資訊經濟學導論",
-    credits: 3,
-    semester: "下",
-    schedule: "週一 2、3、4 節",
-  },
-  {
-    id: "IM5020",
-    code: "IM5020",
-    name: "創新管理專題",
-    credits: 3,
-    semester: "下",
-    schedule: "週四 5、6、7 節",
-  },
-  {
-    id: "IM5023",
-    code: "IM5023",
-    name: "數位品牌管理",
-    credits: 3,
-    semester: "下",
-    schedule: "週一 2、3、4 節",
-  },
-  {
-    id: "IM5036",
-    code: "IM5036",
-    name: "智慧商務",
-    credits: 3,
-    semester: "下",
-    schedule: "週一 5、6、7 節",
-  },
-  {
-    id: "IM6100",
-    code: "IM6100",
-    name: "顧客關係管理",
-    credits: 3,
-    semester: "下",
-    schedule: "週四 2、3、4 節",
-  },
-  {
-    id: "IM6102",
-    code: "IM6102",
-    name: "產業組織與智慧企業",
-    credits: 3,
-    semester: "下",
-    schedule: "週四 5、6、7 節",
-  },
-  {
-    id: "IM7036",
-    code: "IM7036",
-    name: "定性研究法",
-    credits: 3,
-    semester: "下",
-    schedule: "週四 5、6、7 節",
-  },
-  {
-    id: "MT6011-m",
-    code: "MT6011-MT6019",
-    name: "企業實習",
-    credits: 3,
-    semester: "上/下",
-    note: "管院實習最多認列 3 學分",
-  },
+  cc(["IM5001", "IM5001", "社會網路分析", 3, "上", "週五 2、3、4 節"]),
+  cc(["IM5021-m", "IM5021", "智慧醫療", 3, "上", "週一 6、7、8 節"]),
+  cc(["IM6103", "IM6103", "網路經濟與賽局智慧", 3, "上", "週四 5、6、7 節"]),
+  cc(["IM6002", "IM6002", "資訊系統專案管理", 3, "上", "週四 5、6、7 節"]),
+  cc(["IM5009", "IM5009", "資訊經濟學導論", 3, "下", "週一 2、3、4 節"]),
+  cc(["IM5020", "IM5020", "創新管理專題", 3, "下", "週四 5、6、7 節"]),
+  cc(["IM5023", "IM5023", "數位品牌管理", 3, "下", "週一 2、3、4 節"]),
+  cc(["IM5036", "IM5036", "智慧商務", 3, "下", "週一 5、6、7 節"]),
+  cc(["IM6100", "IM6100", "顧客關係管理", 3, "下", "週四 2、3、4 節"]),
+  cc(["IM6102", "IM6102", "產業組織與智慧企業", 3, "下", "週四 5、6、7 節"]),
+  cc(["IM7036", "IM7036", "定性研究法", 3, "下", "週四 5、6、7 節"]),
+  cc(["MT6011-m", "MT6011-MT6019", "企業實習", 3, "上/下", undefined, "管院實習最多認列 3 學分"]),
 ];
 
 // ── IS Track (資訊系統組 30 學分) ───────────────────────────────
@@ -319,145 +157,28 @@ export const SYS_PREREQUISITES: readonly PrereqCourse[] = [
 ];
 
 export const SYS_TRACK_REQUIRED: readonly CurriculumCourse[] = [
-  {
-    id: "IM7071-s",
-    code: "IM7071",
-    name: "企業電腦網路",
-    credits: 3,
-    semester: "上",
-    schedule: "週二 6、7、8 節",
-    note: "必修 (3學分)",
-  },
-  {
-    id: "IM6041-s",
-    code: "IM6041",
-    name: "生產與作業管理",
-    credits: 3,
-    semester: "上",
-    schedule: "週一 2、3、4 節",
-    note: "管理課程四選一 (3學分)",
-  },
-  {
-    id: "IM6082-s",
-    code: "IM6082",
-    name: "行銷管理",
-    credits: 3,
-    semester: "一上",
-    schedule: "週四 2、3、4 節",
-    note: "管理課程四選一 (3學分)",
-  },
-  {
-    id: "IM6069-s",
-    code: "IM6069",
-    name: "財務管理",
-    credits: 3,
-    semester: "下",
-    schedule: "週一 5、6、7 節",
-    note: "管理課程四選一 (3學分)",
-  },
-  {
-    id: "IM7065-s",
-    code: "IM7065",
-    name: "人力資源管理",
-    credits: 3,
-    semester: "下",
-    schedule: "週二 2、3、4 節",
-    note: "管理課程四選一 (3學分)",
-  },
+  cc(["IM7071-s", "IM7071", "企業電腦網路", 3, "上", "週二 6、7、8 節", "必修 (3學分)"]),
+  cc(["IM6041-s", "IM6041", "生產與作業管理", 3, "上", "週一 2、3、4 節", "管理課程四選一 (3學分)"]),
+  cc(["IM6082-s", "IM6082", "行銷管理", 3, "一上", "週四 2、3、4 節", "管理課程四選一 (3學分)"]),
+  cc(["IM6069-s", "IM6069", "財務管理", 3, "下", "週一 5、6、7 節", "管理課程四選一 (3學分)"]),
+  cc(["IM7065-s", "IM7065", "人力資源管理", 3, "下", "週二 2、3、4 節", "管理課程四選一 (3學分)"]),
 ];
 
 export const SYS_TRACK_ELECTIVES: readonly CurriculumCourse[] = [
-  {
-    id: "IM5008",
-    code: "IM5008",
-    name: "商業智慧",
-    credits: 3,
-    semester: "上",
-    schedule: "週五 2、3、4 節",
-  },
-  {
-    id: "IM5022",
-    code: "IM5022",
-    name: "多媒體資料庫",
-    credits: 3,
-    semester: "上",
-    schedule: "週四 6、7、8 節",
-  },
-  {
-    id: "IM5038",
-    code: "IM5038",
-    name: "進階區塊鏈應用與隱私防護",
-    credits: 3,
-    semester: "上",
-    schedule: "週三 2、3、4 節",
-  },
-  {
-    id: "IM6055",
-    code: "IM6055",
-    name: "電腦網路安全",
-    credits: 3,
-    semester: "上",
-    schedule: "週五 6、7、8 節",
-  },
-  {
-    id: "IM5041",
-    code: "IM5041",
-    name: "現代與後量子密碼學導論",
-    credits: 3,
-    semester: "上",
-    schedule: "週五 2、3、4 節",
-  },
-  {
-    id: "IM5002",
-    code: "IM5002",
-    name: "電子商務技術",
-    credits: 3,
-    semester: "下",
-    schedule: "週一 2、3、4 節",
-  },
-  {
-    id: "IM5012",
-    code: "IM5012",
-    name: "行動網路技術與應用",
-    credits: 3,
-    semester: "下",
-    schedule: "週四 2、3、4 節",
-  },
-  {
-    id: "IM5021-s",
-    code: "IM5021",
-    name: "智慧醫療",
-    credits: 3,
-    semester: "下",
-    schedule: "週四 6、7、8 節",
-  },
-  {
-    id: "IM5030",
-    code: "IM5030",
-    name: "軟體流程與專案管理",
-    credits: 3,
-    semester: "下",
-    schedule: "週三 2、3、4 節",
-  },
+  cc(["IM5008", "IM5008", "商業智慧", 3, "上", "週五 2、3、4 節"]),
+  cc(["IM5022", "IM5022", "多媒體資料庫", 3, "上", "週四 6、7、8 節"]),
+  cc(["IM5038", "IM5038", "進階區塊鏈應用與隱私防護", 3, "上", "週三 2、3、4 節"]),
+  cc(["IM6055", "IM6055", "電腦網路安全", 3, "上", "週五 6、7、8 節"]),
+  cc(["IM5041", "IM5041", "現代與後量子密碼學導論", 3, "上", "週五 2、3、4 節"]),
+  cc(["IM5002", "IM5002", "電子商務技術", 3, "下", "週一 2、3、4 節"]),
+  cc(["IM5012", "IM5012", "行動網路技術與應用", 3, "下", "週四 2、3、4 節"]),
+  cc(["IM5021-s", "IM5021", "智慧醫療", 3, "下", "週四 6、7、8 節"]),
+  cc(["IM5030", "IM5030", "軟體流程與專案管理", 3, "下", "週三 2、3、4 節"]),
 ];
 
 export const SYS_TRACK_FREE_ELECTIVES: readonly CurriculumCourse[] = [
-  {
-    id: "IM_FREE",
-    code: "IM5xxx-IM7xxx",
-    name: "資管所其他選修課程",
-    credits: 3,
-    semester: "上/下",
-    note: "IM 開頭之研究所課程 (需 3 學分)",
-  },
-  {
-    id: "MT6011-s",
-    code: "MT6011-MT6019",
-    name: "企業實習",
-    credits: 3,
-    semester: "上/下",
-    note: "管院實習最多認列 3 學分",
-  },
+  cc(["IM_FREE", "IM5xxx-IM7xxx", "資管所其他選修課程", 3, "上/下", undefined, "IM 開頭之研究所課程 (需 3 學分)"]),
+  cc(["MT6011-s", "MT6011-MT6019", "企業實習", 3, "上/下", undefined, "管院實習最多認列 3 學分"]),
 ];
 
 /** IM graduate courses not already named in the system-track curriculum count here. */

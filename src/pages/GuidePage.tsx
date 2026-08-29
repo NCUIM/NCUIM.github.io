@@ -150,6 +150,35 @@ const RESOURCE_CATEGORIES: readonly ResourceCategory[] = [
   },
 ];
 
+const ResourceItem = ({ item }: Readonly<{ item: ResourceLink }>) => (
+  <IonItem
+    button
+    detail={false}
+    key={item.url}
+    href={item.url}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{ "--background": "var(--ncu-surface)", cursor: "pointer" }}
+  >
+    <IonLabel style={{ margin: "12px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+        <strong style={{ fontSize: 15.5, fontWeight: 700, color: "var(--ncu-ink)" }}>
+          {item.title}
+        </strong>
+        {item.tag && (
+          <IonBadge color="primary" style={{ fontSize: 11, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}>
+            {item.tag}
+          </IonBadge>
+        )}
+      </div>
+      <p style={{ fontSize: 13, color: "var(--ncu-muted)", lineHeight: 1.4, margin: 0 }}>
+        {item.description}
+      </p>
+    </IonLabel>
+    <IonIcon icon={openOutline} slot="end" style={{ fontSize: 18, color: "var(--ncu-muted)", flexShrink: 0, marginLeft: 10 }} />
+  </IonItem>
+);
+
 const GuidePage: React.FC = () => {
   return (
     <IonPage>
@@ -227,73 +256,7 @@ const GuidePage: React.FC = () => {
                 }}
               >
                 {cat.items.map((item) => (
-                  <IonItem
-                    button
-                    detail={false}
-                    key={item.url}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      "--background": "var(--ncu-surface)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <IonLabel style={{ margin: "12px 0" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          flexWrap: "wrap",
-                          marginBottom: 4,
-                        }}
-                      >
-                        <strong
-                          style={{
-                            fontSize: 15.5,
-                            fontWeight: 700,
-                            color: "var(--ncu-ink)",
-                          }}
-                        >
-                          {item.title}
-                        </strong>
-                        {item.tag && (
-                          <IonBadge
-                            color="primary"
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 700,
-                              padding: "3px 7px",
-                              borderRadius: 4,
-                            }}
-                          >
-                            {item.tag}
-                          </IonBadge>
-                        )}
-                      </div>
-                      <p
-                        style={{
-                          fontSize: 13,
-                          color: "var(--ncu-muted)",
-                          lineHeight: 1.4,
-                          margin: 0,
-                        }}
-                      >
-                        {item.description}
-                      </p>
-                    </IonLabel>
-                    <IonIcon
-                      icon={openOutline}
-                      slot="end"
-                      style={{
-                        fontSize: 18,
-                        color: "var(--ncu-muted)",
-                        flexShrink: 0,
-                        marginLeft: 10,
-                      }}
-                    />
-                  </IonItem>
+                  <ResourceItem key={item.url} item={item} />
                 ))}
               </IonList>
             </div>
