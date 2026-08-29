@@ -11,58 +11,43 @@
 
 const CIS_SESSION_KEY = "cis_session";
 
-export function getCisSession(): string | null {
-  return localStorage.getItem(CIS_SESSION_KEY);
-}
+export const getCisSession = (): string | null =>
+  localStorage.getItem(CIS_SESSION_KEY);
 
-export function isCisLoggedIn(): boolean {
-  return getCisSession() !== null;
-}
+export const isCisLoggedIn = (): boolean => getCisSession() !== null;
 
-export function setCisSession(sessionId: string): void {
+export const setCisSession = (sessionId: string): void => {
   localStorage.setItem(CIS_SESSION_KEY, sessionId);
-}
+};
 
-export function cisLogout(): void {
+export const cisLogout = (): void => {
   localStorage.removeItem(CIS_SESSION_KEY);
-}
+};
 
 /**
  * Sanitize raw pasted JSESSIONID string.
- * Handles cases like:
- * - "JSESSIONID=7DFF50FF6F2B55531B6A803D2DEAEF4C"
- * - "Cookie: JSESSIONID=7DFF50FF...; path=/"
- * - "\"7DFF50FF...\""
- * - Leading / trailing whitespace
  */
-export function sanitizeJsessionId(raw: string): string {
+export const sanitizeJsessionId = (raw: string): string => {
   if (!raw) return "";
-  let clean = raw.trim();
-
-  // If user pasted a cookie header or full key-value pair
+  const clean = raw.trim();
   const cookieMatch = clean.match(/(?:^|;\s*|\b)JSESSIONID=([^;\s"']+)/i);
   if (cookieMatch) {
-    clean = cookieMatch[1];
-  } else {
-    // Remove quotes and trailing semicolons/attributes if pasted directly
-    clean = clean.replace(/^["']|["']$/g, "").split(";")[0].trim();
+    return cookieMatch[1];
   }
-
-  return clean;
-}
+  return clean.replace(/^["']|["']$/g, "").split(";")[0].trim();
+};
 
 /**
  * Validate JSESSIONID format locally before making network requests.
- * Tomcat session IDs are typically 32-character hexadecimal or alphanumeric strings,
- * optionally with a node identifier (e.g. .jvm1 or .node1).
  */
-export function validateJsessionIdFormat(raw: string): { valid: boolean; error?: string } {
+export const validateJsessionIdFormat = (
+  raw: string,
+): { valid: boolean; error?: string } => {
   const clean = sanitizeJsessionId(raw);
   if (!clean) {
     return { valid: false, error: "請輸入 JSESSIONID" };
   }
 
-  // Check length: Tomcat sessions are at least 16 chars and up to 64 chars
   if (clean.length < 16 || clean.length > 64) {
     return {
       valid: false,
@@ -70,7 +55,6 @@ export function validateJsessionIdFormat(raw: string): { valid: boolean; error?:
     };
   }
 
-  // Check character set: only alphanumeric, dash, underscore, or dot
   if (!/^[a-zA-Z0-9._-]+$/.test(clean)) {
     return {
       valid: false,
@@ -79,7 +63,13 @@ export function validateJsessionIdFormat(raw: string): { valid: boolean; error?:
   }
 
   return { valid: true };
-}
+};
+
+const formatSessionError = (data: { error?: string; debug?: unknown }): string => {
+  const base = data.error || "Session 無效";
+  const debug = data.debug ? ` [${JSON.stringify(data.debug)}]` : "";
+  return `${base}${debug}`;
+};
 
 const requestSessionValidation = async (
   sessionId: string,
@@ -96,8 +86,7 @@ const requestSessionValidation = async (
       setCisSession(sessionId);
       return { ok: true };
     }
-    const debug = data.debug ? ` [${JSON.stringify(data.debug)}]` : "";
-    return { ok: false, error: `${data.error ?? "Session 無效"}${debug}` };
+    return { ok: false, error: formatSessionError(data) };
   } catch (err) {
     return {
       ok: false,
@@ -108,33 +97,28 @@ const requestSessionValidation = async (
 
 /**
  * Validate a JSESSIONID via the server-side /ncu/cis/validate endpoint.
- * Performs client-side format validation first, then makes the request.
  */
-export async function cisLogin(
+export const cisLogin = async (
   rawSessionId: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string }> => {
   const formatCheck = validateJsessionIdFormat(rawSessionId);
   if (!formatCheck.valid) {
     return { ok: false, error: formatCheck.error };
   }
   const sessionId = sanitizeJsessionId(rawSessionId);
   return await requestSessionValidation(sessionId);
-}
+};
 
 /**
  * Wrapper around fetch that attaches the CIS session cookie.
- * Uses a custom header (X-CIS-Session) because browsers strip the
- * Cookie header from manual fetch() calls. The Vite proxy rewrites
- * it into a real Cookie header before forwarding to cis.ncu.edu.tw.
  */
-export async function cisFetch(
+export const cisFetch = async (
   path: string,
   init?: RequestInit,
-): Promise<Response> {
+): Promise<Response> => {
   const session = getCisSession();
   if (!session) throw new Error("No CIS session");
 
-  // Prefix with /ncu/cis so the request goes through the Vite proxy
   const proxyPath = path.startsWith("/ncu/cis") ? path : `/ncu/cis${path}`;
   return await fetch(proxyPath, {
     ...init,
@@ -144,4 +128,4 @@ export async function cisFetch(
       "X-CIS-Session": session,
     },
   });
-}
+};

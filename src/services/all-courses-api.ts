@@ -95,12 +95,26 @@ const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
     (c) => isImCourse(c) && !isExcludedMasterCourse(c) && isMasterLevelCourse(c),
   );
 
+const mapRawCourse = (c: RawCourse): MasterCourseItem => ({
+  serialNo: c.serialNo,
+  classNo: c.classNo,
+  title: c.title,
+  credit: c.credit,
+  teachers: c.teachers || [],
+  classTimes: c.classTimes || [],
+  courseType: c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE",
+  passwordCard: c.passwordCard ?? undefined,
+  limitCnt: c.limitCnt,
+  admitCnt: c.admitCnt,
+  room: IM_CLASSROOM_MAP[c.classNo] || "I1-404",
+});
+
 /**
  * Fetch all NCU courses from S3 and filter for IM Fresher / Master courses.
  * Excludes 碩二課程 (IM5019 管理溝通, IM7043 書報研討Ⅰ) and doctoral courses (IM8xxx).
  * Falls back to bundled static json if network fails or offline.
  */
-export async function fetchImMasterCourses(): Promise<MasterCourseItem[]> {
+export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
   try {
     const res = await fetch(ALL_COURSES_API_URL, { cache: "default" });
     if (!res.ok) {
@@ -111,26 +125,14 @@ export async function fetchImMasterCourses(): Promise<MasterCourseItem[]> {
     const filtered = filterMasterCourses(allCourses);
 
     if (filtered.length > 0) {
-      return filtered.map((c) => ({
-        serialNo: c.serialNo,
-        classNo: c.classNo,
-        title: c.title,
-        credit: c.credit,
-        teachers: c.teachers || [],
-        classTimes: c.classTimes || [],
-        courseType: c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE",
-        passwordCard: c.passwordCard ?? undefined,
-        limitCnt: c.limitCnt,
-        admitCnt: c.admitCnt,
-        room: IM_CLASSROOM_MAP[c.classNo] || "I1-404",
-      }));
+      return filtered.map(mapRawCourse);
     }
 
     return fallbackMasterCourses as MasterCourseItem[];
   } catch {
     return fallbackMasterCourses as MasterCourseItem[];
   }
-}
+};
 
 const addCourseTimeToMap = (
   result: Record<string, MasterCourseItem[]>,
@@ -140,14 +142,15 @@ const addCourseTimeToMap = (
   const parts = ct.split("-");
   if (parts.length !== 2) return;
   const dayNum = parseInt(parts[0], 10);
-  const periodId = parts[1];
-  if (dayNum < 1 || dayNum > 5) return;
+  const dayIdx = dayNum - 1;
+  if (dayIdx < 0 || dayIdx > 4) return;
 
-  const key = `${periodId}-${dayNum - 1}`;
+  const key = `${parts[1]}-${dayIdx}`;
   if (!result[key]) {
     result[key] = [];
   }
-  if (!result[key].some((item) => item.classNo === c.classNo)) {
+  const exists = result[key].some((item) => item.classNo === c.classNo);
+  if (!exists) {
     result[key].push(c);
   }
 };
@@ -156,9 +159,9 @@ const addCourseTimeToMap = (
  * Convert master courses into timetable grid map: Key is `${periodId}-${dayIndex}` (e.g. "2-4")
  * Supporting multiple courses per time slot!
  */
-export function buildTimetableMapFromMasterCourses(
+export const buildTimetableMapFromMasterCourses = (
   courses: MasterCourseItem[],
-): Record<string, MasterCourseItem[]> {
+): Record<string, MasterCourseItem[]> => {
   const result: Record<string, MasterCourseItem[]> = {};
   for (const c of courses) {
     for (const ct of c.classTimes) {
@@ -166,4 +169,4 @@ export function buildTimetableMapFromMasterCourses(
     }
   }
   return result;
-}
+};

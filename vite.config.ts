@@ -7,11 +7,15 @@ import fs from "fs";
 import path from "path";
 
 const extractSessionId = (req: IncomingMessage): string => {
-  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
-  const queryId = url.searchParams.get("jsessionid") ?? "";
-  const cookieHeader = req.headers.cookie ?? "";
-  const jsessionidMatch = cookieHeader.match(/JSESSIONID=([^;]+)/);
-  return queryId || (jsessionidMatch ? jsessionidMatch[1].trim() : "");
+  const host = req.headers.host || "localhost";
+  const rawUrl = req.url || "/";
+  const url = new URL(rawUrl, `http://${host}`);
+  const queryId = url.searchParams.get("jsessionid");
+  if (queryId) return queryId;
+  const cookie = req.headers.cookie;
+  if (!cookie) return "";
+  const match = cookie.match(/JSESSIONID=([^;]+)/);
+  return match ? match[1].trim() : "";
 };
 
 const handleValidationResponse = (

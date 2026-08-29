@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { IonPage, IonContent, IonSpinner, IonText } from "@ionic/react";
 import { NCU_OAUTH, saveToken, decodeState } from "../services/ncu-oauth";
@@ -97,17 +97,8 @@ const NcuAuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
   const processedRef = useRef(false);
 
-  useEffect(() => {
-    if (processedRef.current) return;
-    processedRef.current = true;
-
-    const { code, codeVerifier, error: parseError } = parseCallbackCredentials();
-    if (parseError || !code || !codeVerifier) {
-      setError(parseError ?? "認證資訊錯誤");
-      return;
-    }
-
-    const runExchange = async () => {
+  const runAuthExchange = useCallback(
+    async (code: string, codeVerifier: string) => {
       try {
         const result = await exchangeAuthCode(code, codeVerifier);
         saveToken(result.accessToken, result.expiresIn);
@@ -115,10 +106,23 @@ const NcuAuthCallback = () => {
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       }
-    };
-    void runExchange();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    },
+    [history],
+  );
+
+  useEffect(() => {
+    if (processedRef.current) return;
+    processedRef.current = true;
+
+    const creds = parseCallbackCredentials();
+    if (creds.error) {
+      setError(creds.error);
+      return;
+    }
+    if (creds.code && creds.codeVerifier) {
+      runAuthExchange(creds.code, creds.codeVerifier).catch(() => {});
+    }
+  }, [runAuthExchange]);
 
   return (
     <IonPage>
