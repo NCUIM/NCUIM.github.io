@@ -107,6 +107,11 @@ export const decodeState = (state: string): string | null => {
 const STORAGE_KEY_AUTH = "app_auth_data";
 const STORAGE_KEY_EXPIRY = "app_auth_ttl";
 
+export const clearToken = (): void => {
+  localStorage.removeItem(STORAGE_KEY_AUTH);
+  localStorage.removeItem(STORAGE_KEY_EXPIRY);
+};
+
 export const saveToken = (accessToken: string, expiresIn: number): void => {
   localStorage.setItem(STORAGE_KEY_AUTH, accessToken);
   localStorage.setItem(STORAGE_KEY_EXPIRY, String(Date.now() + expiresIn * 1000));
@@ -119,11 +124,6 @@ export const getAccessToken = (): string | null => {
     return null;
   }
   return localStorage.getItem(STORAGE_KEY_AUTH);
-};
-
-export const clearToken = (): void => {
-  localStorage.removeItem(STORAGE_KEY_AUTH);
-  localStorage.removeItem(STORAGE_KEY_EXPIRY);
 };
 
 export const isLoggedIn = (): boolean => getAccessToken() !== null;
