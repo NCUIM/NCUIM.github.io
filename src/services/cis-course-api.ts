@@ -1,23 +1,5 @@
-/**
- * NCU CIS Course API
- *
- * Fetches the student's selected courses from cis.ncu.edu.tw.
- *
- * CIS Architecture (after login):
- *   sheets.xml → lists "sheets" (panels), each with a ref= pointing to
- *                 an XML data file containing <Course> elements.
- *   Course XML → <Course Title="..." SerialNo="..." Status="ready|register|..." />
- *
- * Flow:
- *   1. Login → JSESSIONID
- *   2. GET /Course/main/support/sheets.xml → get sheet definitions
- *   3. For each sheet with ref=, GET {ref}?id={sheetId} → parse Course elements
- *   4. Filter Status === "ready" for selected courses
- */
-
-import { cisFetch, isCisLoggedIn } from "./cis-login";
-
-// ── Types ─────────────────────────────────────────────────────
+/** CIS course and course-taking-status readers. */
+import { cisFetch, isCisLoggedIn, cisLogout } from "./cis-login";
 
 export interface CisCourse {
   serialNo: string;
@@ -32,154 +14,151 @@ export interface CisCourse {
   admitCnt: number;
   limitCnt: number;
   waitCnt: number;
+  semester?: string;
 }
 
-// ── XML Parsing Helpers (browser-native DOMParser) ────────────
-
-function parseXml(text: string): Document {
-  return new DOMParser().parseFromString(text, "text/xml");
+function isExpired(text: string): boolean {
+  return text.includes("window.location") || text.includes("閒置時間過長");
 }
 
-// ── API ───────────────────────────────────────────────────────
-
-/**
- * Fetch sheets.xml to discover which XML data files contain course lists.
- */
-async function fetchSheets(): Promise<
-  { id: string; title: string; ref: string; ulClass: string }[]
-> {
-  const res = await cisFetch("/Course/main/support/sheets.xml");
-  if (!res.ok) throw new Error(`sheets.xml fetch failed: ${res.status}`);
-
+async function readCisText(path: string, init?: RequestInit): Promise<string> {
+  const res = await cisFetch(path, init);
   const text = await res.text();
-  // CIS JS redirect page means session expired
-  if (text.includes("window.location")) {
-    throw new Error("Session 已過期，請重新連結課務系統");
+  if (!res.ok || isExpired(text)) {
+    cisLogout();
+    throw new Error("CIS 登入已過期，請重新連結課務系統");
   }
-  const xml = parseXml(text);
-  const sheets: { id: string; title: string; ref: string; ulClass: string }[] =
-    [];
-
-  xml.querySelectorAll("Sheets > Sheet").forEach((el) => {
-    sheets.push({
-      id: el.getAttribute("id") ?? "",
-      title: el.getAttribute("Title") ?? "",
-      ref: el.getAttribute("ref") ?? "",
-      ulClass: el.getAttribute("class") ?? "",
-    });
-  });
-
-  return sheets;
+  return text;
 }
 
-/**
- * Fetch a course XML data file and parse <Course> elements.
- */
-async function fetchCourseXml(
-  dataSource: string,
-  sheetId: string,
-): Promise<CisCourse[]> {
-  const res = await cisFetch(`${dataSource}?id=${sheetId}`);
-  if (!res.ok) return [];
+function toText(element: Element): string {
+  return (element.textContent ?? "").replace(/\s+/g, " ").trim();
+}
 
-  const text = await res.text();
-  if (text.includes("window.location")) return [];
-  const xml = parseXml(text);
-  const courses: CisCourse[] = [];
-
-  xml.querySelectorAll("Courses > Course").forEach((el) => {
+function parseCourseXml(text: string): CisCourse[] {
+  const doc = new DOMParser().parseFromString(text, "text/xml");
+  return Array.from(doc.querySelectorAll("Courses > Course")).flatMap((el) => {
     const serialNo = el.getAttribute("SerialNo") ?? "";
-    if (!serialNo) return;
-
-    courses.push({
+    if (!serialNo) return [];
+    return [{
       serialNo,
       classNo: el.getAttribute("ClassNo") ?? "",
       name: el.getAttribute("Title") ?? "",
       teacher: el.getAttribute("Teacher") ?? "",
       room: "",
-      credit: parseInt(el.getAttribute("credit") ?? "0", 10),
-      classTimes: (el.getAttribute("ClassTime") ?? "").split(","),
+      credit: Number(el.getAttribute("credit") ?? 0),
+      classTimes: (el.getAttribute("ClassTime") ?? "").split(",").filter(Boolean),
       classTimesAlt: el.getAttribute("ClassTimeAlt") ?? "",
-      status: el.getAttribute("Status") ?? "default",
-      admitCnt: parseInt(el.getAttribute("admitCnt") ?? "0", 10),
-      limitCnt: parseInt(el.getAttribute("limitCnt") ?? "0", 10),
-      waitCnt: parseInt(el.getAttribute("waitCnt") ?? "0", 10),
-    });
+      status: el.getAttribute("Status") ?? "",
+      admitCnt: Number(el.getAttribute("admitCnt") ?? 0),
+      limitCnt: Number(el.getAttribute("limitCnt") ?? 0),
+      waitCnt: Number(el.getAttribute("waitCnt") ?? 0),
+    }];
   });
+}
+
+function parseSemesters(html: string): string[] {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const options = Array.from(doc.querySelectorAll<HTMLOptionElement>('select[name="semester"] option'));
+  const current = options.find((option) => option.selected)?.value;
+  const studentId = doc.body.textContent?.match(/Student ID Number:\s*(\d{3})/)?.[1];
+  const startYear = studentId ? Number(studentId) : undefined;
+
+  return options
+    .map((option) => option.value)
+    .filter((semester) => /^\d{4}$/.test(semester))
+    .filter((semester) => !current || Number(semester) <= Number(current))
+    .filter((semester) => !startYear || Number(semester.slice(0, 3)) >= startYear);
+}
+
+/** Parse one semester's official CIS course-taking-status page. */
+export function parseCisCourseStatusPage(html: string, semester: string): CisCourse[] {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const seen = new Set<string>();
+
+  return Array.from(doc.querySelectorAll("tr")).flatMap((row) => {
+    const cells = Array.from(row.querySelectorAll("td, th")).map(toText);
+    if (cells.length < 7 || !/^\d+$/.test(cells[1] ?? "") || !/^[A-Z]{2,}\d+/.test(cells[2] ?? "")) {
+      return [];
+    }
+
+    const serialNo = cells[1];
+    const classNo = cells[2];
+    const key = `${serialNo}-${classNo}-${semester}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+
+    return [{
+      serialNo,
+      classNo,
+      name: (cells[4] ?? "").replace(/\s+[A-Za-z][A-Za-z\d .,&'()/-]*$/, "").trim(),
+      teacher: cells[5] ?? "",
+      room: "",
+      credit: Number(cells[6] ?? 0),
+      classTimes: [],
+      classTimesAlt: "",
+      status: cells[cells.length - 1] ?? "",
+      admitCnt: 0,
+      limitCnt: 0,
+      waitCnt: 0,
+      semester,
+    }];
+  });
+}
+
+async function fetchRoomMap(): Promise<Map<string, string>> {
+  const rooms = new Map<string, string>();
+  try {
+    const doc = new DOMParser().parseFromString(
+      await readCisText("/Course/main/personal/A4Crstable"),
+      "text/html",
+    );
+    doc.querySelectorAll("td").forEach((cell) => {
+      const match = toText(cell).match(/^(.+?)\s+(\S+?)\s*\(([^)]+)\)$/);
+      if (match) rooms.set(match[2], match[3]);
+    });
+  } catch {
+    // A room lookup must not hide an otherwise valid current timetable.
+  }
+  return rooms;
+}
+
+/** Fetch only the student's current CIS timetable for the timetable page. */
+export async function fetchCisSelectedCourses(): Promise<CisCourse[]> {
+  if (!isCisLoggedIn()) throw new Error("尚未連結課務系統，請輸入 JSESSIONID 登入");
+
+  const [xml, rooms] = await Promise.all([
+    readCisText("/Course/main/support/course.xml?id=my_class"),
+    fetchRoomMap(),
+  ]);
+  return parseCourseXml(xml)
+    .filter((course) => course.status === "ready" || course.status === "register")
+    .map((course) => ({ ...course, room: rooms.get(course.teacher) ?? "" }));
+}
+
+/** Fetch every semester since the student's admission from CIS course-taking status. */
+export async function fetchCisCourseHistory(): Promise<CisCourse[]> {
+  if (!isCisLoggedIn()) throw new Error("尚未連結課務系統，請輸入 JSESSIONID 登入");
+
+  const index = await readCisText("/Course/main/personal/perCrsstatus");
+  const semesters = parseSemesters(index);
+  const courses: CisCourse[] = [];
+
+  // CIS is an older session-based system: concurrent POST requests can make the
+  // proxy connection fail before CIS returns a response. Keep this sequential.
+  for (const semester of semesters) {
+    try {
+      const html = await readCisText("/Course/main/personal/perCrsstatus", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body: new URLSearchParams({ semester }).toString(),
+      });
+      courses.push(...parseCisCourseStatusPage(html, semester));
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "未知錯誤";
+      throw new Error(`讀取 ${semester} 學期修課結果失敗：${reason}`);
+    }
+  }
 
   return courses;
-}
-
-/**
- * Fetch the A4Crstable page and extract room info per course.
- * The timetable cells contain text like "課程名稱 教師 (教室)".
- * Returns a map from teacher name → room.
- */
-async function fetchRoomMap(): Promise<Map<string, string>> {
-  const roomMap = new Map<string, string>();
-  try {
-    const res = await cisFetch("/Course/main/personal/A4Crstable");
-    if (!res.ok) return roomMap;
-    const html = await res.text();
-    if (html.includes("window.location")) return roomMap;
-
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const tables = doc.querySelectorAll("table");
-    for (const table of tables) {
-      const rows = table.querySelectorAll("tr");
-      if (rows.length < 5) continue;
-      for (const row of rows) {
-        row.querySelectorAll("td").forEach((td) => {
-          // Cell text: "管理溝通 何迪亞 (I1-404)" or empty
-          const text = td.textContent?.trim() ?? "";
-          // Match: name teacher (room)
-          const m = text.match(/^(.+?)\s+(\S+?)\s*\(([^)]+)\)$/);
-          if (m) {
-            const teacher = m[2];
-            const room = m[3];
-            roomMap.set(teacher, room);
-          }
-        });
-      }
-    }
-  } catch {
-    // Ignore room fetch failures
-  }
-  return roomMap;
-}
-
-/**
- * Fetch the student's selected courses (status === "ready") from CIS.
- *
- * This follows the same flow as the CIS frontend:
- *   sheets.xml → each sheet's XML data → filter by status.
- * Also fetches room info from A4Crstable.
- */
-export async function fetchCisSelectedCourses(): Promise<CisCourse[]> {
-  if (!isCisLoggedIn()) {
-    throw new Error("Not logged in to CIS");
-  }
-
-  const [sheets, roomMap] = await Promise.all([fetchSheets(), fetchRoomMap()]);
-  const allCourses: CisCourse[] = [];
-
-  for (const sheet of sheets) {
-    if (!sheet.ref) continue;
-    try {
-      const courses = await fetchCourseXml(sheet.ref, sheet.id);
-      allCourses.push(...courses);
-    } catch {
-      // Skip failed sheets
-    }
-  }
-
-  // Filter, deduplicate, and attach room info
-  const seen = new Set<string>();
-  return allCourses
-    .filter((c) => (c.status === "ready" || c.status === "register") && !seen.has(c.serialNo))
-    .map((c) => { seen.add(c.serialNo); return c; })
-    .map((c) => ({
-      ...c,
-      room: roomMap.get(c.teacher) ?? "",
-    }));
 }

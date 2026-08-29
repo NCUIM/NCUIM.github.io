@@ -89,10 +89,13 @@ export default defineConfig({
           proxy.on("proxyReq", (proxyReq) => {
             // Rewrite X-CIS-Session custom header → Cookie header
             // (browsers strip manual Cookie headers from fetch)
-            const session = proxyReq.getHeader("x-cis-session");
+            const session =
+              proxyReq.getHeader("x-cis-session") ||
+              proxyReq.getHeader("X-CIS-Session");
             if (session) {
               proxyReq.setHeader("Cookie", `JSESSIONID=${session}`);
               proxyReq.removeHeader("x-cis-session");
+              proxyReq.removeHeader("X-CIS-Session");
             }
           });
           proxy.on("proxyRes", (proxyRes) => {
