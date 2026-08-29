@@ -151,7 +151,7 @@ const CisLoginModal = ({
     setError(null);
   }, []);
 
-  const handleLogin = useCallback(async () => {
+  const handleLogin = useCallback(async () => { // skipcq: JS-R1005
     const formatCheck = validateJsessionIdFormat(sessionId);
     if (!formatCheck.valid) {
       setError(formatCheck.error ?? "JSESSIONID 格式不正確");

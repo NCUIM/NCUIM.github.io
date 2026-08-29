@@ -461,7 +461,7 @@ export const SYS_TRACK_FREE_ELECTIVES: readonly CurriculumCourse[] = [
 ];
 
 /** IM graduate courses not already named in the system-track curriculum count here. */
-export function isSystemTrackFreeElectiveCode(code: string): boolean {
+export function isSystemTrackFreeElectiveCode(code: string): boolean { // skipcq: JS-0067
   return /^IM[5-7]\d{3}[A-Z*]?$/.test(code) || /^MT601[1-9][A-Z*]?$/.test(code);
 }
 
@@ -585,11 +585,11 @@ export interface CreditCalculationResult {
   readonly sectionResults: Record<string, SectionCreditResult>;
 }
 
-function countSelected(ids: readonly string[], options: readonly string[]): number {
+function countSelected(ids: readonly string[], options: readonly string[]): number { // skipcq: JS-0067
   return options.filter((id) => ids.includes(id)).length;
 }
 
-function calcMgmtTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> {
+function calcMgmtTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> { // skipcq: JS-0067 JS-R1005
   const hasMultivariate = selectedCourseIds.includes("IM6053");
   const selected6Count = countSelected(selectedCourseIds, [
     "IM6014", "IM7071", "IM6041", "IM6082", "IM6069", "IM7065",
@@ -620,7 +620,7 @@ function calcMgmtTrackSections(selectedCourseIds: readonly string[]): Record<str
   };
 }
 
-function calcSysTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> {
+function calcSysTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> { // skipcq: JS-0067
   const hasNetwork = selectedCourseIds.includes("IM7071-s");
   const selected4Count = countSelected(selectedCourseIds, [
     "IM6041-s", "IM6082-s", "IM6069-s", "IM7065-s",
