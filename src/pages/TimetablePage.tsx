@@ -358,7 +358,7 @@ const getDayFixedTracks = (
 
   const maxTracks = Math.max(1, ...spans.map((s) => s.trackIndex + 1));
   const rows = periods.map((period, idx) => {
-    const activeSpans = spans.filter((s) => s.startIdx === idx);
+    const activeSpans = spans.filter((s) => s.startIdx <= idx && idx <= s.endIdx);
     const tracks: (Course | null)[] = new Array(maxTracks).fill(null);
     for (const s of activeSpans) {
       tracks[s.trackIndex] = s.course;
