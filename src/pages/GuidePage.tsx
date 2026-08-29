@@ -11,12 +11,39 @@ import {
   IonIcon,
   IonBadge,
 } from "@ionic/react";
-import { openOutline } from "ionicons/icons";
 import {
-  RESOURCE_CATEGORIES,
-  type ResourceLink,
-  type ResourceCategory,
-} from "../data/guide-resources";
+  openOutline,
+  schoolOutline,
+  peopleOutline,
+  codeSlashOutline,
+} from "ionicons/icons";
+import guideCategoriesJson from "../data/guide-resources.json";
+
+interface ResourceLink {
+  readonly title: string;
+  readonly description: string;
+  readonly url: string;
+  readonly tag?: string;
+}
+
+interface ResourceCategory {
+  readonly id: string;
+  readonly title: string;
+  readonly subtitle: string;
+  readonly icon: string;
+  readonly items: readonly ResourceLink[];
+}
+
+const CATEGORY_ICON_MAP: Record<string, string> = {
+  academic: schoolOutline,
+  community: peopleOutline,
+  "tech-dev": codeSlashOutline,
+};
+
+const guideCategories: readonly ResourceCategory[] = guideCategoriesJson.map((cat) => ({
+  ...cat,
+  icon: CATEGORY_ICON_MAP[cat.id] || schoolOutline,
+}));
 
 const ResourceItem = ({ item }: Readonly<{ item: ResourceLink }>) => (
   <IonItem
@@ -104,7 +131,7 @@ const GuidePageBody = () => (
   <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
     <div style={{ maxWidth: 860, margin: "0 auto" }}>
       <GuideIntroHeader />
-      {RESOURCE_CATEGORIES.map((cat) => (
+      {guideCategories.map((cat) => (
         <CategorySection key={cat.id} cat={cat} />
       ))}
     </div>
