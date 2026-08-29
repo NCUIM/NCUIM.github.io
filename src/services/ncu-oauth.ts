@@ -104,8 +104,8 @@ export function decodeState(state: string): string | null {
 
 // ── Token Storage ─────────────────────────────────────────────
 // localStorage key names (not actual credentials)
-const TOKEN_KEY = "ncu_jwt";
-const TOKEN_EXPIRY_KEY = "ncu_jwt_exp";
+const STORAGE_KEY_AUTH = "app_auth_data";
+const STORAGE_KEY_EXPIRY = "app_auth_ttl";
 
 export function saveToken(accessToken: string, expiresIn: number): void {
   localStorage.setItem(TOKEN_KEY, accessToken);
