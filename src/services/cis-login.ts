@@ -109,7 +109,7 @@ export async function cisLogin(
       return { ok: true };
     }
     const debug = data.debug ? ` [${JSON.stringify(data.debug)}]` : "";
-    return { ok: false, error: (data.error ?? "Session 無效") + debug };
+    return { ok: false, error: `${data.error ?? "Session 無效"}${debug}` };
   } catch (err) {
     return {
       ok: false,
@@ -133,7 +133,7 @@ export async function cisFetch(
 
   // Prefix with /ncu/cis so the request goes through the Vite proxy
   const proxyPath = path.startsWith("/ncu/cis") ? path : `/ncu/cis${path}`;
-  return fetch(proxyPath, {
+  return await fetch(proxyPath, {
     ...init,
     credentials: "include",
     headers: {

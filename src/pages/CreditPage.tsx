@@ -88,14 +88,11 @@ const matchCisToCurriculum = (
   config: (typeof TRACK_CONFIGS)[TrackType],
   track: TrackType,
 ): string[] => {
-  const ids: string[] = [];
-  for (const section of config.sections) {
-    for (const c of section.courses) {
-      if (cisCourses.some((cis) => matchesCurriculumCourse(cis, c))) {
-        ids.push(c.id);
-      }
-    }
-  }
+  const allCourses = config.sections.flatMap((s) => s.courses);
+  const ids = allCourses
+    .filter((c) => cisCourses.some((cis) => matchesCurriculumCourse(cis, c)))
+    .map((c) => c.id);
+
   if (track === "sys" && hasUnmatchedSysFreeElective(cisCourses, config)) {
     ids.push("IM_FREE");
   }
@@ -160,6 +157,41 @@ const CreditPageHeader = ({
   </IonHeader>
 );
 
+const TrackSelectorContent = ({
+  track,
+  onSelectTrack,
+}: Readonly<{
+  track: TrackType;
+  onSelectTrack: (t: TrackType) => void;
+}>) => (
+  <>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 8,
+      }}
+    >
+      <span style={{ fontWeight: 700, color: "var(--ncu-ink)", fontSize: 15 }}>
+        選擇修讀組別
+      </span>
+      <span style={{ fontSize: 13, color: "var(--ncu-muted)" }}>115 學年度適用</span>
+    </div>
+    <IonSegment
+      value={track}
+      onIonChange={(e) => onSelectTrack(e.detail.value as TrackType)}
+    >
+      <IonSegmentButton value="mgmt">
+        <IonLabel style={{ fontWeight: 700 }}>管理組 (33 學分)</IonLabel>
+      </IonSegmentButton>
+      <IonSegmentButton value="sys">
+        <IonLabel style={{ fontWeight: 700 }}>資訊系統組 (30 學分)</IonLabel>
+      </IonSegmentButton>
+    </IonSegment>
+  </>
+);
+
 const TrackSelectorCard = ({
   track,
   onSelectTrack,
@@ -176,30 +208,7 @@ const TrackSelectorCard = ({
     }}
   >
     <IonCardContent style={{ padding: "12px 16px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 8,
-        }}
-      >
-        <span style={{ fontWeight: 700, color: "var(--ncu-ink)", fontSize: 15 }}>
-          選擇修讀組別
-        </span>
-        <span style={{ fontSize: 13, color: "var(--ncu-muted)" }}>115 學年度適用</span>
-      </div>
-      <IonSegment
-        value={track}
-        onIonChange={(e) => onSelectTrack(e.detail.value as TrackType)}
-      >
-        <IonSegmentButton value="mgmt">
-          <IonLabel style={{ fontWeight: 700 }}>管理組 (33 學分)</IonLabel>
-        </IonSegmentButton>
-        <IonSegmentButton value="sys">
-          <IonLabel style={{ fontWeight: 700 }}>資訊系統組 (30 學分)</IonLabel>
-        </IonSegmentButton>
-      </IonSegment>
+      <TrackSelectorContent track={track} onSelectTrack={onSelectTrack} />
     </IonCardContent>
   </IonCard>
 );
@@ -207,6 +216,68 @@ const TrackSelectorCard = ({
 // ---------------------------------------------------------------------------
 // Sub-components: Overview Credit Dashboard
 // ---------------------------------------------------------------------------
+
+const DashboardHeader = ({
+  trackName,
+  creditStats,
+}: Readonly<{
+  trackName: string;
+  creditStats: CreditCalculationResult;
+}>) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 8,
+    }}
+  >
+    <div>
+      <IonCardSubtitle style={{ color: "var(--ncu-primary)", fontWeight: 700 }}>
+        {trackName} 畢業學分試算
+      </IonCardSubtitle>
+      <IonCardTitle
+        style={{
+          fontSize: "var(--ncu-font-size-2xl)",
+          fontWeight: 800,
+          color: "var(--ncu-ink)",
+        }}
+      >
+        {creditStats.totalEarnedCredits} / {creditStats.targetCredits} 學分
+      </IonCardTitle>
+    </div>
+    <div>
+      {creditStats.isGraduationEligible ? (
+        <IonBadge color="success" style={{ fontSize: 14, padding: "6px 12px", fontWeight: 700 }}>
+          🎉 應修學分已達標
+        </IonBadge>
+      ) : (
+        <IonBadge color="warning" style={{ fontSize: 14, padding: "6px 12px", fontWeight: 700 }}>
+          尚缺 {Math.max(0, creditStats.targetCredits - creditStats.totalEarnedCredits)} 學分
+        </IonBadge>
+      )}
+    </div>
+  </div>
+);
+
+const DashboardBody = ({
+  creditStats,
+}: Readonly<{
+  creditStats: CreditCalculationResult;
+}>) => (
+  <>
+    <IonProgressBar
+      value={creditStats.progressPercentage / 100}
+      color={creditStats.isGraduationEligible ? "success" : "primary"}
+      style={{ height: 10, borderRadius: 5, marginBottom: 12 }}
+    />
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--ncu-muted)" }}>
+      <span>達成進度：{creditStats.progressPercentage}%</span>
+      <span>最低畢業門檻：{creditStats.targetCredits} 學分</span>
+    </div>
+  </>
+);
 
 const CreditDashboardCard = ({
   trackName,
@@ -225,53 +296,10 @@ const CreditDashboardCard = ({
     }}
   >
     <IonCardHeader style={{ paddingBottom: 8 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 8,
-        }}
-      >
-        <div>
-          <IonCardSubtitle style={{ color: "var(--ncu-primary)", fontWeight: 700 }}>
-            {trackName} 畢業學分試算
-          </IonCardSubtitle>
-          <IonCardTitle
-            style={{
-              fontSize: "var(--ncu-font-size-2xl)",
-              fontWeight: 800,
-              color: "var(--ncu-ink)",
-            }}
-          >
-            {creditStats.totalEarnedCredits} / {creditStats.targetCredits} 學分
-          </IonCardTitle>
-        </div>
-        <div>
-          {creditStats.isGraduationEligible ? (
-            <IonBadge color="success" style={{ fontSize: 14, padding: "6px 12px", fontWeight: 700 }}>
-              🎉 應修學分已達標
-            </IonBadge>
-          ) : (
-            <IonBadge color="warning" style={{ fontSize: 14, padding: "6px 12px", fontWeight: 700 }}>
-              尚缺 {Math.max(0, creditStats.targetCredits - creditStats.totalEarnedCredits)} 學分
-            </IonBadge>
-          )}
-        </div>
-      </div>
+      <DashboardHeader trackName={trackName} creditStats={creditStats} />
     </IonCardHeader>
-
     <IonCardContent>
-      <IonProgressBar
-        value={creditStats.progressPercentage / 100}
-        color={creditStats.isGraduationEligible ? "success" : "primary"}
-        style={{ height: 10, borderRadius: 5, marginBottom: 12 }}
-      />
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--ncu-muted)" }}>
-        <span>達成進度：{creditStats.progressPercentage}%</span>
-        <span>最低畢業門檻：{creditStats.targetCredits} 學分</span>
-      </div>
+      <DashboardBody creditStats={creditStats} />
     </IonCardContent>
   </IonCard>
 );
@@ -317,6 +345,43 @@ const CourseItemRow = ({
   </IonItem>
 );
 
+const SectionHeaderContent = ({
+  section,
+  result,
+}: Readonly<{
+  section: (typeof TRACK_CONFIGS)[TrackType]["sections"][number];
+  result?: SectionCreditResult;
+}>) => (
+  <>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <IonCardTitle style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: 800 }}>
+          {section.title}
+        </IonCardTitle>
+        {result?.isMet ? (
+          <IonBadge color="success">
+            <IonIcon icon={checkmarkCircle} style={{ verticalAlign: "middle", marginRight: 2 }} />
+            已達標 ({result.earned}/{result.target})
+          </IonBadge>
+        ) : (
+          <IonBadge color="medium">
+            需 {result?.target ?? section.requiredCredits} 學分 · 目前 {result?.earned ?? 0}
+          </IonBadge>
+        )}
+      </div>
+    </div>
+    <IonCardSubtitle style={{ marginTop: 4, color: "var(--ncu-muted)", fontSize: 12 }}>
+      {section.description}
+    </IonCardSubtitle>
+    {result?.hint && (
+      <div style={{ marginTop: 6, fontSize: 12, color: "#d97706", display: "flex", alignItems: "center", gap: 4 }}>
+        <IonIcon icon={alertCircleOutline} />
+        <span>{result.hint}</span>
+      </div>
+    )}
+  </>
+);
+
 const SectionCard = ({
   section,
   result,
@@ -337,32 +402,7 @@ const SectionCard = ({
     }}
   >
     <IonCardHeader style={{ paddingBottom: 6 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <IonCardTitle style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: 800 }}>
-            {section.title}
-          </IonCardTitle>
-          {result?.isMet ? (
-            <IonBadge color="success">
-              <IonIcon icon={checkmarkCircle} style={{ verticalAlign: "middle", marginRight: 2 }} />
-              已達標 ({result.earned}/{result.target})
-            </IonBadge>
-          ) : (
-            <IonBadge color="medium">
-              需 {result?.target ?? section.requiredCredits} 學分 · 目前 {result?.earned ?? 0}
-            </IonBadge>
-          )}
-        </div>
-      </div>
-      <IonCardSubtitle style={{ marginTop: 4, color: "var(--ncu-muted)", fontSize: 12 }}>
-        {section.description}
-      </IonCardSubtitle>
-      {result?.hint && (
-        <div style={{ marginTop: 6, fontSize: 12, color: "#d97706", display: "flex", alignItems: "center", gap: 4 }}>
-          <IonIcon icon={alertCircleOutline} />
-          <span>{result.hint}</span>
-        </div>
-      )}
+      <SectionHeaderContent section={section} result={result} />
     </IonCardHeader>
 
     <IonCardContent style={{ padding: 0 }}>

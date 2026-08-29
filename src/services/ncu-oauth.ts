@@ -51,10 +51,10 @@ function base64urlencode(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let str = "";
   for (const b of bytes) str += String.fromCharCode(b);
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/={1,2}$/, "");
 }
 
-export async function generateCodeVerifier(): Promise<string> {
+export function generateCodeVerifier(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return base64urlencode(array.buffer);
@@ -81,7 +81,7 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
 export function encodeState(verifier: string): string {
   const nonce = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   const payload = `${nonce}:${verifier}`;
-  return btoa(payload).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(payload).replace(/\+/g, "-").replace(/\//g, "_").replace(/={1,2}$/, "");
 }
 
 /**

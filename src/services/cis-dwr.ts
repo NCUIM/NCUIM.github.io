@@ -113,7 +113,7 @@ async function dwrCall(
   // DWR responses look like:
   //   //|骄|0|4|return-value|...|0|骄|
   // The actual return value is between specific markers
-  const returnValueMatch = text.match(/\|4\|([^\|]*)\|/);
+  const returnValueMatch = text.match(/\|4\|([^|]*)\|/);
   if (returnValueMatch) {
     return returnValueMatch[1];
   }

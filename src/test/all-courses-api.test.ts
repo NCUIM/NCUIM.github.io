@@ -90,7 +90,7 @@ describe("all-courses-api service", () => {
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
-      json: async () => mockApiResponse,
+      json: () => Promise.resolve(mockApiResponse),
     } as Response);
 
     const courses = await fetchImMasterCourses();

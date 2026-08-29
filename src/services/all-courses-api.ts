@@ -90,7 +90,7 @@ export async function fetchImMasterCourses(): Promise<MasterCourseItem[]> {
     const filtered = allCourses.filter((c) => {
       const isIm =
         c.departmentIds?.includes("deptI1I4003I0") ||
-        (c.classNo && c.classNo.startsWith("IM"));
+        (c.classNo?.startsWith("IM") ?? false);
       if (!isIm) return false;
 
       // Exclude 碩二必修與論文 (雙重檢驗: 課號前綴 OR 課名關鍵字)

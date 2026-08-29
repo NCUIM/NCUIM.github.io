@@ -179,92 +179,83 @@ const ResourceItem = ({ item }: Readonly<{ item: ResourceLink }>) => (
   </IonItem>
 );
 
-const GuidePage: React.FC = () => {
-  return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>常用資源與新生導航</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+const GuideIntroHeader = () => (
+  <div style={{ padding: "4px 4px 16px" }}>
+    <h1
+      style={{
+        fontSize: 22,
+        fontWeight: 800,
+        color: "var(--ncu-ink)",
+        margin: "0 0 4px",
+      }}
+    >
+      中大生活與實用入口
+    </h1>
+    <p style={{ fontSize: 14, color: "var(--ncu-muted)", margin: 0 }}>
+      收錄資管所新生常用之校園系統、生活服務與開發者軟體資源
+    </p>
+  </div>
+);
 
-      <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
-        <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          {/* Header Introduction */}
-          <div style={{ padding: "4px 4px 16px" }}>
-            <h1
-              style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: "var(--ncu-ink)",
-                margin: "0 0 4px",
-              }}
-            >
-              中大生活與實用入口
-            </h1>
-            <p style={{ fontSize: 14, color: "var(--ncu-muted)", margin: 0 }}>
-              收錄資管所新生常用之校園系統、生活服務與開發者軟體資源
-            </p>
-          </div>
+const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => (
+  <div style={{ marginBottom: 28 }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 6,
+        padding: "0 4px",
+      }}
+    >
+      <IonIcon icon={cat.icon} style={{ fontSize: 20, color: "var(--ncu-primary)" }} />
+      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--ncu-ink)" }}>
+        {cat.title}
+      </h2>
+    </div>
+    <p style={{ margin: "0 0 10px 4px", fontSize: 13, color: "var(--ncu-muted)" }}>
+      {cat.subtitle}
+    </p>
+    <IonList
+      inset
+      style={{
+        margin: 0,
+        borderRadius: "var(--ncu-radius-md)",
+        border: "1.5px solid var(--ncu-border)",
+        overflow: "hidden",
+      }}
+    >
+      {cat.items.map((item) => (
+        <ResourceItem key={item.url} item={item} />
+      ))}
+    </IonList>
+  </div>
+);
 
-          {/* Categorized Resource Sections */}
-          {RESOURCE_CATEGORIES.map((cat) => (
-            <div key={cat.id} style={{ marginBottom: 28 }}>
-              {/* Category Header */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 6,
-                  padding: "0 4px",
-                }}
-              >
-                <IonIcon
-                  icon={cat.icon}
-                  style={{ fontSize: 20, color: "var(--ncu-primary)" }}
-                />
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: 17,
-                    fontWeight: 800,
-                    color: "var(--ncu-ink)",
-                  }}
-                >
-                  {cat.title}
-                </h2>
-              </div>
-              <p
-                style={{
-                  margin: "0 0 10px 4px",
-                  fontSize: 13,
-                  color: "var(--ncu-muted)",
-                }}
-              >
-                {cat.subtitle}
-              </p>
+const GuidePageBody = () => (
+  <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
+    <div style={{ maxWidth: 860, margin: "0 auto" }}>
+      <GuideIntroHeader />
+      {RESOURCE_CATEGORIES.map((cat) => (
+        <CategorySection key={cat.id} cat={cat} />
+      ))}
+    </div>
+  </IonContent>
+);
 
-              {/* Resource List */}
-              <IonList
-                inset
-                style={{
-                  margin: 0,
-                  borderRadius: "var(--ncu-radius-md)",
-                  border: "1.5px solid var(--ncu-border)",
-                  overflow: "hidden",
-                }}
-              >
-                {cat.items.map((item) => (
-                  <ResourceItem key={item.url} item={item} />
-                ))}
-              </IonList>
-            </div>
-          ))}
-        </div>
-      </IonContent>
-    </IonPage>
-  );
-};
+const GuidePageHeader = () => (
+  <IonHeader>
+    <IonToolbar>
+      <IonTitle>常用資源與新生導航</IonTitle>
+    </IonToolbar>
+  </IonHeader>
+);
+
+const GuidePage: React.FC = () => (
+  <IonPage>
+    <GuidePageHeader />
+    <GuidePageBody />
+  </IonPage>
+);
 
 export default GuidePage;

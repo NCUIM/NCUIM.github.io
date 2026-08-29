@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   IonBackButton,
+  IonBadge,
   IonButton,
   IonButtons,
   IonContent,
@@ -14,6 +15,7 @@ import {
   IonSegment,
   IonSegmentButton,
   IonSpinner,
+  IonText,
   IonTitle,
   IonToolbar,
 } from "@ionic/react";
@@ -82,8 +84,8 @@ const DESKTOP_EMPTY_ROW_HEIGHT = 38;
 // ── Helpers ───────────────────────────────────────────────────
 
 function getDefaultDayIndex(): number {
-  const d = new Date().getDay();
-  if (d >= 1 && d <= 5) return d - 1;
+  const dayNum = new Date().getDay();
+  if (dayNum >= 1 && dayNum <= 5) return dayNum - 1;
   return 0;
 }
 
@@ -113,16 +115,16 @@ function getTimeIndicators(
 }
 
 function matchCisCourse(master: MasterCourseItem, myCourses: readonly CisCourse[]): { isMine: boolean; room?: string } {
-  const matched = myCourses.find((c) => {
-    if (c.serialNo && String(master.serialNo) === String(c.serialNo)) {
+  const matched = myCourses.find((courseItem) => {
+    if (courseItem.serialNo && String(master.serialNo) === String(courseItem.serialNo)) {
       return true;
     }
-    if (c.classNo && master.classNo && c.classNo === master.classNo) {
+    if (courseItem.classNo && master.classNo && courseItem.classNo === master.classNo) {
       return true;
     }
-    const sameTitle = c.name.trim() === master.title.trim();
+    const sameTitle = courseItem.name.trim() === master.title.trim();
     const sameTeacher = master.teachers.some(
-      (t) => t.trim() && (c.teacher.includes(t.trim()) || t.trim().includes(c.teacher.trim())),
+      (t) => t.trim() && (courseItem.teacher.includes(t.trim()) || t.trim().includes(courseItem.teacher.trim())),
     );
     return sameTitle && sameTeacher;
   });
@@ -157,6 +159,7 @@ function areSameCourse(a: Course, b: Course): boolean {
   );
 }
 
+// skipcq: JS-R1005
 function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<string, Course[]> {
   const DAY_MAP: Record<string, number> = {
     "一": 0, "二": 1, "三": 2, "四": 3, "五": 4,
@@ -170,17 +173,17 @@ function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<str
       let periodChars = "";
 
       if (ct.includes("-")) {
-        const [d, p] = ct.split("-");
-        const dNum = parseInt(d, 10);
+        const [dayPart, periodPart] = ct.split("-");
+        const dNum = parseInt(dayPart, 10);
         if (dNum >= 1 && dNum <= 5) {
           dayIdx = dNum - 1;
-          periodChars = p;
+          periodChars = periodPart;
         }
       } else if (ct.length >= 2 && ct[0] >= "1" && ct[0] <= "5") {
         dayIdx = parseInt(ct[0], 10) - 1;
         periodChars = ct.slice(1);
       } else {
-        const dayMatch = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/);
+        const dayMatch = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/u);
         if (dayMatch) {
           dayIdx = DAY_MAP[dayMatch[1]] ?? -1;
           periodChars = ct.slice(dayMatch[0].length);
@@ -189,9 +192,9 @@ function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<str
 
       if (dayIdx < 0) continue;
       for (const ch of periodChars) {
-        const period = periods.find((p) => p.id === ch);
-        if (!period) continue;
-        const key = `${period.id}-${dayIdx}`;
+        const periodItem = periods.find((p) => p.id === ch);
+        if (!periodItem) continue;
+        const key = `${periodItem.id}-${dayIdx}`;
         if (!result[key]) {
           result[key] = [];
         }
@@ -216,6 +219,7 @@ function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<str
 /**
  * Mobile view fixed track layout
  */
+// skipcq: JS-R1005
 function getDayFixedTracks(
   timetableData: Record<string, Course[]>,
   dayIndex: number,
@@ -227,18 +231,18 @@ function getDayFixedTracks(
   const processedCourses = new Set<string>();
 
   for (let i = 0; i < periods.length; i++) {
-    const p = periods[i];
-    const courses = timetableData[`${p.id}-${dayIndex}`] || [];
+    const periodItem = periods[i];
+    const courses = timetableData[`${periodItem.id}-${dayIndex}`] || [];
 
-    for (const c of courses) {
-      const courseIdKey = `${c.id || c.name}-${c.teacher}`;
+    for (const courseItem of courses) {
+      const courseIdKey = `${courseItem.id || courseItem.name}-${courseItem.teacher}`;
       if (processedCourses.has(courseIdKey)) continue;
 
       let end = i;
       while (end + 1 < periods.length) {
         const nextP = periods[end + 1];
         const nextCourses = timetableData[`${nextP.id}-${dayIndex}`] || [];
-        const isMatch = nextCourses.some((nc) => areSameCourse(nc, c));
+        const isMatch = nextCourses.some((nc) => areSameCourse(nc, courseItem));
         if (isMatch) {
           end++;
         } else {
@@ -248,7 +252,7 @@ function getDayFixedTracks(
 
       processedCourses.add(courseIdKey);
       spans.push({
-        course: c,
+        course: courseItem,
         startIdx: i,
         endIdx: end,
         trackIndex: 0,
@@ -299,6 +303,7 @@ function getDayFixedTracks(
  * Automatically calculates dynamic column divisions so morning 2-course cluster takes 50% each,
  * rather than being squished by afternoon 4-course clusters.
  */
+// skipcq: JS-R1005
 function getDesktopCourseSpans(
   timetableData: Record<string, Course[]>,
   dayIndex: number,
@@ -307,18 +312,18 @@ function getDesktopCourseSpans(
   const processed = new Set<string>();
 
   for (let i = 0; i < periods.length; i++) {
-    const p = periods[i];
-    const courses = timetableData[`${p.id}-${dayIndex}`] || [];
+    const periodItem = periods[i];
+    const courses = timetableData[`${periodItem.id}-${dayIndex}`] || [];
 
-    for (const c of courses) {
-      const key = `${c.id || c.name}-${c.teacher}`;
+    for (const courseItem of courses) {
+      const key = `${courseItem.id || courseItem.name}-${courseItem.teacher}`;
       if (processed.has(key)) continue;
 
       let end = i;
       while (end + 1 < periods.length) {
         const nextP = periods[end + 1];
         const nextCourses = timetableData[`${nextP.id}-${dayIndex}`] || [];
-        if (nextCourses.some((nc) => areSameCourse(nc, c))) {
+        if (nextCourses.some((nc) => areSameCourse(nc, courseItem))) {
           end++;
         } else {
           break;
@@ -326,7 +331,7 @@ function getDesktopCourseSpans(
       }
 
       processed.add(key);
-      spans.push({ course: c, startIdx: i, endIdx: end });
+      spans.push({ course: courseItem, startIdx: i, endIdx: end });
     }
   }
 
@@ -430,7 +435,9 @@ const TimetableMobileView = ({
         block: "start",
       });
     }, 150);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [isToday, scrollToIndex, selectedDay]);
 
   return (
@@ -452,9 +459,6 @@ const TimetableMobileView = ({
           const isCurrent = isToday && idx === currentPeriodIndex;
           const isNext =
             isToday && idx === nextPeriodIndex && idx !== currentPeriodIndex;
-          const hasMyCourse = tracks.some((c) => c?.isMyCourse);
-          const hasAnyCourse = tracks.some((c) => c !== null);
-          const isSlim = !hasAnyCourse;
 
           return (
             <IonItem
@@ -462,50 +466,88 @@ const TimetableMobileView = ({
               ref={(el) => {
                 periodRefs.current[idx] = el;
               }}
-              style={
-                {
-                  ...(hasMyCourse
-                    ? { "--background": "var(--ncu-star-light)" }
-                    : {}),
-                  ...(isCurrent
-                    ? {
-                        borderLeft: "3px solid var(--ncu-primary)",
-                        "--min-height": "48px",
-                      }
-                    : isNext
-                      ? {
-                          borderLeft: "4px solid #0d7a3e",
-                          "--min-height": "48px",
-                        }
-                      : isSlim
-                        ? {
-                            "--min-height": "36px",
-                            opacity: 0.7,
-                          }
-                        : {
-                            "--min-height": "56px",
-                          }),
-                } as React.CSSProperties
-              }
+              style={{
+                "--background": isCurrent
+                  ? "var(--ncu-primary-light)"
+                  : "var(--ncu-surface)",
+                "--border-color": isCurrent
+                  ? "var(--ncu-primary)"
+                  : "var(--ncu-border)",
+                "--border-width": isCurrent ? "2px" : "1px",
+              }}
             >
-              <IonLabel
+              <div
                 style={{
-                  margin: isSlim ? "4px 0" : "10px 0",
-                  flex: 1,
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "stretch",
+                  gap: "12px",
+                  padding: "10px 0",
                 }}
               >
-                {!hasAnyCourse ? (
-                  <h2
+                {/* Period identifier block */}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: "48px",
+                    textAlign: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <IonText
                     style={{
-                      color: "var(--ncu-muted)",
-                      fontWeight: 400,
-                      fontSize: 13,
-                      margin: 0,
+                      fontSize: "18px",
+                      fontWeight: 800,
+                      color: isCurrent
+                        ? "var(--ncu-primary)"
+                        : "var(--ncu-ink)",
                     }}
                   >
-                    {period.id === "N" ? "午休時間" : "空堂"}
-                  </h2>
-                ) : (
+                    {period.id}
+                  </IonText>
+                  <IonText
+                    style={{
+                      fontSize: "11px",
+                      color: isCurrent
+                        ? "var(--ncu-primary)"
+                        : "var(--ncu-muted)",
+                      fontWeight: isCurrent ? 700 : 400,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {period.time}
+                  </IonText>
+                  {isCurrent && (
+                    <IonBadge
+                      color="primary"
+                      style={{
+                        fontSize: "9px",
+                        marginTop: "4px",
+                        padding: "1px 4px",
+                      }}
+                    >
+                      NOW
+                    </IonBadge>
+                  )}
+                  {isNext && (
+                    <IonBadge
+                      color="warning"
+                      style={{
+                        fontSize: "9px",
+                        marginTop: "4px",
+                        padding: "1px 4px",
+                      }}
+                    >
+                      NEXT
+                    </IonBadge>
+                  )}
+                </div>
+
+                {/* Course tracks side-by-side inside this period */}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
                       display: "grid",
@@ -517,7 +559,7 @@ const TimetableMobileView = ({
                   >
                     {tracks.map((course, trackIdx) => {
                       if (!course) {
-                        return <div key={`empty-track-${trackIdx}`} />;
+                        return <div key={`empty-${period.id}-${trackIdx}`} />;
                       }
 
                       return (
@@ -577,53 +619,8 @@ const TimetableMobileView = ({
                       );
                     })}
                   </div>
-                )}
-              </IonLabel>
-              <IonNote
-                slot="end"
-                style={{
-                  alignSelf: "center",
-                  margin: isSlim ? "auto 0 0 8px" : "auto 0 0 10px",
-                  textAlign: "center",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minWidth: 64,
-                  flexShrink: 0,
-                  fontSize: isSlim ? 11 : 12,
-                }}
-              >
-                {isCurrent && (
-                  <span
-                    style={{
-                      color: "var(--ncu-primary)",
-                      fontWeight: 700,
-                      fontSize: 11,
-                      display: "block",
-                      marginBottom: 1,
-                    }}
-                  >
-                    ● NOW
-                  </span>
-                )}
-                {isNext && (
-                  <span
-                    style={{
-                      color: "#0d7a3e",
-                      fontWeight: 700,
-                      fontSize: 11,
-                      display: "block",
-                      marginBottom: 1,
-                    }}
-                  >
-                    &#9654; NEXT
-                  </span>
-                )}
-                {period.id === "N" ? "午休" : `第 ${period.id} 節`}
-                <br />
-                {period.time}
-              </IonNote>
+                </div>
+              </div>
             </IonItem>
           );
         })}
@@ -742,14 +739,14 @@ const TimetableDesktopView = ({
           {/* Column 1: Time Ruler */}
           <div style={{ display: "flex", flexDirection: "column" }}>
             {periods.map((period, idx) => {
-              const h = periodHeights[idx];
-              const isSlim = h === DESKTOP_EMPTY_ROW_HEIGHT;
+              const rowHeight = periodHeights[idx];
+              const isSlim = rowHeight === DESKTOP_EMPTY_ROW_HEIGHT;
 
               return (
                 <div
                   key={period.id}
                   style={{
-                    height: h,
+                    height: rowHeight,
                     borderBottom:
                       idx === periods.length - 1
                         ? "none"
@@ -1135,14 +1132,14 @@ const TimetablePage = () => {
     [timetableData, dayIndex, currentTimestamp],
   );
   const isToday = useMemo(() => {
-    const d = new Date().getDay();
-    return d >= 1 && d <= 5 && Number(selectedDay) === d - 1;
+    const dayNum = new Date().getDay();
+    return dayNum >= 1 && dayNum <= 5 && Number(selectedDay) === dayNum - 1;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDay, currentTimestamp]);
 
   const todayDayIndex = useMemo(() => {
-    const d = new Date().getDay();
-    return d >= 1 && d <= 5 ? d - 1 : -1;
+    const dayNum = new Date().getDay();
+    return dayNum >= 1 && dayNum <= 5 ? dayNum - 1 : -1;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTimestamp]);
 

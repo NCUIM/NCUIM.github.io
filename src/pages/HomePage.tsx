@@ -321,6 +321,7 @@ const HomePage = () => {
 
   // DevTools console easter egg
   useEffect(() => {
+    // skipcq: JS-0002
     console.log(
       "%c🚩 NCUIM 2026 CTF Challenge%c\nLooking for flags? Join the secret battlefield:\n👉 https://im2026ctf.duckdns.org/",
       "color: #38bdf8; font-size: 16px; font-weight: bold; background: #0f172a; padding: 6px 12px; border-radius: 6px;",

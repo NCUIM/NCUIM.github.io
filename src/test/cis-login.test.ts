@@ -84,7 +84,7 @@ describe("cis-login service", () => {
     const mockFetch = (response: { ok: boolean; body: Record<string, unknown> }) =>
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
         ok: response.ok,
-        json: async () => response.body,
+        json: () => Promise.resolve(response.body),
       } as Response);
 
     it("fails early without network request if format is invalid", async () => {
