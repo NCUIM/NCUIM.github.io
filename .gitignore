@@ -33,6 +33,7 @@ Thumbs.db
 
 # ZAP scan reports
 zap-reports/
+zap.yaml
 
 # Freebuff local tool state
 .freebuff/
