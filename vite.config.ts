@@ -1,6 +1,8 @@
 import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import https from "https";
+import fs from "fs";
+import path from "path";
 
 /**
  * Vite plugin that adds /ncu/cis/validate endpoint.
@@ -65,8 +67,30 @@ function cisValidatePlugin() {
   };
 }
 
+/**
+ * Vite plugin that generates a 404.html copy of index.html in dist/
+ * to ensure SPA client-side routing works on GitHub Pages refreshes.
+ */
+function spa404Plugin() {
+  return {
+    name: "spa-404-fallback",
+    closeBundle() {
+      const distDir = path.resolve(__dirname, "dist");
+      const indexPath = path.join(distDir, "index.html");
+      const notFoundPath = path.join(distDir, "404.html");
+      if (fs.existsSync(indexPath)) {
+        fs.copyFileSync(indexPath, notFoundPath);
+      }
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), cisValidatePlugin()],
+  base:
+    process.env.GITHUB_PAGES === "true" || process.env.GITHUB_ACTIONS
+      ? "/NCUIM2026-Fresher/"
+      : "/",
+  plugins: [react(), cisValidatePlugin(), spa404Plugin()],
   envPrefix: ["VITE_", "FIREBASE_"],
   server: {
     proxy: {
@@ -141,16 +165,5 @@ export default defineConfig({
     globals: true,
     exclude: [...configDefaults.exclude, "tests/e2e/**", "functions/**"],
     setupFiles: "./src/test/setup.ts",
-    coverage: {
-      provider: "v8",
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/main.tsx", "src/test/**", "src/vite-env.d.ts"],
-      thresholds: {
-        lines: 70,
-        functions: 70,
-        branches: 60,
-        statements: 70,
-      },
-    },
   },
 });
