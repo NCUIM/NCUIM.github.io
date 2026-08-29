@@ -109,7 +109,7 @@ const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
       title="NCUIM"
     >
       <img
-        src="/favicon.svg"
+        src={`${import.meta.env.BASE_URL}favicon.svg`}
         alt="NCUIM Logo"
         style={{ width: "100%", height: "100%", objectFit: "contain" }}
       />
