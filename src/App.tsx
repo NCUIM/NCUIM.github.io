@@ -7,7 +7,7 @@ import AppTabs from "./AppTabs";
 // AppTabs.tsx handles IonTabs + IonRouterOutlet + IonTabBar as direct JSX children (Ionic requirement).
 const App = () => (
   <IonApp>
-    <IonReactRouter>
+    <IonReactRouter basename={import.meta.env.BASE_URL}>
       <AppTabs />
     </IonReactRouter>
   </IonApp>

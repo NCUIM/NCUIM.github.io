@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2b4c7e"/>
+      <stop offset="100%" stop-color="#0f1b2e"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dce7f5"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="128" height="128" rx="28" fill="url(#bgGrad)"/>
+  
+  <!-- Outer subtle border -->
+  <rect x="2" y="2" width="124" height="124" rx="26" fill="none" stroke="#476f9d" stroke-width="2" stroke-opacity="0.4"/>
+
+  <!-- Top accent indicator dot -->
+  <circle cx="64" cy="24" r="5" fill="#38bdf8"/>
+  <line x1="64" y1="29" x2="64" y2="40" stroke="#38bdf8" stroke-width="2" stroke-dasharray="2 2"/>
+
+  <!-- Brand Typography: NCU IM -->
+  <!-- "NCU" small header -->
+  <text x="64" y="48" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="800" fill="#93c5fd" letter-spacing="3">NCU</text>
+
+  <!-- "IM" Main Monogram -->
+  <text x="64" y="96" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="46" font-weight="900" fill="url(#textGrad)" letter-spacing="-1">IM</text>
+
+  <!-- Bottom Accent Stripe (Tech / Growth) -->
+  <rect x="36" y="106" width="56" height="4" rx="2" fill="url(#accentGrad)"/>
+</svg>

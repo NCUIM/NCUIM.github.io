@@ -1,174 +1,156 @@
+import React from "react";
 import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
   IonContent,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardContent,
   IonList,
   IonItem,
   IonLabel,
   IonIcon,
-  IonCheckbox,
-  IonNote,
+  IonBadge,
 } from "@ionic/react";
-import { openOutline, link } from "ionicons/icons";
-import { useState } from "react";
+import {
+  openOutline,
+  schoolOutline,
+  peopleOutline,
+  codeSlashOutline,
+} from "ionicons/icons";
+import guideCategoriesJson from "../data/guide-resources.json";
 
-interface CheckItem {
+interface ResourceLink {
+  readonly title: string;
+  readonly description: string;
+  readonly url: string;
+  readonly tag?: string;
+}
+
+interface ResourceCategory {
   readonly id: string;
   readonly title: string;
-  readonly done: boolean;
+  readonly subtitle: string;
+  readonly icon: string;
+  readonly items: readonly ResourceLink[];
 }
 
-interface ResourceItem {
-  readonly title: string;
-  readonly url: string;
-}
+const CATEGORY_ICON_MAP: Record<string, string> = {
+  academic: schoolOutline,
+  community: peopleOutline,
+  "tech-dev": codeSlashOutline,
+};
 
-const checklist: readonly CheckItem[] = [
-  { id: "1", title: "完成報到手續", done: false },
-  { id: "2", title: "領取學生證", done: false },
-  { id: "3", title: "選課登記", done: false },
-  { id: "4", title: "學術倫理研習", done: false },
-  { id: "5", title: "認識指導教授", done: false },
-  { id: "6", title: "加入系上社群", done: false },
-];
+const guideCategories: readonly ResourceCategory[] = guideCategoriesJson.map((cat) => ({
+  ...cat,
+  icon: CATEGORY_ICON_MAP[cat.id] || schoolOutline,
+}));
 
-const resources: readonly ResourceItem[] = [
-  { title: "教務處選課系統", url: "#" },
-  { title: "計中帳號申請", url: "#" },
-  { title: "圖書館借閱", url: "#" },
-  { title: "VPN 設定教學", url: "#" },
-  { title: "GitHub Student Pack", url: "#" },
-  { title: "JetBrains 授權", url: "#" },
-];
-
-const links: readonly ResourceItem[] = [
-  { title: "2026 新生知訊網", url: "https://ncufresh.ncu.edu.tw/link" },
-  { title: "NCU Portal", url: "https://portal.ncu.edu.tw/" },
-  { title: "新 ee-class", url: "https://ncueeclass.ncu.edu.tw/" },
-  { title: "iNCU 首頁", url: "https://cis.ncu.edu.tw/iNCU/home" },
-  { title: "iNCU 學校活動", url: "https://cis.ncu.edu.tw/iNCU/messageNotice/activityManagement/activity" },
-  { title: "NCU TALK 臉書版", url: "https://www.facebook.com/groups/NCUgroup/" },
-  { title: "復活福利社", url: "https://www.facebook.com/groups/209055389218793/" },
-  { title: "雲端租屋生活網", url: "https://house.nfu.edu.tw/NCU" },
-];
-
-const ChecklistCard = ({
-  completedIds,
-  onToggle,
-}: Readonly<{
-  completedIds: readonly string[];
-  onToggle: (id: string, checked: boolean) => void;
-}>) => (
-  <IonCard
-    style={{
-      margin: "0 0 var(--ncu-space-4)",
-      border: "2px solid var(--ncu-ink)",
-      boxShadow: "var(--ncu-shadow-hard)",
-    }}
+const ResourceItem = ({ item }: Readonly<{ item: ResourceLink }>) => (
+  <IonItem
+    button
+    detail={false}
+    key={item.url}
+    href={item.url}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{ "--background": "var(--ncu-surface)", cursor: "pointer" }}
   >
-    <IonCardHeader>
-      <IonCardTitle>入學檢核清單</IonCardTitle>
-    </IonCardHeader>
-    <IonCardContent>
-      <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-        {checklist.map((item) => {
-          const done = completedIds.includes(item.id);
-          return (
-            <IonItem key={item.id}>
-              <IonCheckbox
-                slot="start"
-                checked={done}
-                onIonChange={(event) => onToggle(item.id, event.detail.checked)}
-              />
-              <IonLabel style={{ textDecoration: done ? "line-through" : "none" }}>
-                {item.title}
-              </IonLabel>
-            </IonItem>
-          );
-        })}
-      </IonList>
-    </IonCardContent>
-  </IonCard>
+    <IonLabel style={{ margin: "12px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+        <strong style={{ fontSize: 15.5, fontWeight: 700, color: "var(--ncu-ink)" }}>
+          {item.title}
+        </strong>
+        {item.tag && (
+          <IonBadge color="primary" style={{ fontSize: 11, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}>
+            {item.tag}
+          </IonBadge>
+        )}
+      </div>
+      <p style={{ fontSize: 13, color: "var(--ncu-muted)", lineHeight: 1.4, margin: 0 }}>
+        {item.description}
+      </p>
+    </IonLabel>
+    <IonIcon icon={openOutline} slot="end" style={{ fontSize: 18, color: "var(--ncu-muted)", flexShrink: 0, marginLeft: 10 }} />
+  </IonItem>
 );
 
-const ResourcesSection = () => (
-  <>
-    <h3 style={{ fontSize: "var(--ncu-font-size-lg)", fontWeight: "var(--ncu-font-weight-bold)" }}>
-      校園資源直達車
-    </h3>
-    <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-      {resources.map((res) => (
-        <IonItem key={res.title} disabled>
-          <IonLabel>{res.title}</IonLabel>
-          <IonNote slot="end">準備中</IonNote>
-        </IonItem>
-      ))}
-    </IonList>
-  </>
-);
-
-const LinksSection = () => (
-  <>
-    <h3
+const GuideIntroHeader = () => (
+  <div style={{ padding: "4px 4px 16px" }}>
+    <h1
       style={{
-        fontSize: "var(--ncu-font-size-lg)",
-        fontWeight: "var(--ncu-font-weight-bold)",
-        marginTop: "var(--ncu-space-4)",
+        fontSize: 22,
+        fontWeight: 800,
+        color: "var(--ncu-ink)",
+        margin: "0 0 4px",
       }}
     >
-      常用連結
-    </h3>
-    <IonList style={{ borderRadius: "var(--ncu-radius-md)", overflow: "hidden" }}>
-      {links.map((l) => (
-        <IonItem key={l.url} button href={l.url} target="_blank" rel="noopener noreferrer">
-          <IonIcon icon={link} slot="start" color="medium" />
-          <IonLabel>{l.title}</IonLabel>
-          <IonIcon icon={openOutline} slot="end" color="primary" />
-        </IonItem>
-      ))}
-    </IonList>
-  </>
+      中大生活與實用入口
+    </h1>
+    <p style={{ fontSize: 14, color: "var(--ncu-muted)", margin: 0 }}>
+      收錄資管所新生常用之校園系統、生活服務與開發者軟體資源
+    </p>
+  </div>
 );
 
-const GuideHeader = () => (
+const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => (
+  <div style={{ marginBottom: 28 }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: 6,
+        padding: "0 4px",
+      }}
+    >
+      <IonIcon icon={cat.icon} style={{ fontSize: 20, color: "var(--ncu-primary)" }} />
+      <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--ncu-ink)" }}>
+        {cat.title}
+      </h2>
+    </div>
+    <p style={{ margin: "0 0 10px 4px", fontSize: 13, color: "var(--ncu-muted)" }}>
+      {cat.subtitle}
+    </p>
+    <IonList
+      inset
+      style={{
+        margin: 0,
+        borderRadius: "var(--ncu-radius-md)",
+        border: "1.5px solid var(--ncu-border)",
+        overflow: "hidden",
+      }}
+    >
+      {cat.items.map((item) => (
+        <ResourceItem key={item.url} item={item} />
+      ))}
+    </IonList>
+  </div>
+);
+
+const GuidePageBody = () => (
+  <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
+    <div style={{ maxWidth: 860, margin: "0 auto" }}>
+      <GuideIntroHeader />
+      {guideCategories.map((cat) => (
+        <CategorySection key={cat.id} cat={cat} />
+      ))}
+    </div>
+  </IonContent>
+);
+
+const GuidePageHeader = () => (
   <IonHeader>
     <IonToolbar>
-      <IonTitle>新生生存指南</IonTitle>
+      <IonTitle>常用資源與新生導航</IonTitle>
     </IonToolbar>
   </IonHeader>
 );
 
-const GuideBody = ({
-  completedIds,
-  onToggle,
-}: Readonly<{
-  completedIds: readonly string[];
-  onToggle: (id: string, checked: boolean) => void;
-}>) => (
-  <IonContent className="ion-padding">
-    <ChecklistCard completedIds={completedIds} onToggle={onToggle} />
-    <ResourcesSection />
-    <LinksSection />
-  </IonContent>
-);
-
 const GuidePage = () => {
-  const [completedIds, setCompletedIds] = useState<readonly string[]>([]);
-  const toggleItem = (id: string, checked: boolean) =>
-    setCompletedIds((ids) =>
-      checked ? [...ids, id] : ids.filter((itemId) => itemId !== id)
-    );
-
   return (
     <IonPage>
-      <GuideHeader />
-      <GuideBody completedIds={completedIds} onToggle={toggleItem} />
+      <GuidePageHeader />
+      <GuidePageBody />
     </IonPage>
   );
 };

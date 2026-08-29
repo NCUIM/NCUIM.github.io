@@ -1,0 +1,325 @@
+[
+  {
+    "serialNo": 43022,
+    "classNo": "IM5001-*",
+    "title": "社會網路分析",
+    "credit": 3,
+    "teachers": [
+      "曾筱珽"
+    ],
+    "classTimes": [
+      "5-2",
+      "5-3",
+      "5-4"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 20,
+    "admitCnt": 2
+  },
+  {
+    "serialNo": 43023,
+    "classNo": "IM5007-*",
+    "title": "資訊檢索",
+    "credit": 3,
+    "teachers": [
+      "蔡志豐"
+    ],
+    "classTimes": [
+      "2-6",
+      "2-7",
+      "2-8"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 6
+  },
+  {
+    "serialNo": 43024,
+    "classNo": "IM5008-*",
+    "title": "商業智慧",
+    "credit": 3,
+    "teachers": [
+      "陳彥良"
+    ],
+    "classTimes": [
+      "5-2",
+      "5-3",
+      "5-4"
+    ],
+    "room": "I1-404",
+    "courseType": "ELECTIVE",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 40,
+    "admitCnt": 27
+  },
+  {
+    "serialNo": 43027,
+    "classNo": "IM5022-*",
+    "title": "多媒體資料庫",
+    "credit": 3,
+    "teachers": [
+      "蔡志豐"
+    ],
+    "classTimes": [
+      "4-6",
+      "4-7",
+      "4-8"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 7
+  },
+  {
+    "serialNo": 43028,
+    "classNo": "IM5032-*",
+    "title": "物聯網實務應用",
+    "credit": 3,
+    "teachers": [
+      "施皇嘉"
+    ],
+    "classTimes": [
+      "2-5",
+      "2-6",
+      "2-7"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 10
+  },
+  {
+    "serialNo": 43029,
+    "classNo": "IM5038-*",
+    "title": "進階區塊鏈應用與隱私防護",
+    "credit": 3,
+    "teachers": [
+      "葉羅堯"
+    ],
+    "classTimes": [
+      "3-2",
+      "3-3",
+      "3-4"
+    ],
+    "room": "I1-404",
+    "courseType": "ELECTIVE",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 20,
+    "admitCnt": 2
+  },
+  {
+    "serialNo": 43030,
+    "classNo": "IM5041-*",
+    "title": "現代與後量子密碼學導論",
+    "credit": 3,
+    "teachers": [
+      "劉子源"
+    ],
+    "classTimes": [
+      "5-2",
+      "5-3",
+      "5-4"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 4
+  },
+  {
+    "serialNo": 43031,
+    "classNo": "IM6002-*",
+    "title": "資訊系統專案管理",
+    "credit": 3,
+    "teachers": [
+      "蔡家安"
+    ],
+    "classTimes": [
+      "4-5",
+      "4-6",
+      "4-7"
+    ],
+    "room": "I1-404",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 13
+  },
+  {
+    "serialNo": 43032,
+    "classNo": "IM6003-*",
+    "title": "軟體工程Ⅰ",
+    "credit": 3,
+    "teachers": [
+      "許智誠"
+    ],
+    "classTimes": [
+      "3-6",
+      "3-7",
+      "3-8"
+    ],
+    "room": "I1-404",
+    "courseType": "REQUIRED",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 50,
+    "admitCnt": 17
+  },
+  {
+    "serialNo": 43033,
+    "classNo": "IM6012-*",
+    "title": "管理資訊系統",
+    "credit": 3,
+    "teachers": [
+      "許文錦"
+    ],
+    "classTimes": [
+      "1-5",
+      "1-6",
+      "1-7"
+    ],
+    "room": "I1-404",
+    "courseType": "REQUIRED",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 50,
+    "admitCnt": 18
+  },
+  {
+    "serialNo": 43034,
+    "classNo": "IM6041-*",
+    "title": "生產與作業管理",
+    "credit": 3,
+    "teachers": [
+      "陳振明"
+    ],
+    "classTimes": [
+      "1-2",
+      "1-3",
+      "1-4"
+    ],
+    "room": "I1-404",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 2
+  },
+  {
+    "serialNo": 43035,
+    "classNo": "IM6053-*",
+    "title": "多變量分析",
+    "credit": 3,
+    "teachers": [
+      "王存國"
+    ],
+    "classTimes": [
+      "3-2",
+      "3-3",
+      "3-4"
+    ],
+    "room": "I1-404",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 12
+  },
+  {
+    "serialNo": 43036,
+    "classNo": "IM6055-*",
+    "title": "電腦網路安全",
+    "credit": 3,
+    "teachers": [
+      "陳奕明"
+    ],
+    "classTimes": [
+      "5-6",
+      "5-7",
+      "5-8"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 6
+  },
+  {
+    "serialNo": 43037,
+    "classNo": "IM6082-*",
+    "title": "行銷管理",
+    "credit": 3,
+    "teachers": [
+      "曾筱珽"
+    ],
+    "classTimes": [
+      "4-2",
+      "4-3",
+      "4-4"
+    ],
+    "room": "I1-404",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 11
+  },
+  {
+    "serialNo": 43038,
+    "classNo": "IM6103-*",
+    "title": "網路經濟與賽局智慧",
+    "credit": 3,
+    "teachers": [
+      "張李治華"
+    ],
+    "classTimes": [
+      "4-5",
+      "4-6",
+      "4-7"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 20,
+    "admitCnt": 1
+  },
+  {
+    "serialNo": 43040,
+    "classNo": "IM7071-*",
+    "title": "企業電腦網路",
+    "credit": 3,
+    "teachers": [
+      "陳奕明"
+    ],
+    "classTimes": [
+      "2-6",
+      "2-7",
+      "2-8"
+    ],
+    "room": "I1-405-1",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 9
+  },
+  {
+    "serialNo": 43041,
+    "classNo": "IM7082-*",
+    "title": "智慧型資訊系統",
+    "credit": 3,
+    "teachers": [
+      "胡雅涵"
+    ],
+    "classTimes": [
+      "3-2",
+      "3-3",
+      "3-4"
+    ],
+    "room": "I1-404",
+    "courseType": "ELECTIVE",
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 13
+  }
+]

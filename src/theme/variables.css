@@ -7,14 +7,6 @@
  * danger/white 4.85:1, surface/muted 4.97:1, terminal/terminal-text 14.84:1.
  */
 
-@font-face {
-  font-family: "Noto Sans TC";
-  src: url("../assets/fonts/noto-sans-tc-ui.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-}
-
 :root {
   /* ── Color Tokens ─────────────────────────────────────────────── */
   --ncu-canvas: #f7f5ee;
@@ -36,8 +28,8 @@
   --ncu-border: #d0d5dd;
 
   /* ── Typography ───────────────────────────────────────────────── */
-  --ncu-font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
-    system-ui, -apple-system, sans-serif;
+  --ncu-font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei UI",
+    "Microsoft JhengHei", system-ui, -apple-system, sans-serif;
   --ncu-font-size-xs: 12px;
   --ncu-font-size-sm: 14px;
   --ncu-font-size-base: 16px;
@@ -141,7 +133,16 @@ ion-content::part(scroll) {
 /* Timetable responsive behavior */
 .timetable-mobile { display: block; }
 .timetable-desktop { display: none; }
-.timetable-course-list ion-item { --padding-top: 10px; --padding-bottom: 10px; }
+.timetable-course-list ion-item {
+  --padding-top: 10px;
+  --padding-bottom: 10px;
+  --align-items: center;
+}
+.timetable-course-list ion-note {
+  align-self: center !important;
+  text-align: center !important;
+  margin: auto 0;
+}
 
 /* ── Desktop: constrain page content width ─────────────────── */
 @media (min-width: 768px) {
@@ -456,4 +457,3 @@ ion-content::part(scroll) {
   min-height: 32px;
   --color: #b9f6ca;
 }
-
