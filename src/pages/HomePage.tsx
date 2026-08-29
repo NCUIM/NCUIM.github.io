@@ -227,7 +227,7 @@ const ModuleCardItem = ({
               title={mod.title}
               badge={mod.badge}
               subtitle={mod.subtitle}
-              disabled={true}
+              disabled
             />
           </div>
         </IonCardHeader>
