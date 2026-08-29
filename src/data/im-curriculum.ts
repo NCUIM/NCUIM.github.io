@@ -585,6 +585,81 @@ export interface CreditCalculationResult {
   readonly sectionResults: Record<string, SectionCreditResult>;
 }
 
+function countSelected(ids: readonly string[], options: readonly string[]): number {
+  return options.filter((id) => ids.includes(id)).length;
+}
+
+function calcMgmtTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> {
+  const hasMultivariate = selectedCourseIds.includes("IM6053");
+  const selected6Count = countSelected(selectedCourseIds, [
+    "IM6014", "IM7071", "IM6041", "IM6082", "IM6069", "IM7065",
+  ]);
+  const earned = (hasMultivariate ? 3 : 0) + Math.min(9, selected6Count * 3);
+  const isMet = hasMultivariate && selected6Count >= 3;
+  let hint: string | undefined;
+  if (!isMet) {
+    if (!hasMultivariate && selected6Count < 3) {
+      hint = `缺「多變量分析」且六選三尚缺 ${3 - selected6Count} 門`;
+    } else if (!hasMultivariate) {
+      hint = "必修「多變量分析」尚未修習";
+    } else {
+      hint = `六選三尚缺 ${3 - selected6Count} 門`;
+    }
+  }
+  const electCredits = MGMT_TRACK_ELECTIVES
+    .filter((c) => selectedCourseIds.includes(c.id))
+    .reduce((sum, c) => sum + c.credits, 0)
+    + Math.max(0, (selected6Count - 3) * 3);
+  const electIsMet = electCredits >= 9;
+  return {
+    "mgmt-req": { earned, target: 12, isMet, hint },
+    "mgmt-elect": {
+      earned: electCredits, target: 9, isMet: electIsMet,
+      hint: electIsMet ? undefined : `尚缺 ${9 - electCredits} 學分`,
+    },
+  };
+}
+
+function calcSysTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> {
+  const hasNetwork = selectedCourseIds.includes("IM7071-s");
+  const selected4Count = countSelected(selectedCourseIds, [
+    "IM6041-s", "IM6082-s", "IM6069-s", "IM7065-s",
+  ]);
+  const earned = (hasNetwork ? 3 : 0) + Math.min(3, selected4Count * 3);
+  const isMet = hasNetwork && selected4Count >= 1;
+  let hint: string | undefined;
+  if (!isMet) {
+    if (!hasNetwork && selected4Count === 0) {
+      hint = "缺「企業電腦網路」且管理課程四選一尚未修習";
+    } else if (!hasNetwork) {
+      hint = "必修「企業電腦網路」尚未修習";
+    } else {
+      hint = "管理課程四選一尚未修習";
+    }
+  }
+  const electCredits = SYS_TRACK_ELECTIVES
+    .filter((c) => selectedCourseIds.includes(c.id))
+    .reduce((sum, c) => sum + c.credits, 0);
+  const electIsMet = electCredits >= 9;
+  const sys4Overflow = Math.max(0, (selected4Count - 1) * 3);
+  const electOverflow = Math.max(0, electCredits - 9);
+  const freeCredits = SYS_TRACK_FREE_ELECTIVES
+    .filter((c) => selectedCourseIds.includes(c.id))
+    .reduce((sum, c) => sum + c.credits, 0) + sys4Overflow + electOverflow;
+  const freeIsMet = freeCredits >= 3;
+  return {
+    "sys-req": { earned, target: 6, isMet, hint },
+    "sys-elect": {
+      earned: electCredits, target: 9, isMet: electIsMet,
+      hint: electIsMet ? undefined : `尚缺 ${9 - electCredits} 學分`,
+    },
+    "sys-free": {
+      earned: freeCredits, target: 3, isMet: freeIsMet,
+      hint: freeIsMet ? undefined : `尚缺 ${3 - freeCredits} 學分`,
+    },
+  };
+}
+
 export function calculateTrackCredits(
   track: TrackType,
   selectedCourseIds: readonly string[],
@@ -608,125 +683,11 @@ export function calculateTrackCredits(
   };
 
   // 2. 組別專屬計算
-  if (track === "mgmt") {
-    // ── 管理組 (33 學分) ──────────────────────────
-    // 組必修：多變量分析 (必修 3) + 粗框六選三 (9) = 12
-    const hasMultivariate = selectedCourseIds.includes("IM6053");
-    const mgmt6Options = [
-      "IM6014",
-      "IM7071",
-      "IM6041",
-      "IM6082",
-      "IM6069",
-      "IM7065",
-    ];
-    const selected6Count = mgmt6Options.filter((id) =>
-      selectedCourseIds.includes(id),
-    ).length;
-
-    const mgmtReqEarned =
-      (hasMultivariate ? 3 : 0) + Math.min(9, selected6Count * 3);
-    const mgmtReqIsMet = hasMultivariate && selected6Count >= 3;
-
-    let mgmtReqHint: string | undefined;
-    if (!mgmtReqIsMet) {
-      if (!hasMultivariate && selected6Count < 3) {
-        mgmtReqHint = `缺「多變量分析」且六選三尚缺 ${3 - selected6Count} 門`;
-      } else if (!hasMultivariate) {
-        mgmtReqHint = "必修「多變量分析」尚未修習";
-      } else {
-        mgmtReqHint = `六選三尚缺 ${3 - selected6Count} 門`;
-      }
-    }
-
-    sectionResults["mgmt-req"] = {
-      earned: mgmtReqEarned,
-      target: 12,
-      isMet: mgmtReqIsMet,
-      hint: mgmtReqHint,
-    };
-
-    // 組應選修：十二選三 (9 學分) + 六選三溢出的學分
-    const mgmtElectSelected = MGMT_TRACK_ELECTIVES.filter((c) =>
-      selectedCourseIds.includes(c.id),
-    );
-    const mgmtElectDirect = mgmtElectSelected.reduce((sum, c) => sum + c.credits, 0);
-    const mgmtOverflow = Math.max(0, (selected6Count - 3) * 3);
-    const mgmtElectEarned = mgmtElectDirect + mgmtOverflow;
-    const mgmtElectIsMet = mgmtElectEarned >= 9;
-
-    sectionResults["mgmt-elect"] = {
-      earned: mgmtElectEarned,
-      target: 9,
-      isMet: mgmtElectIsMet,
-      hint: mgmtElectIsMet ? undefined : `尚缺 ${9 - mgmtElectEarned} 學分`,
-    };
-  } else {
-    // ── 資訊系統組 (30 學分) ──────────────────────
-    // 組必修：企業電腦網路 (必修 3) + 粗框四選一 (3) = 6
-    const hasNetwork = selectedCourseIds.includes("IM7071-s");
-    const sys4Options = [
-      "IM6041-s",
-      "IM6082-s",
-      "IM6069-s",
-      "IM7065-s",
-    ];
-    const selected4Count = sys4Options.filter((id) =>
-      selectedCourseIds.includes(id),
-    ).length;
-
-    const sysReqEarned =
-      (hasNetwork ? 3 : 0) + Math.min(3, selected4Count * 3);
-    const sysReqIsMet = hasNetwork && selected4Count >= 1;
-
-    let sysReqHint: string | undefined;
-    if (!sysReqIsMet) {
-      if (!hasNetwork && selected4Count === 0) {
-        sysReqHint = "缺「企業電腦網路」且管理課程四選一尚未修習";
-      } else if (!hasNetwork) {
-        sysReqHint = "必修「企業電腦網路」尚未修習";
-      } else {
-        sysReqHint = "管理課程四選一尚未修習";
-      }
-    }
-
-    sectionResults["sys-req"] = {
-      earned: sysReqEarned,
-      target: 6,
-      isMet: sysReqIsMet,
-      hint: sysReqHint,
-    };
-
-    // 組應選修：九選三 (9 學分)
-    const sysElectSelected = SYS_TRACK_ELECTIVES.filter((c) =>
-      selectedCourseIds.includes(c.id),
-    );
-    const sysElectEarned = sysElectSelected.reduce((sum, c) => sum + c.credits, 0);
-    const sysElectIsMet = sysElectEarned >= 9;
-
-    sectionResults["sys-elect"] = {
-      earned: sysElectEarned,
-      target: 9,
-      isMet: sysElectIsMet,
-      hint: sysElectIsMet ? undefined : `尚缺 ${9 - sysElectEarned} 學分`,
-    };
-
-    // 組選修：IM 研究所課程 / 實習 (3 學分) + 溢出學分
-    const sysFreeSelected = SYS_TRACK_FREE_ELECTIVES.filter((c) =>
-      selectedCourseIds.includes(c.id),
-    );
-    const sysFreeDirect = sysFreeSelected.reduce((sum, c) => sum + c.credits, 0);
-    const sys4Overflow = Math.max(0, (selected4Count - 1) * 3);
-    const sysElectOverflow = Math.max(0, sysElectEarned - 9);
-    const sysFreeEarned = sysFreeDirect + sys4Overflow + sysElectOverflow;
-    const sysFreeIsMet = sysFreeEarned >= 3;
-
-    sectionResults["sys-free"] = {
-      earned: sysFreeEarned,
-      target: 3,
-      isMet: sysFreeIsMet,
-      hint: sysFreeIsMet ? undefined : `尚缺 ${3 - sysFreeEarned} 學分`,
-    };
+  const trackSections = track === "mgmt"
+    ? calcMgmtTrackSections(selectedCourseIds)
+    : calcSysTrackSections(selectedCourseIds);
+  for (const [id, result] of Object.entries(trackSections)) {
+    sectionResults[id] = result;
   }
 
   // 3. 總學分與畢業資格計算

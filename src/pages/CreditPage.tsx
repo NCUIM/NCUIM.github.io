@@ -54,6 +54,48 @@ const STORAGE_KEY_COURSES = "ncu_selected_credit_courses";
 const STORAGE_KEY_PREREQS = "ncu_selected_prereqs";
 const STORAGE_KEY_GATES = "ncu_selected_gates";
 
+function matchesCurriculumCourse(cis: CisCourse, course: CurriculumCourse): boolean {
+  const sameCode =
+    Boolean(cis.classNo) &&
+    Boolean(course.code) &&
+    (cis.classNo.includes(course.code) || course.code.includes(cis.classNo));
+  const normCis = cis.name.replace(/[\s\-_()（）]/gu, "");
+  const normCurriculum = course.name.replace(/[\s\-_()（）]/gu, "");
+  const sameName =
+    normCis.length >= 2 &&
+    normCurriculum.length >= 2 &&
+    (normCis.includes(normCurriculum) || normCurriculum.includes(normCis));
+  return sameCode || sameName;
+}
+
+function matchCisToCurriculum(
+  cisCourses: readonly CisCourse[],
+  config: (typeof TRACK_CONFIGS)[TrackType],
+  track: TrackType,
+): string[] {
+  const ids: string[] = [];
+  for (const section of config.sections) {
+    for (const c of section.courses) {
+      if (cisCourses.some((cis) => matchesCurriculumCourse(cis, c))) {
+        ids.push(c.id);
+      }
+    }
+  }
+  if (
+    track === "sys" &&
+    cisCourses.some(
+      (cis) =>
+        isSystemTrackFreeElectiveCode(cis.classNo) &&
+        !config.sections.some((s) =>
+          s.courses.some((course) => matchesCurriculumCourse(cis, course)),
+        ),
+    )
+  ) {
+    ids.push("IM_FREE");
+  }
+  return ids;
+}
+
 const CreditPage: React.FC = () => {
   const [presentToast] = useIonToast();
   const [presentAlert] = useIonAlert();
@@ -193,45 +235,7 @@ const CreditPage: React.FC = () => {
         });
         return;
       }
-
-      // Match CIS courses with curriculum course IDs.
-      const matchesCurriculumCourse = (cis: CisCourse, course: CurriculumCourse) => {
-        const sameCode =
-          Boolean(cis.classNo) &&
-          Boolean(course.code) &&
-          (cis.classNo.includes(course.code) || course.code.includes(cis.classNo));
-        const normCis = cis.name.replace(/[\s\-_()（）]/g, "");
-        const normCurriculum = course.name.replace(/[\s\-_()（）]/g, "");
-        const sameName =
-          normCis.length >= 2 &&
-          normCurriculum.length >= 2 &&
-          (normCis.includes(normCurriculum) || normCurriculum.includes(normCis));
-        return sameCode || sameName;
-      };
-
-      const matchedCourseIds: string[] = [];
-      for (const section of currentConfig.sections) {
-        for (const c of section.courses) {
-          const match = cisCourses.some((cis) => matchesCurriculumCourse(cis, c));
-          if (match) {
-            matchedCourseIds.push(c.id);
-          }
-        }
-      }
-
-      if (
-        track === "sys" &&
-        cisCourses.some(
-          (cis) =>
-            isSystemTrackFreeElectiveCode(cis.classNo) &&
-            !currentConfig.sections.some((section) =>
-              section.courses.some((course) => matchesCurriculumCourse(cis, course)),
-            ),
-        )
-      ) {
-        matchedCourseIds.push("IM_FREE");
-      }
-
+      const matchedCourseIds = matchCisToCurriculum(cisCourses, currentConfig, track);
       if (matchedCourseIds.length > 0) {
         setSelectedCourseIds(matchedCourseIds);
         setCisAuthenticated(true);
