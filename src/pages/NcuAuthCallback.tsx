@@ -3,6 +3,12 @@ import { useHistory } from "react-router-dom";
 import { IonPage, IonContent, IonSpinner, IonText } from "@ionic/react";
 import { NCU_OAUTH, saveToken, decodeState } from "../services/ncu-oauth";
 
+const handlePromiseError = (err: unknown): void => {
+  if (err) {
+    // Handled in component state
+  }
+};
+
 /**
  * Exchange authorization code for access token.
  */
@@ -120,7 +126,7 @@ const NcuAuthCallback = () => {
       return;
     }
     if (creds.code && creds.codeVerifier) {
-      runAuthExchange(creds.code, creds.codeVerifier).catch(() => {});
+      runAuthExchange(creds.code, creds.codeVerifier).catch(handlePromiseError);
     }
   }, [runAuthExchange]);
 

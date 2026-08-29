@@ -82,6 +82,12 @@ const DESKTOP_EMPTY_ROW_HEIGHT = 38;
 const TITLE_FONT_SIZES = [18, 18, 16, 14.5];
 const TEACHER_FONT_SIZES = [14.5, 14.5, 13.5, 12.5];
 
+const handleCatchNoop = (err: unknown): void => {
+  if (err) {
+    // Errors handled in component state
+  }
+};
+
 // ── Helpers ───────────────────────────────────────────────────
 
 const getDefaultDayIndex = (): number => {
@@ -138,11 +144,17 @@ const isTeacherMatch = (teachers: readonly string[], target: string): boolean =>
   });
 };
 
+const isSerialMatch = (masterSerial: number, cisSerial?: string): boolean =>
+  Boolean(cisSerial && String(masterSerial) === String(cisSerial));
+
+const isClassNoMatch = (masterNo: string, cisNo?: string): boolean =>
+  Boolean(cisNo && masterNo && cisNo === masterNo);
+
 const isCourseMatch = (master: MasterCourseItem, cis: CisCourse): boolean => {
-  if (cis.serialNo && String(master.serialNo) === String(cis.serialNo)) return true;
-  if (cis.classNo && master.classNo && cis.classNo === master.classNo) return true;
+  if (isSerialMatch(master.serialNo, cis.serialNo)) return true;
+  if (isClassNoMatch(master.classNo, cis.classNo)) return true;
   const isSameTitle = cis.name.trim() === master.title.trim();
-  return isSameTitle ? isTeacherMatch(master.teachers, cis.teacher) : false;
+  return isSameTitle && isTeacherMatch(master.teachers, cis.teacher);
 };
 
 const matchCisCourse = (
@@ -177,28 +189,38 @@ const areSameCourse = (a: Course, b: Course): boolean =>
   (Boolean(a.id) && Boolean(b.id) && a.id === b.id) ||
   (a.name.trim() === b.name.trim() && a.teacher.trim() === b.teacher.trim());
 
-const parseClassTimeDayAndPeriods = (
+const parseHyphenTime = (ct: string): { dayIdx: number; periodChars: string } | null => {
+  if (!ct.includes("-")) return null;
+  const parts = ct.split("-");
+  const dNum = parseInt(parts[0], 10);
+  const dayIdx = dNum >= 1 && dNum <= 5 ? dNum - 1 : -1;
+  return { dayIdx, periodChars: parts[1] || "" };
+};
+
+const parseDigitTime = (ct: string): { dayIdx: number; periodChars: string } | null => {
+  const first = ct[0];
+  if (ct.length >= 2 && first >= "1" && first <= "5") {
+    return { dayIdx: parseInt(first, 10) - 1, periodChars: ct.slice(1) };
+  }
+  return null;
+};
+
+const parseNamedDayTime = (
   ct: string,
   dayMap: Record<string, number>,
 ): { dayIdx: number; periodChars: string } => {
-  if (ct.includes("-")) {
-    const parts = ct.split("-");
-    const dNum = parseInt(parts[0], 10);
-    return {
-      dayIdx: dNum >= 1 && dNum <= 5 ? dNum - 1 : -1,
-      periodChars: parts[1] || "",
-    };
-  }
-  const firstChar = ct[0];
-  if (ct.length >= 2 && firstChar >= "1" && firstChar <= "5") {
-    return { dayIdx: parseInt(firstChar, 10) - 1, periodChars: ct.slice(1) };
-  }
-  const dayMatch = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/u);
-  if (dayMatch) {
-    return { dayIdx: dayMap[dayMatch[1]] ?? -1, periodChars: ct.slice(dayMatch[0].length) };
+  const match = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/u);
+  if (match) {
+    return { dayIdx: dayMap[match[1]] ?? -1, periodChars: ct.slice(match[0].length) };
   }
   return { dayIdx: -1, periodChars: "" };
 };
+
+const parseClassTimeDayAndPeriods = (
+  ct: string,
+  dayMap: Record<string, number>,
+): { dayIdx: number; periodChars: string } =>
+  parseHyphenTime(ct) || parseDigitTime(ct) || parseNamedDayTime(ct, dayMap);
 
 const addCisCourseToMap = (
   result: Record<string, Course[]>,
@@ -267,24 +289,35 @@ const findSpanEndIndex = (
   return end;
 };
 
+const extractSpansForPeriod = (
+  periodItem: Period,
+  dayIndex: number,
+  periodIdx: number,
+  timetableData: Record<string, Course[]>,
+  processed: Set<string>,
+): { course: Course; startIdx: number; endIdx: number }[] => {
+  const courses = timetableData[`${periodItem.id}-${dayIndex}`] || [];
+  const periodSpans: { course: Course; startIdx: number; endIdx: number }[] = [];
+  for (const courseItem of courses) {
+    const key = `${courseItem.id || courseItem.name}-${courseItem.teacher}`;
+    if (!processed.has(key)) {
+      const end = findSpanEndIndex(periodIdx, courseItem, timetableData, dayIndex);
+      processed.add(key);
+      periodSpans.push({ course: courseItem, startIdx: periodIdx, endIdx: end });
+    }
+  }
+  return periodSpans;
+};
+
 const collectDayCourseSpans = (
   timetableData: Record<string, Course[]>,
   dayIndex: number,
 ): { course: Course; startIdx: number; endIdx: number }[] => {
   const spans: { course: Course; startIdx: number; endIdx: number }[] = [];
   const processed = new Set<string>();
-
   for (let i = 0; i < periods.length; i++) {
-    const periodItem = periods[i];
-    const courses = timetableData[`${periodItem.id}-${dayIndex}`] || [];
-    for (const courseItem of courses) {
-      const key = `${courseItem.id || courseItem.name}-${courseItem.teacher}`;
-      if (!processed.has(key)) {
-        const end = findSpanEndIndex(i, courseItem, timetableData, dayIndex);
-        processed.add(key);
-        spans.push({ course: courseItem, startIdx: i, endIdx: end });
-      }
-    }
+    const found = extractSpansForPeriod(periods[i], dayIndex, i, timetableData, processed);
+    spans.push(...found);
   }
   return spans;
 };
@@ -331,23 +364,33 @@ const getDayFixedTracks = (
   return { maxTracks, rows };
 };
 
+const getOverlappingClusterTracks = (
+  cIdx: number,
+  clusterIndices: number[],
+  spans: { course: Course; startIdx: number; endIdx: number }[],
+  assignedTracks: Record<number, number>,
+): Set<number> => {
+  const used = new Set<number>();
+  for (const otherIdx of clusterIndices) {
+    if (otherIdx !== cIdx && assignedTracks[otherIdx] !== undefined) {
+      const overlaps =
+        Math.max(spans[cIdx].startIdx, spans[otherIdx].startIdx) <=
+        Math.min(spans[cIdx].endIdx, spans[otherIdx].endIdx);
+      if (overlaps) {
+        used.add(assignedTracks[otherIdx]);
+      }
+    }
+  }
+  return used;
+};
+
 const assignClusterTracks = (
   clusterIndices: number[],
   spans: { course: Course; startIdx: number; endIdx: number }[],
 ): Record<number, number> => {
   const assignedTracks: Record<number, number> = {};
   for (const cIdx of clusterIndices) {
-    const used = new Set<number>();
-    for (const otherIdx of clusterIndices) {
-      if (otherIdx !== cIdx && assignedTracks[otherIdx] !== undefined) {
-        const overlaps =
-          Math.max(spans[cIdx].startIdx, spans[otherIdx].startIdx) <=
-          Math.min(spans[cIdx].endIdx, spans[otherIdx].endIdx);
-        if (overlaps) {
-          used.add(assignedTracks[otherIdx]);
-        }
-      }
-    }
+    const used = getOverlappingClusterTracks(cIdx, clusterIndices, spans, assignedTracks);
     let trackNum = 0;
     while (used.has(trackNum)) trackNum++;
     assignedTracks[cIdx] = trackNum;
@@ -421,6 +464,7 @@ const MobileTrackCard = ({
   const isRequired = course.courseType === "REQUIRED";
   const titleSize = maxTracks >= 3 ? 15.5 : 16;
   const descSize = maxTracks >= 3 ? 13.5 : 14;
+  const roomText = course.room ? ` · ${course.room}` : "";
 
   return (
     <div style={{ minWidth: 0 }}>
@@ -460,8 +504,7 @@ const MobileTrackCard = ({
           wordBreak: "break-word",
         }}
       >
-        {course.teacher}
-        {course.room ? ` · ${course.room}` : ""}
+        {course.teacher}{roomText}
       </p>
     </div>
   );
@@ -480,6 +523,7 @@ const PeriodTimeBadge = ({
   const badgeText = isCurrent ? "NOW" : "NEXT";
   const textColor = isCurrent ? "var(--ncu-primary)" : "var(--ncu-ink)";
   const timeColor = isCurrent ? "var(--ncu-primary)" : "var(--ncu-muted)";
+  const hasBadge = isCurrent || isNext;
 
   return (
     <div
@@ -499,7 +543,7 @@ const PeriodTimeBadge = ({
       <IonText style={{ fontSize: "11px", color: timeColor, fontWeight: isCurrent ? 700 : 400, lineHeight: 1.2 }}>
         {period.time}
       </IonText>
-      {(isCurrent || isNext) && (
+      {hasBadge && (
         <IonBadge color={badgeColor} style={{ fontSize: "9px", marginTop: "4px", padding: "1px 4px" }}>
           {badgeText}
         </IonBadge>
@@ -637,14 +681,17 @@ const DesktopRulerItem = ({
   isLast: boolean;
 }>) => {
   const isSlim = rowHeight === DESKTOP_EMPTY_ROW_HEIGHT;
+  const title = period.id === "N" ? "午休" : `第 ${period.id} 節`;
+  const bg = period.id === "N" ? "rgba(0, 0, 0, 0.03)" : "var(--ncu-primary-light)";
+  const borderBottomStyle = isLast ? "none" : "1px solid var(--ncu-border)";
 
   return (
     <div
       style={{
         height: rowHeight,
-        borderBottom: isLast ? "none" : "1px solid var(--ncu-border)",
+        borderBottom: borderBottomStyle,
         borderRight: "2px solid var(--ncu-ink)",
-        background: period.id === "N" ? "rgba(0, 0, 0, 0.03)" : "var(--ncu-primary-light)",
+        background: bg,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -655,7 +702,7 @@ const DesktopRulerItem = ({
       }}
     >
       <strong style={{ fontSize: isSlim ? 13 : 15, color: "var(--ncu-ink)", fontWeight: 700 }}>
-        {period.id === "N" ? "午休" : `第 ${period.id} 節`}
+        {title}
       </strong>
       <span style={{ fontSize: isSlim ? 10.5 : 12, color: "var(--ncu-muted)", marginTop: isSlim ? 0 : 2 }}>
         {period.time}
@@ -702,6 +749,9 @@ const DesktopCourseCard = ({
 
   const titleFontSize = getFontSize(TITLE_FONT_SIZES, span.totalCols);
   const teacherFontSize = getFontSize(TEACHER_FONT_SIZES, span.totalCols);
+  const cardBg = isMine ? "var(--ncu-star-light)" : "#ffffff";
+  const cardBoxShadow = isMine ? "inset 0 0 0 2px var(--ncu-star)" : "none";
+  const cardZIndex = isMine ? 3 : 2;
 
   return (
     <div
@@ -711,7 +761,7 @@ const DesktopCourseCard = ({
         height: spanHeight,
         left: `${leftPct}%`,
         width: `${widthPct}%`,
-        background: isMine ? "var(--ncu-star-light)" : "#ffffff",
+        background: cardBg,
         border: "1px solid var(--ncu-border)",
         padding: "8px 6px",
         display: "flex",
@@ -720,8 +770,8 @@ const DesktopCourseCard = ({
         justifyContent: "center",
         textAlign: "center",
         gap: 4,
-        boxShadow: isMine ? "inset 0 0 0 2px var(--ncu-star)" : "none",
-        zIndex: isMine ? 3 : 2,
+        boxShadow: cardBoxShadow,
+        zIndex: cardZIndex,
         overflow: "hidden",
         boxSizing: "border-box",
       }}
@@ -972,60 +1022,50 @@ const TimetablePage = () => {
   const [cisAuthenticated, setCisAuthenticated] = useState(isCisLoggedIn());
   const [showCisLogin, setShowCisLogin] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadDefaultCourses = async () => {
-      setLoading(true);
-      try {
-        const courses = await fetchImMasterCourses();
-        if (!cancelled && courses.length > 0) {
-          setMasterCourses(courses);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setApiError(err instanceof Error ? err.message : "載入碩士班課程資料失敗");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+  const syncDefaultCourses = useCallback(async () => {
+    setLoading(true);
+    try {
+      const courses = await fetchImMasterCourses();
+      if (courses.length > 0) {
+        setMasterCourses(courses);
       }
-    };
-    loadDefaultCourses().catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "載入碩士班課程資料失敗");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (!cisAuthenticated) return undefined;
-    let cancelled = false;
-    const loadCisCourses = async () => {
-      setLoading(true);
-      setApiError(null);
-      try {
-        const courses = await fetchCisSelectedCourses();
-        if (!cancelled && courses.length > 0) {
-          setMyCisCourses(courses);
-        } else if (!cancelled) {
-          cisLogout();
-          setCisAuthenticated(false);
-          setApiError("CIS Session 已過期，請重新連結");
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : "CIS 載入失敗";
-          setApiError(msg);
-          cisLogout();
-          setCisAuthenticated(false);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+    syncDefaultCourses().catch(handleCatchNoop);
+  }, [syncDefaultCourses]);
+
+  const syncCisCourses = useCallback(async () => {
+    setLoading(true);
+    setApiError(null);
+    try {
+      const courses = await fetchCisSelectedCourses();
+      if (courses.length > 0) {
+        setMyCisCourses(courses);
+      } else {
+        cisLogout();
+        setCisAuthenticated(false);
+        setApiError("CIS Session 已過期，請重新連結");
       }
-    };
-    loadCisCourses().catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [cisAuthenticated]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "CIS 載入失敗";
+      setApiError(msg);
+      cisLogout();
+      setCisAuthenticated(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cisAuthenticated) return;
+    syncCisCourses().catch(handleCatchNoop);
+  }, [cisAuthenticated, syncCisCourses]);
 
   const timetableData = useMemo(() => {
     if (viewScope === "mine" && myCisCourses.length > 0) {

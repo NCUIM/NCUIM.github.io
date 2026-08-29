@@ -6,16 +6,22 @@ import https from "https";
 import fs from "fs";
 import path from "path";
 
-const extractSessionId = (req: IncomingMessage): string => {
+const getQuerySession = (req: IncomingMessage): string => {
   const host = req.headers.host || "localhost";
   const rawUrl = req.url || "/";
   const url = new URL(rawUrl, `http://${host}`);
-  const queryId = url.searchParams.get("jsessionid");
-  if (queryId) return queryId;
-  const cookie = req.headers.cookie;
-  if (!cookie) return "";
+  return url.searchParams.get("jsessionid") || "";
+};
+
+const getCookieSession = (req: IncomingMessage): string => {
+  const cookie = req.headers.cookie || "";
   const match = cookie.match(/JSESSIONID=([^;]+)/);
   return match ? match[1].trim() : "";
+};
+
+const extractSessionId = (req: IncomingMessage): string => {
+  const querySession = getQuerySession(req);
+  return querySession || getCookieSession(req);
 };
 
 const handleValidationResponse = (

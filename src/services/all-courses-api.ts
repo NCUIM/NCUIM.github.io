@@ -95,6 +95,9 @@ const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
     (c) => isImCourse(c) && !isExcludedMasterCourse(c) && isMasterLevelCourse(c),
   );
 
+const getCourseType = (t?: string): "REQUIRED" | "ELECTIVE" =>
+  t === "REQUIRED" ? "REQUIRED" : "ELECTIVE";
+
 const mapRawCourse = (c: RawCourse): MasterCourseItem => ({
   serialNo: c.serialNo,
   classNo: c.classNo,
@@ -102,8 +105,8 @@ const mapRawCourse = (c: RawCourse): MasterCourseItem => ({
   credit: c.credit,
   teachers: c.teachers || [],
   classTimes: c.classTimes || [],
-  courseType: c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE",
-  passwordCard: c.passwordCard ?? undefined,
+  courseType: getCourseType(c.courseType),
+  passwordCard: c.passwordCard || undefined,
   limitCnt: c.limitCnt,
   admitCnt: c.admitCnt,
   room: IM_CLASSROOM_MAP[c.classNo] || "I1-404",
@@ -134,18 +137,23 @@ export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
   }
 };
 
+const parseDayAndPeriod = (ct: string): { dayIdx: number; periodId: string } | null => {
+  const parts = ct.split("-");
+  if (parts.length !== 2) return null;
+  const dayNum = parseInt(parts[0], 10);
+  if (dayNum < 1 || dayNum > 5) return null;
+  return { dayIdx: dayNum - 1, periodId: parts[1] };
+};
+
 const addCourseTimeToMap = (
   result: Record<string, MasterCourseItem[]>,
   c: MasterCourseItem,
   ct: string,
 ): void => {
-  const parts = ct.split("-");
-  if (parts.length !== 2) return;
-  const dayNum = parseInt(parts[0], 10);
-  const dayIdx = dayNum - 1;
-  if (dayIdx < 0 || dayIdx > 4) return;
+  const parsed = parseDayAndPeriod(ct);
+  if (!parsed) return;
 
-  const key = `${parts[1]}-${dayIdx}`;
+  const key = `${parsed.periodId}-${parsed.dayIdx}`;
   if (!result[key]) {
     result[key] = [];
   }
