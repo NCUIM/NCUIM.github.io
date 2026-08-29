@@ -44,7 +44,7 @@ export const NCU_OAUTH = {
 
 const trimTrailingEquals = (s: string): string => {
   let end = s.length;
-  while (end > 0 && s.charCodeAt(end - 1) === 61) {
+  while (end > 0 && s.codePointAt(end - 1) === 61) {
     end--;
   }
   return s.slice(0, end);
