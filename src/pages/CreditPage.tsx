@@ -54,18 +54,15 @@ const STORAGE_KEY_COURSES = "ncu_selected_credit_courses";
 const STORAGE_KEY_PREREQS = "ncu_selected_prereqs";
 const STORAGE_KEY_GATES = "ncu_selected_gates";
 
+const NORM_RE = /[\s\-_()（）]/gu;
+const norm = (s: string) => s.replace(NORM_RE, "");
+
 function matchesCurriculumCourse(cis: CisCourse, course: CurriculumCourse): boolean {
-  const sameCode =
-    Boolean(cis.classNo) &&
-    Boolean(course.code) &&
+  const codeMatch = Boolean(cis.classNo && course.code) &&
     (cis.classNo.includes(course.code) || course.code.includes(cis.classNo));
-  const normCis = cis.name.replace(/[\s\-_()（）]/gu, "");
-  const normCurriculum = course.name.replace(/[\s\-_()（）]/gu, "");
-  const sameName =
-    normCis.length >= 2 &&
-    normCurriculum.length >= 2 &&
-    (normCis.includes(normCurriculum) || normCurriculum.includes(normCis));
-  return sameCode || sameName;
+  const [a, b] = [norm(cis.name), norm(course.name)];
+  const nameMatch = a.length >= 2 && b.length >= 2 && (a.includes(b) || b.includes(a));
+  return codeMatch || nameMatch;
 }
 
 function matchCisToCurriculum(

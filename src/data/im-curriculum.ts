@@ -312,76 +312,45 @@ function countSelected(ids: readonly string[], options: readonly string[]): numb
   return options.filter((id) => ids.includes(id)).length;
 }
 
-// skipcq: JS-0067 JS-R1005
-function calcMgmtTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> {
-  const hasMultivariate = selectedCourseIds.includes("IM6053");
-  const selected6Count = countSelected(selectedCourseIds, [
-    "IM6014", "IM7071", "IM6041", "IM6082", "IM6069", "IM7065",
-  ]);
-  const earned = (hasMultivariate ? 3 : 0) + Math.min(9, selected6Count * 3);
-  const isMet = hasMultivariate && selected6Count >= 3;
-  let hint: string | undefined;
-  if (!isMet) {
-    if (!hasMultivariate && selected6Count < 3) {
-      hint = `缺「多變量分析」且六選三尚缺 ${3 - selected6Count} 門`;
-    } else if (!hasMultivariate) {
-      hint = "必修「多變量分析」尚未修習";
-    } else {
-      hint = `六選三尚缺 ${3 - selected6Count} 門`;
-    }
-  }
-  const electCredits = MGMT_TRACK_ELECTIVES
-    .filter((c) => selectedCourseIds.includes(c.id))
-    .reduce((sum, c) => sum + c.credits, 0)
-    + Math.max(0, (selected6Count - 3) * 3);
-  const electIsMet = electCredits >= 9;
+function sumCredits(ids: readonly string[], courses: readonly CurriculumCourse[]): number {
+  return courses.filter((c) => ids.includes(c.id)).reduce((s, c) => s + c.credits, 0);
+}
+
+function reqHint(isMet: boolean, msgs: [boolean, string, string]): string | undefined {
+  if (isMet) return undefined;
+  const [a, msgA] = msgs[0] ? [false, ""] : [true, msgs[1]];
+  return a ? msgA : msgs[2];
+}
+
+function calcMgmtTrackSections(ids: readonly string[]): Record<string, SectionCreditResult> {
+  const hasMulti = ids.includes("IM6053");
+  const cnt6 = countSelected(ids, ["IM6014", "IM7071", "IM6041", "IM6082", "IM6069", "IM7065"]);
+  const reqMet = hasMulti && cnt6 >= 3;
+  const reqHintStr = reqMet ? undefined
+    : !hasMulti && cnt6 < 3 ? `缺「多變量分析」且六選三尚缺 ${3 - cnt6} 門`
+    : !hasMulti ? "必修「多變量分析」尚未修習"
+    : `六選三尚缺 ${3 - cnt6} 門`;
+  const electCr = sumCredits(ids, MGMT_TRACK_ELECTIVES) + Math.max(0, (cnt6 - 3) * 3);
   return {
-    "mgmt-req": { earned, target: 12, isMet, hint },
-    "mgmt-elect": {
-      earned: electCredits, target: 9, isMet: electIsMet,
-      hint: electIsMet ? undefined : `尚缺 ${9 - electCredits} 學分`,
-    },
+    "mgmt-req": { earned: (hasMulti ? 3 : 0) + Math.min(9, cnt6 * 3), target: 12, isMet: reqMet, hint: reqHintStr },
+    "mgmt-elect": { earned: electCr, target: 9, isMet: electCr >= 9, hint: electCr >= 9 ? undefined : `尚缺 ${9 - electCr} 學分` },
   };
 }
 
-// skipcq: JS-0067 JS-R1005
-function calcSysTrackSections(selectedCourseIds: readonly string[]): Record<string, SectionCreditResult> {
-  const hasNetwork = selectedCourseIds.includes("IM7071-s");
-  const selected4Count = countSelected(selectedCourseIds, [
-    "IM6041-s", "IM6082-s", "IM6069-s", "IM7065-s",
-  ]);
-  const earned = (hasNetwork ? 3 : 0) + Math.min(3, selected4Count * 3);
-  const isMet = hasNetwork && selected4Count >= 1;
-  let hint: string | undefined;
-  if (!isMet) {
-    if (!hasNetwork && selected4Count === 0) {
-      hint = "缺「企業電腦網路」且管理課程四選一尚未修習";
-    } else if (!hasNetwork) {
-      hint = "必修「企業電腦網路」尚未修習";
-    } else {
-      hint = "管理課程四選一尚未修習";
-    }
-  }
-  const electCredits = SYS_TRACK_ELECTIVES
-    .filter((c) => selectedCourseIds.includes(c.id))
-    .reduce((sum, c) => sum + c.credits, 0);
-  const electIsMet = electCredits >= 9;
-  const sys4Overflow = Math.max(0, (selected4Count - 1) * 3);
-  const electOverflow = Math.max(0, electCredits - 9);
-  const freeCredits = SYS_TRACK_FREE_ELECTIVES
-    .filter((c) => selectedCourseIds.includes(c.id))
-    .reduce((sum, c) => sum + c.credits, 0) + sys4Overflow + electOverflow;
-  const freeIsMet = freeCredits >= 3;
+function calcSysTrackSections(ids: readonly string[]): Record<string, SectionCreditResult> {
+  const hasNet = ids.includes("IM7071-s");
+  const cnt4 = countSelected(ids, ["IM6041-s", "IM6082-s", "IM6069-s", "IM7065-s"]);
+  const reqMet = hasNet && cnt4 >= 1;
+  const reqHintStr = reqMet ? undefined
+    : !hasNet && cnt4 === 0 ? "缺「企業電腦網路」且管理課程四選一尚未修習"
+    : !hasNet ? "必修「企業電腦網路」尚未修習"
+    : "管理課程四選一尚未修習";
+  const electCr = sumCredits(ids, SYS_TRACK_ELECTIVES);
+  const freeCr = sumCredits(ids, SYS_TRACK_FREE_ELECTIVES) + Math.max(0, (cnt4 - 1) * 3) + Math.max(0, electCr - 9);
   return {
-    "sys-req": { earned, target: 6, isMet, hint },
-    "sys-elect": {
-      earned: electCredits, target: 9, isMet: electIsMet,
-      hint: electIsMet ? undefined : `尚缺 ${9 - electCredits} 學分`,
-    },
-    "sys-free": {
-      earned: freeCredits, target: 3, isMet: freeIsMet,
-      hint: freeIsMet ? undefined : `尚缺 ${3 - freeCredits} 學分`,
-    },
+    "sys-req": { earned: (hasNet ? 3 : 0) + Math.min(3, cnt4 * 3), target: 6, isMet: reqMet, hint: reqHintStr },
+    "sys-elect": { earned: electCr, target: 9, isMet: electCr >= 9, hint: electCr >= 9 ? undefined : `尚缺 ${9 - electCr} 學分` },
+    "sys-free": { earned: freeCr, target: 3, isMet: freeCr >= 3, hint: freeCr >= 3 ? undefined : `尚缺 ${3 - freeCr} 學分` },
   };
 }
 
