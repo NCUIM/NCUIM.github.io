@@ -108,22 +108,22 @@ const STORAGE_KEY_AUTH = "app_auth_data";
 const STORAGE_KEY_EXPIRY = "app_auth_ttl";
 
 export function saveToken(accessToken: string, expiresIn: number): void {
-  localStorage.setItem(TOKEN_KEY, accessToken);
-  localStorage.setItem(TOKEN_EXPIRY_KEY, String(Date.now() + expiresIn * 1000));
+  localStorage.setItem(STORAGE_KEY_AUTH, accessToken);
+  localStorage.setItem(STORAGE_KEY_EXPIRY, String(Date.now() + expiresIn * 1000));
 }
 
 export function getAccessToken(): string | null {
-  const expiry = Number(localStorage.getItem(TOKEN_EXPIRY_KEY) ?? 0);
+  const expiry = Number(localStorage.getItem(STORAGE_KEY_EXPIRY) ?? 0);
   if (Date.now() > expiry) {
     clearToken();
     return null;
   }
-  return localStorage.getItem(TOKEN_KEY);
+  return localStorage.getItem(STORAGE_KEY_AUTH);
 }
 
 export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(TOKEN_EXPIRY_KEY);
+  localStorage.removeItem(STORAGE_KEY_AUTH);
+  localStorage.removeItem(STORAGE_KEY_EXPIRY);
 }
 
 export function isLoggedIn(): boolean {
