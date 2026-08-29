@@ -104,8 +104,8 @@ export function decodeState(state: string): string | null {
 
 // ── Token Storage ─────────────────────────────────────────────
 // localStorage key names (not actual credentials)
-const TOKEN_KEY = "ncu_access_token"; // deepsource:ignore SCT-A000
-const TOKEN_EXPIRY_KEY = "ncu_token_expiry"; // deepsource:ignore SCT-A000
+const TOKEN_KEY = "ncu_jwt";
+const TOKEN_EXPIRY_KEY = "ncu_jwt_exp";
 
 export function saveToken(accessToken: string, expiresIn: number): void {
   localStorage.setItem(TOKEN_KEY, accessToken);
