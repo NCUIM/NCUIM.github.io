@@ -1,26 +1,61 @@
 import { configDefaults, defineConfig, type Plugin } from "vitest/config";
-import type { ViteDevServer, Connect } from "vite";
+import type { ViteDevServer } from "vite";
 import type { IncomingMessage, ServerResponse } from "http";
 import react from "@vitejs/plugin-react";
 import https from "https";
 import fs from "fs";
 import path from "path";
 
+const extractSessionId = (req: IncomingMessage): string => {
+  const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
+  const queryId = url.searchParams.get("jsessionid") ?? "";
+  const cookieHeader = req.headers.cookie ?? "";
+  const jsessionidMatch = cookieHeader.match(/JSESSIONID=([^;]+)/);
+  return queryId || (jsessionidMatch ? jsessionidMatch[1].trim() : "");
+};
+
+const handleValidationResponse = (
+  cisRes: IncomingMessage,
+  res: ServerResponse,
+): void => {
+  if (cisRes.statusCode === 301 || cisRes.statusCode === 302) {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        valid: false,
+        error: `Session 無效 (HTTP ${cisRes.statusCode})`,
+        debug: { status: cisRes.statusCode, location: cisRes.headers.location },
+      }),
+    );
+    cisRes.resume();
+    return;
+  }
+  let body = "";
+  cisRes.on("data", (chunk: Buffer) => {
+    body += chunk.toString();
+  });
+  cisRes.on("end", () => {
+    const isJsRedirect = body.includes("window.location");
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        valid: !isJsRedirect,
+        debug: { bodyLength: body.length, isJsRedirect, snippet: body.substring(0, 300) },
+      }),
+    );
+  });
+};
+
 /**
  * Vite plugin that adds /ncu/cis/validate endpoint.
  * Server-side: fetches CIS sheets.xml with the user's JSESSIONID,
  * then returns 200 (valid) or 302/JS-redirect (invalid).
- * This avoids browser CORS + opaque-redirect issues.
  */
 const cisValidatePlugin = (): Plugin => ({
   name: "cis-validate",
   configureServer(server: ViteDevServer) {
     server.middlewares.use("/ncu/cis/validate", (req: IncomingMessage, res: ServerResponse) => {
-      const url = new URL(req.url ?? "/", `http://${req.headers.host}`);
-      const queryId = url.searchParams.get("jsessionid") ?? "";
-      const cookieHeader = req.headers.cookie ?? "";
-      const jsessionidMatch = cookieHeader.match(/JSESSIONID=([^;]+)/);
-      const sessionId = queryId || (jsessionidMatch ? jsessionidMatch[1].trim() : "");
+      const sessionId = extractSessionId(req);
       if (!sessionId) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ valid: false, error: "No JSESSIONID" }));
@@ -36,34 +71,7 @@ const cisValidatePlugin = (): Plugin => ({
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
           },
         },
-        (cisRes) => {
-          if (cisRes.statusCode === 301 || cisRes.statusCode === 302) {
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(
-              JSON.stringify({
-                valid: false,
-                error: `Session 無效 (HTTP ${cisRes.statusCode})`,
-                debug: { status: cisRes.statusCode, location: cisRes.headers.location },
-              }),
-            );
-            cisRes.resume();
-            return;
-          }
-          let body = "";
-          cisRes.on("data", (chunk: Buffer) => {
-            body += chunk.toString();
-          });
-          cisRes.on("end", () => {
-            const isJsRedirect = body.includes("window.location");
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(
-              JSON.stringify({
-                valid: !isJsRedirect,
-                debug: { bodyLength: body.length, isJsRedirect, snippet: body.substring(0, 300) },
-              }),
-            );
-          });
-        },
+        (cisRes) => handleValidationResponse(cisRes as IncomingMessage, res),
       );
       cisReq.on("error", (err) => {
         res.writeHead(502, { "Content-Type": "application/json" });
@@ -72,6 +80,21 @@ const cisValidatePlugin = (): Plugin => ({
     });
   },
 });
+
+const rewriteProxyLocation = (locationHeader?: string): string | null => {
+  if (!locationHeader) return null;
+  if (locationHeader.startsWith("/")) {
+    return `/ncu/cis${locationHeader}`;
+  }
+  if (locationHeader.includes("cis.ncu.edu.tw")) {
+    try {
+      return `/ncu/cis${new URL(locationHeader).pathname}`;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
 
 /**
  * Vite plugin that generates a 404.html copy of index.html in dist/
@@ -123,18 +146,7 @@ export default defineConfig({
             }
           });
           proxy.on("proxyRes", (proxyRes) => {
-            const loc = proxyRes.headers.location;
-            if (!loc) return;
-            let newPath: string | null = null;
-            if (loc.startsWith("/")) {
-              newPath = `/ncu/cis${loc}`;
-            } else if (loc.includes("cis.ncu.edu.tw")) {
-              try {
-                newPath = `/ncu/cis${new URL(loc).pathname}`;
-              } catch {
-                // ignore malformed URLs
-              }
-            }
+            const newPath = rewriteProxyLocation(proxyRes.headers.location);
             if (newPath) {
               proxyRes.headers.location = newPath;
             }

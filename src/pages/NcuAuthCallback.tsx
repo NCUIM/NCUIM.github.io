@@ -43,64 +43,80 @@ const requestTokenExchange = async (
   return { accessToken: data.access_token, expiresIn: data.expires_in ?? 3600 };
 };
 
+const parseCallbackCredentials = (): {
+  code?: string;
+  codeVerifier?: string;
+  error?: string;
+} => {
+  const url = new URL(window.location.href);
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+
+  if (!code) {
+    return { error: `Missing authorization code. URL: ${window.location.href}` };
+  }
+
+  const codeVerifier = state ? decodeState(state) : null;
+  if (!codeVerifier) {
+    return {
+      error: state
+        ? "Could not decode PKCE verifier from state parameter. State may have been modified by the authorization server."
+        : "Missing state parameter — cannot verify PKCE.",
+    };
+  }
+
+  return { code, codeVerifier };
+};
+
+const exchangeAuthCode = async (
+  code: string,
+  codeVerifier: string,
+): Promise<{ accessToken: string; expiresIn: number }> => {
+  let lastError: unknown = null;
+  for (const usePKCE of [true, false]) {
+    try {
+      return await requestTokenExchange(
+        NCU_OAUTH.tokenEndpoint,
+        code,
+        codeVerifier,
+        usePKCE,
+      );
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  const errMsg = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`Token exchange failed\n${errMsg}`);
+};
+
 /**
  * Handles the OAuth2 callback from NCU Portal.
- * The PKCE code_verifier is decoded from the state parameter —
- * no client-side storage (localStorage / sessionStorage) is needed.
  */
 const NcuAuthCallback = () => {
   const history = useHistory();
   const [error, setError] = useState<string | null>(null);
-  // Guard against React 18 strict-mode double-mount
   const processedRef = useRef(false);
 
   useEffect(() => {
     if (processedRef.current) return;
     processedRef.current = true;
 
-    // Parse directly from the real browser URL
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get("code");
-    const state = url.searchParams.get("state");
-
-    if (!code) {
-      setError(`Missing authorization code. URL: ${window.location.href}`);
+    const { code, codeVerifier, error: parseError } = parseCallbackCredentials();
+    if (parseError || !code || !codeVerifier) {
+      setError(parseError ?? "認證資訊錯誤");
       return;
     }
 
-    // Decode the PKCE code_verifier from the state parameter
-    const codeVerifier = state ? decodeState(state) : null;
-    if (!codeVerifier) {
-      setError(
-        state
-          ? "Could not decode PKCE verifier from state parameter. State may have been modified by the authorization server."
-          : "Missing state parameter — cannot verify PKCE.",
-      );
-      return;
-    }
-
-    // Exchange code for token
-    (async () => {
-      let lastError: unknown = null;
-      for (const usePKCE of [true, false]) {
-        try {
-          const result = await requestTokenExchange(
-            NCU_OAUTH.tokenEndpoint,
-            code,
-            codeVerifier,
-            usePKCE,
-          );
-          saveToken(result.accessToken, result.expiresIn);
-          history.replace("/timetable");
-          return;
-        } catch (err) {
-          lastError = err;
-        }
+    const runExchange = async () => {
+      try {
+        const result = await exchangeAuthCode(code, codeVerifier);
+        saveToken(result.accessToken, result.expiresIn);
+        history.replace("/timetable");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
       }
-
-      const errMsg = lastError instanceof Error ? lastError.message : String(lastError);
-      setError(`Token exchange failed\n${errMsg}`);
-    })();
+    };
+    void runExchange();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

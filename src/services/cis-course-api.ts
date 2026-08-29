@@ -35,26 +35,30 @@ function toText(element: Element): string {
   return (element.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
+const parseXmlCourseElement = (el: Element): CisCourse | null => {
+  const serialNo = el.getAttribute("SerialNo") ?? "";
+  if (!serialNo) return null;
+  return {
+    serialNo,
+    classNo: el.getAttribute("ClassNo") ?? "",
+    name: el.getAttribute("Title") ?? "",
+    teacher: el.getAttribute("Teacher") ?? "",
+    room: "",
+    credit: Number(el.getAttribute("credit") ?? 0),
+    classTimes: (el.getAttribute("ClassTime") ?? "").split(",").filter(Boolean),
+    classTimesAlt: el.getAttribute("ClassTimeAlt") ?? "",
+    status: el.getAttribute("Status") ?? "",
+    admitCnt: Number(el.getAttribute("admitCnt") ?? 0),
+    limitCnt: Number(el.getAttribute("limitCnt") ?? 0),
+    waitCnt: Number(el.getAttribute("waitCnt") ?? 0),
+  };
+};
+
 function parseCourseXml(text: string): CisCourse[] {
   const doc = new DOMParser().parseFromString(text, "text/xml");
-  return Array.from(doc.querySelectorAll("Courses > Course")).flatMap((el) => {
-    const serialNo = el.getAttribute("SerialNo") ?? "";
-    if (!serialNo) return [];
-    return [{
-      serialNo,
-      classNo: el.getAttribute("ClassNo") ?? "",
-      name: el.getAttribute("Title") ?? "",
-      teacher: el.getAttribute("Teacher") ?? "",
-      room: "",
-      credit: Number(el.getAttribute("credit") ?? 0),
-      classTimes: (el.getAttribute("ClassTime") ?? "").split(",").filter(Boolean),
-      classTimesAlt: el.getAttribute("ClassTimeAlt") ?? "",
-      status: el.getAttribute("Status") ?? "",
-      admitCnt: Number(el.getAttribute("admitCnt") ?? 0),
-      limitCnt: Number(el.getAttribute("limitCnt") ?? 0),
-      waitCnt: Number(el.getAttribute("waitCnt") ?? 0),
-    }];
-  });
+  return Array.from(doc.querySelectorAll("Courses > Course"))
+    .map(parseXmlCourseElement)
+    .filter((c): c is CisCourse => c !== null);
 }
 
 function parseSemesters(html: string): string[] {
@@ -71,6 +75,12 @@ function parseSemesters(html: string): string[] {
     .filter((semester) => !startYear || Number(semester.slice(0, 3)) >= startYear);
 }
 
+const isValidStatusTableRow = (cells: string[]): boolean => {
+  if (cells.length < 7) return false;
+  if (!/^\d+$/.test(cells[1] ?? "")) return false;
+  return /^[A-Z]{2,}\d+/.test(cells[2] ?? "");
+};
+
 /** Parse one semester's official CIS course-taking-status page. */
 export function parseCisCourseStatusPage(html: string, semester: string): CisCourse[] {
   const doc = new DOMParser().parseFromString(html, "text/html");
@@ -78,9 +88,7 @@ export function parseCisCourseStatusPage(html: string, semester: string): CisCou
 
   return Array.from(doc.querySelectorAll("tr")).flatMap((row) => {
     const cells = Array.from(row.querySelectorAll("td, th")).map(toText);
-    if (cells.length < 7 || !/^\d+$/.test(cells[1] ?? "") || !/^[A-Z]{2,}\d+/.test(cells[2] ?? "")) {
-      return [];
-    }
+    if (!isValidStatusTableRow(cells)) return [];
 
     const serialNo = cells[1];
     const classNo = cells[2];

@@ -10,7 +10,6 @@ import {
   IonItem,
   IonLabel,
   IonList,
-  IonNote,
   IonPage,
   IonSegment,
   IonSegmentButton,
@@ -37,12 +36,12 @@ export interface Course {
   readonly name: string;
   readonly teacher: string;
   readonly room?: string;
-  readonly courseType?: "REQUIRED" | "ELECTIVE" | string;
+  readonly courseType?: "REQUIRED" | "ELECTIVE";
   readonly credit?: number;
   readonly isMyCourse?: boolean;
 }
 
-interface Period {
+export interface Period {
   readonly id: string;
   readonly time: string;
 }
@@ -89,6 +88,13 @@ function getDefaultDayIndex(): number {
   return 0;
 }
 
+const getPeriodTimeBounds = (timeStr: string): { start: number; end: number } => {
+  const [startStr, endStr] = timeStr.split("-");
+  const [sh, sm] = startStr.split(":").map(Number);
+  const [eh, em] = endStr.split(":").map(Number);
+  return { start: sh * 60 + sm, end: eh * 60 + em };
+};
+
 function getTimeIndicators(
   timetableData: Record<string, Course[]>,
   dayIndex: number,
@@ -98,37 +104,37 @@ function getTimeIndicators(
   let current = -1;
   let next = -1;
   for (let i = 0; i < periods.length; i++) {
-    const [startStr, endStr] = periods[i].time.split("-");
-    const [sh, sm] = startStr.split(":").map(Number);
-    const [eh, em] = endStr.split(":").map(Number);
-    const start = sh * 60 + sm;
-    const end = eh * 60 + em;
+    const { start, end } = getPeriodTimeBounds(periods[i].time);
     const courses = timetableData[`${periods[i].id}-${dayIndex}`];
     const hasCourse = Boolean(courses && courses.length > 0);
-    if (mins >= start && mins < end && hasCourse) {
+    if (hasCourse && mins >= start && mins < end) {
       current = i;
-    } else if (next === -1 && mins < start && hasCourse) {
+    } else if (hasCourse && next === -1 && mins < start) {
       next = i;
     }
   }
   return { current, next };
 }
 
-function matchCisCourse(master: MasterCourseItem, myCourses: readonly CisCourse[]): { isMine: boolean; room?: string } {
-  const matched = myCourses.find((courseItem) => {
-    if (courseItem.serialNo && String(master.serialNo) === String(courseItem.serialNo)) {
-      return true;
-    }
-    if (courseItem.classNo && master.classNo && courseItem.classNo === master.classNo) {
-      return true;
-    }
-    const sameTitle = courseItem.name.trim() === master.title.trim();
-    const sameTeacher = master.teachers.some(
-      (t) => t.trim() && (courseItem.teacher.includes(t.trim()) || t.trim().includes(courseItem.teacher.trim())),
-    );
-    return sameTitle && sameTeacher;
+const isTeacherMatch = (teachers: readonly string[], target: string): boolean => {
+  const tTrim = target.trim();
+  return teachers.some((t) => {
+    const item = t.trim();
+    return item.length > 0 && (tTrim.includes(item) || item.includes(tTrim));
   });
+};
 
+const isCourseMatch = (master: MasterCourseItem, cis: CisCourse): boolean => {
+  if (cis.serialNo && String(master.serialNo) === String(cis.serialNo)) return true;
+  if (cis.classNo && master.classNo && cis.classNo === master.classNo) return true;
+  return cis.name.trim() === master.title.trim() && isTeacherMatch(master.teachers, cis.teacher);
+};
+
+function matchCisCourse(
+  master: MasterCourseItem,
+  myCourses: readonly CisCourse[],
+): { isMine: boolean; room?: string } {
+  const matched = myCourses.find((courseItem) => isCourseMatch(master, courseItem));
   return {
     isMine: Boolean(matched),
     room: matched?.room || master.room,
@@ -146,7 +152,7 @@ function mapMasterCourseToCourse(
     name: c.title,
     teacher: c.teachers.join(", "),
     room: room || c.room,
-    courseType: c.courseType,
+    courseType: c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE",
     credit: c.credit,
     isMyCourse: isMine,
   };
@@ -159,7 +165,28 @@ function areSameCourse(a: Course, b: Course): boolean {
   );
 }
 
-// skipcq: JS-R1005
+const parseClassTimeDayAndPeriods = (
+  ct: string,
+  dayMap: Record<string, number>,
+): { dayIdx: number; periodChars: string } => {
+  if (ct.includes("-")) {
+    const [dayPart, periodPart] = ct.split("-");
+    const dNum = parseInt(dayPart, 10);
+    return {
+      dayIdx: dNum >= 1 && dNum <= 5 ? dNum - 1 : -1,
+      periodChars: periodPart,
+    };
+  }
+  if (ct.length >= 2 && ct[0] >= "1" && ct[0] <= "5") {
+    return { dayIdx: parseInt(ct[0], 10) - 1, periodChars: ct.slice(1) };
+  }
+  const dayMatch = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/u);
+  if (dayMatch) {
+    return { dayIdx: dayMap[dayMatch[1]] ?? -1, periodChars: ct.slice(dayMatch[0].length) };
+  }
+  return { dayIdx: -1, periodChars: "" };
+};
+
 function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<string, Course[]> {
   const DAY_MAP: Record<string, number> = {
     "一": 0, "二": 1, "三": 2, "四": 3, "五": 4,
@@ -169,28 +196,9 @@ function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<str
 
   for (const c of courses) {
     for (const ct of c.classTimes) {
-      let dayIdx = -1;
-      let periodChars = "";
-
-      if (ct.includes("-")) {
-        const [dayPart, periodPart] = ct.split("-");
-        const dNum = parseInt(dayPart, 10);
-        if (dNum >= 1 && dNum <= 5) {
-          dayIdx = dNum - 1;
-          periodChars = periodPart;
-        }
-      } else if (ct.length >= 2 && ct[0] >= "1" && ct[0] <= "5") {
-        dayIdx = parseInt(ct[0], 10) - 1;
-        periodChars = ct.slice(1);
-      } else {
-        const dayMatch = ct.match(/^(Mon|Tue|Wed|Thu|Fri|[一二三四五])/u);
-        if (dayMatch) {
-          dayIdx = DAY_MAP[dayMatch[1]] ?? -1;
-          periodChars = ct.slice(dayMatch[0].length);
-        }
-      }
-
+      const { dayIdx, periodChars } = parseClassTimeDayAndPeriods(ct, DAY_MAP);
       if (dayIdx < 0) continue;
+
       for (const ch of periodChars) {
         const periodItem = periods.find((p) => p.id === ch);
         if (!periodItem) continue;
@@ -216,10 +224,29 @@ function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<str
   return result;
 }
 
+const findSpanEndIndex = (
+  start: number,
+  courseItem: Course,
+  timetableData: Record<string, Course[]>,
+  dayIndex: number,
+): number => {
+  let end = start;
+  while (end + 1 < periods.length) {
+    const nextP = periods[end + 1];
+    const nextCourses = timetableData[`${nextP.id}-${dayIndex}`] || [];
+    const isMatch = nextCourses.some((nc) => areSameCourse(nc, courseItem));
+    if (isMatch) {
+      end++;
+    } else {
+      break;
+    }
+  }
+  return end;
+};
+
 /**
  * Mobile view fixed track layout
  */
-// skipcq: JS-R1005
 function getDayFixedTracks(
   timetableData: Record<string, Course[]>,
   dayIndex: number,
@@ -238,18 +265,7 @@ function getDayFixedTracks(
       const courseIdKey = `${courseItem.id || courseItem.name}-${courseItem.teacher}`;
       if (processedCourses.has(courseIdKey)) continue;
 
-      let end = i;
-      while (end + 1 < periods.length) {
-        const nextP = periods[end + 1];
-        const nextCourses = timetableData[`${nextP.id}-${dayIndex}`] || [];
-        const isMatch = nextCourses.some((nc) => areSameCourse(nc, courseItem));
-        if (isMatch) {
-          end++;
-        } else {
-          break;
-        }
-      }
-
+      const end = findSpanEndIndex(i, courseItem, timetableData, dayIndex);
       processedCourses.add(courseIdKey);
       spans.push({
         course: courseItem,
@@ -280,19 +296,13 @@ function getDayFixedTracks(
   }
 
   const maxTracks = Math.max(1, ...spans.map((s) => s.trackIndex + 1));
-
-  const rows = periods.map((period, i) => {
+  const rows = periods.map((period, idx) => {
+    const activeSpans = spans.filter((s) => s.startIdx === idx);
     const tracks: (Course | null)[] = Array(maxTracks).fill(null);
-    for (const span of spans) {
-      if (i >= span.startIdx && i <= span.endIdx) {
-        tracks[span.trackIndex] = span.course;
-      }
+    for (const s of activeSpans) {
+      tracks[s.trackIndex] = s.course;
     }
-    return {
-      period,
-      tracks,
-      idx: i,
-    };
+    return { period, tracks, idx };
   });
 
   return { maxTracks, rows };
@@ -300,10 +310,7 @@ function getDayFixedTracks(
 
 /**
  * Desktop view cluster-based course spanning layout
- * Automatically calculates dynamic column divisions so morning 2-course cluster takes 50% each,
- * rather than being squished by afternoon 4-course clusters.
  */
-// skipcq: JS-R1005
 function getDesktopCourseSpans(
   timetableData: Record<string, Course[]>,
   dayIndex: number,
@@ -319,17 +326,7 @@ function getDesktopCourseSpans(
       const key = `${courseItem.id || courseItem.name}-${courseItem.teacher}`;
       if (processed.has(key)) continue;
 
-      let end = i;
-      while (end + 1 < periods.length) {
-        const nextP = periods[end + 1];
-        const nextCourses = timetableData[`${nextP.id}-${dayIndex}`] || [];
-        if (nextCourses.some((nc) => areSameCourse(nc, courseItem))) {
-          end++;
-        } else {
-          break;
-        }
-      }
-
+      const end = findSpanEndIndex(i, courseItem, timetableData, dayIndex);
       processed.add(key);
       spans.push({ course: courseItem, startIdx: i, endIdx: end });
     }
@@ -349,12 +346,12 @@ function getDesktopCourseSpans(
       changed = false;
       for (let j = 0; j < spans.length; j++) {
         if (visited.has(j)) continue;
-        const overlapsWithCluster = clusterIndices.some(
+        const overlapsCluster = clusterIndices.some(
           (cIdx) =>
             Math.max(spans[cIdx].startIdx, spans[j].startIdx) <=
             Math.min(spans[cIdx].endIdx, spans[j].endIdx),
         );
-        if (overlapsWithCluster) {
+        if (overlapsCluster) {
           clusterIndices.push(j);
           visited.add(j);
           changed = true;
@@ -362,35 +359,37 @@ function getDesktopCourseSpans(
       }
     }
 
-    const cluster = clusterIndices
-      .map((idx) => spans[idx])
-      .sort((a, b) => a.startIdx - b.startIdx);
+    clusterIndices.sort((a, b) => spans[a].startIdx - spans[b].startIdx);
 
-    const assignedTracks: number[] = [];
-    for (let cIdx = 0; cIdx < cluster.length; cIdx++) {
-      const usedInCluster = new Set<number>();
-      for (let prev = 0; prev < cIdx; prev++) {
+    const assignedTracks: Record<number, number> = {};
+    for (const cIdx of clusterIndices) {
+      const used = new Set<number>();
+      for (const otherIdx of clusterIndices) {
+        if (otherIdx === cIdx) continue;
+        if (assignedTracks[otherIdx] === undefined) continue;
+
         const overlaps =
-          Math.max(cluster[cIdx].startIdx, cluster[prev].startIdx) <=
-          Math.min(cluster[cIdx].endIdx, cluster[prev].endIdx);
+          Math.max(spans[cIdx].startIdx, spans[otherIdx].startIdx) <=
+          Math.min(spans[cIdx].endIdx, spans[otherIdx].endIdx);
         if (overlaps) {
-          usedInCluster.add(assignedTracks[prev]);
+          used.add(assignedTracks[otherIdx]);
         }
       }
-      let track = 0;
-      while (usedInCluster.has(track)) {
-        track++;
-      }
-      assignedTracks.push(track);
+      let t = 0;
+      while (used.has(t)) t++;
+      assignedTracks[cIdx] = t;
     }
 
-    const clusterTotalCols = Math.max(1, ...assignedTracks.map((t) => t + 1));
+    const clusterTotalCols = Math.max(
+      1,
+      ...clusterIndices.map((cIdx) => (assignedTracks[cIdx] ?? 0) + 1),
+    );
 
-    for (let cIdx = 0; cIdx < cluster.length; cIdx++) {
+    for (const cIdx of clusterIndices) {
       result.push({
-        course: cluster[cIdx].course,
-        startIdx: cluster[cIdx].startIdx,
-        endIdx: cluster[cIdx].endIdx,
+        course: spans[cIdx].course,
+        startIdx: spans[cIdx].startIdx,
+        endIdx: spans[cIdx].endIdx,
         colIndex: assignedTracks[cIdx],
         totalCols: clusterTotalCols,
       });
@@ -400,7 +399,116 @@ function getDesktopCourseSpans(
   return result;
 }
 
-// ── Mobile View ───────────────────────────────────────────────
+// ── Mobile View Components ─────────────────────────────────────
+
+const MobileTrackCard = ({
+  course,
+  maxTracks,
+}: Readonly<{
+  course: Course;
+  maxTracks: number;
+}>) => (
+  <div style={{ minWidth: 0 }}>
+    <h2
+      style={{
+        fontSize: maxTracks >= 3 ? 15.5 : 16,
+        fontWeight: 700,
+        margin: 0,
+        lineHeight: 1.3,
+        wordBreak: "break-word",
+      }}
+    >
+      {course.isMyCourse && (
+        <IonIcon
+          icon={star}
+          style={{
+            color: "var(--ncu-star)",
+            marginRight: 3,
+            fontSize: "0.95em",
+            verticalAlign: "middle",
+          }}
+        />
+      )}
+      {course.name}
+      {course.courseType === "REQUIRED" && (
+        <span
+          style={{
+            fontSize: 11,
+            color: "var(--ncu-primary)",
+            marginLeft: 4,
+            fontWeight: 700,
+          }}
+        >
+          [必修]
+        </span>
+      )}
+    </h2>
+    <p
+      style={{
+        margin: "3px 0 0",
+        fontSize: maxTracks >= 3 ? 13.5 : 14,
+        color: "var(--ncu-muted)",
+        lineHeight: 1.3,
+        wordBreak: "break-word",
+      }}
+    >
+      {course.teacher}
+      {course.room ? ` · ${course.room}` : ""}
+    </p>
+  </div>
+);
+
+const PeriodTimeBadge = ({
+  period,
+  isCurrent,
+  isNext,
+}: Readonly<{
+  period: Period;
+  isCurrent: boolean;
+  isNext: boolean;
+}>) => (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: "48px",
+      textAlign: "center",
+      flexShrink: 0,
+    }}
+  >
+    <IonText
+      style={{
+        fontSize: "18px",
+        fontWeight: 800,
+        color: isCurrent ? "var(--ncu-primary)" : "var(--ncu-ink)",
+      }}
+    >
+      {period.id}
+    </IonText>
+    <IonText
+      style={{
+        fontSize: "11px",
+        color: isCurrent ? "var(--ncu-primary)" : "var(--ncu-muted)",
+        fontWeight: isCurrent ? 700 : 400,
+        lineHeight: 1.2,
+      }}
+    >
+      {period.time}
+    </IonText>
+    {isCurrent && (
+      <IonBadge color="primary" style={{ fontSize: "9px", marginTop: "4px", padding: "1px 4px" }}>
+        NOW
+      </IonBadge>
+    )}
+    {isNext && (
+      <IonBadge color="warning" style={{ fontSize: "9px", marginTop: "4px", padding: "1px 4px" }}>
+        NEXT
+      </IonBadge>
+    )}
+  </div>
+);
 
 const TimetableMobileView = ({
   timetableData,
@@ -427,8 +535,9 @@ const TimetableMobileView = ({
 
   const scrollToIndex =
     currentPeriodIndex >= 0 ? currentPeriodIndex : nextPeriodIndex;
+
   useEffect(() => {
-    if (!isToday || scrollToIndex < 0) return;
+    if (!isToday || scrollToIndex < 0) return undefined;
     const timer = setTimeout(() => {
       periodRefs.current[scrollToIndex]?.scrollIntoView({
         behavior: "smooth",
@@ -459,6 +568,10 @@ const TimetableMobileView = ({
           const isCurrent = isToday && idx === currentPeriodIndex;
           const isNext =
             isToday && idx === nextPeriodIndex && idx !== currentPeriodIndex;
+          const trackSlots = tracks.map((course, slotIdx) => ({
+            course,
+            slotKey: `mobile-slot-${period.id}-${slotIdx}`,
+          }));
 
           return (
             <IonItem
@@ -485,68 +598,7 @@ const TimetableMobileView = ({
                   padding: "10px 0",
                 }}
               >
-                {/* Period identifier block */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minWidth: "48px",
-                    textAlign: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <IonText
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 800,
-                      color: isCurrent
-                        ? "var(--ncu-primary)"
-                        : "var(--ncu-ink)",
-                    }}
-                  >
-                    {period.id}
-                  </IonText>
-                  <IonText
-                    style={{
-                      fontSize: "11px",
-                      color: isCurrent
-                        ? "var(--ncu-primary)"
-                        : "var(--ncu-muted)",
-                      fontWeight: isCurrent ? 700 : 400,
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {period.time}
-                  </IonText>
-                  {isCurrent && (
-                    <IonBadge
-                      color="primary"
-                      style={{
-                        fontSize: "9px",
-                        marginTop: "4px",
-                        padding: "1px 4px",
-                      }}
-                    >
-                      NOW
-                    </IonBadge>
-                  )}
-                  {isNext && (
-                    <IonBadge
-                      color="warning"
-                      style={{
-                        fontSize: "9px",
-                        marginTop: "4px",
-                        padding: "1px 4px",
-                      }}
-                    >
-                      NEXT
-                    </IonBadge>
-                  )}
-                </div>
-
-                {/* Course tracks side-by-side inside this period */}
+                <PeriodTimeBadge period={period} isCurrent={isCurrent} isNext={isNext} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
@@ -557,67 +609,13 @@ const TimetableMobileView = ({
                       alignItems: "flex-start",
                     }}
                   >
-                    {tracks.map((course, trackIdx) => {
-                      if (!course) {
-                        return <div key={`empty-${period.id}-${trackIdx}`} />;
-                      }
-
-                      return (
-                        <div
-                          key={`${course.name}-${course.teacher}-${trackIdx}`}
-                          style={{
-                            minWidth: 0,
-                          }}
-                        >
-                          <h2
-                            style={{
-                              fontSize: maxTracks >= 3 ? 15.5 : 16,
-                              fontWeight: 700,
-                              margin: 0,
-                              lineHeight: 1.3,
-                              wordBreak: "break-word",
-                            }}
-                          >
-                            {course.isMyCourse && (
-                              <IonIcon
-                                icon={star}
-                                style={{
-                                  color: "var(--ncu-star)",
-                                  marginRight: 3,
-                                  fontSize: "0.95em",
-                                  verticalAlign: "middle",
-                                }}
-                              />
-                            )}
-                            {course.name}
-                            {course.courseType === "REQUIRED" && (
-                              <span
-                                style={{
-                                  fontSize: 11,
-                                  color: "var(--ncu-primary)",
-                                  marginLeft: 4,
-                                  fontWeight: 700,
-                                }}
-                              >
-                                [必修]
-                              </span>
-                            )}
-                          </h2>
-                          <p
-                            style={{
-                              margin: "3px 0 0",
-                              fontSize: maxTracks >= 3 ? 13.5 : 14,
-                              color: "var(--ncu-muted)",
-                              lineHeight: 1.3,
-                              wordBreak: "break-word",
-                            }}
-                          >
-                            {course.teacher}
-                            {course.room ? ` · ${course.room}` : ""}
-                          </p>
-                        </div>
-                      );
-                    })}
+                    {trackSlots.map(({ course, slotKey }) =>
+                      course ? (
+                        <MobileTrackCard key={slotKey} course={course} maxTracks={maxTracks} />
+                      ) : (
+                        <div key={slotKey} />
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
@@ -629,7 +627,136 @@ const TimetableMobileView = ({
   );
 };
 
-// ── Desktop View: 5-Day Weekly Grid (Zero-Gap Flush Cards) ──────
+// ── Desktop View Components ────────────────────────────────────
+
+const DesktopRulerColumn = ({
+  periodHeights,
+}: Readonly<{
+  periodHeights: readonly number[];
+}>) => (
+  <div style={{ display: "flex", flexDirection: "column" }}>
+    {periods.map((period, idx) => {
+      const rowHeight = periodHeights[idx];
+      const isSlim = rowHeight === DESKTOP_EMPTY_ROW_HEIGHT;
+
+      return (
+        <div
+          key={period.id}
+          style={{
+            height: rowHeight,
+            borderBottom:
+              idx === periods.length - 1 ? "none" : "1px solid var(--ncu-border)",
+            borderRight: "2px solid var(--ncu-ink)",
+            background:
+              period.id === "N" ? "rgba(0, 0, 0, 0.03)" : "var(--ncu-primary-light)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2px 2px",
+            textAlign: "center",
+            opacity: isSlim ? 0.75 : 1,
+          }}
+        >
+          <strong
+            style={{
+              fontSize: isSlim ? 13 : 15,
+              color: "var(--ncu-ink)",
+              fontWeight: 700,
+            }}
+          >
+            {period.id === "N" ? "午休" : `第 ${period.id} 節`}
+          </strong>
+          <span
+            style={{
+              fontSize: isSlim ? 10.5 : 12,
+              color: "var(--ncu-muted)",
+              marginTop: isSlim ? 0 : 2,
+            }}
+          >
+            {period.time}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+);
+
+const DesktopCourseCard = ({
+  span,
+  periodTops,
+}: Readonly<{
+  span: DesktopCourseSpan;
+  periodTops: readonly number[];
+}>) => {
+  const isMine = span.course.isMyCourse ?? false;
+  const isRequired = span.course.courseType === "REQUIRED";
+  const startTop = periodTops[span.startIdx];
+  const spanHeight = periodTops[span.endIdx + 1] - periodTops[span.startIdx];
+  const leftPct = (span.colIndex / span.totalCols) * 100;
+  const widthPct = 100 / span.totalCols;
+
+  const titleFontSize =
+    span.totalCols === 1 ? 18 : span.totalCols === 2 ? 16 : span.totalCols === 3 ? 14.5 : 13.5;
+  const teacherFontSize =
+    span.totalCols === 1 ? 14.5 : span.totalCols === 2 ? 13.5 : 12.5;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: startTop,
+        height: spanHeight,
+        left: `${leftPct}%`,
+        width: `${widthPct}%`,
+        background: isMine ? "var(--ncu-star-light)" : "#ffffff",
+        border: "1px solid var(--ncu-border)",
+        padding: "8px 6px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        gap: 4,
+        boxShadow: isMine ? "inset 0 0 0 2px var(--ncu-star)" : "none",
+        zIndex: isMine ? 3 : 2,
+        overflow: "hidden",
+        boxSizing: "border-box",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, flexWrap: "wrap" }}>
+        {isMine && (
+          <IonIcon icon={star} style={{ color: "var(--ncu-star)", fontSize: titleFontSize, flexShrink: 0 }} />
+        )}
+        <strong style={{ fontSize: titleFontSize, fontWeight: 800, lineHeight: 1.3, color: "var(--ncu-ink)" }}>
+          {span.course.name}
+        </strong>
+        {isRequired && (
+          <span style={{ fontSize: 11, color: "var(--ncu-primary)", fontWeight: 700 }}>
+            [必修]
+          </span>
+        )}
+      </div>
+      <span style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.3, fontWeight: 500 }}>
+        {span.course.teacher}
+      </span>
+      {span.course.room && (
+        <span
+          style={{
+            fontSize: span.totalCols <= 2 ? 12 : 11,
+            color: "var(--ncu-primary)",
+            fontWeight: 700,
+            background: "rgba(49, 87, 200, 0.08)",
+            padding: "2px 8px",
+            borderRadius: 4,
+          }}
+        >
+          {span.course.room}
+        </span>
+      )}
+    </div>
+  );
+};
 
 const TimetableDesktopView = ({
   timetableData,
@@ -642,7 +769,6 @@ const TimetableDesktopView = ({
     return days.map((_, dayIdx) => getDesktopCourseSpans(timetableData, dayIdx));
   }, [timetableData]);
 
-  // Dynamic period heights (shrink rows that are empty across all 5 days)
   const periodHeights = useMemo(() => {
     return periods.map((p) => {
       const hasCourse = days.some((_, dayIdx) => {
@@ -678,7 +804,6 @@ const TimetableDesktopView = ({
           boxShadow: "var(--ncu-shadow-hard)",
         }}
       >
-        {/* Header row: 6 Columns */}
         <div
           style={{
             display: "grid",
@@ -707,19 +832,12 @@ const TimetableDesktopView = ({
                 style={{
                   padding: "12px 4px",
                   textAlign: "center",
-                  background: isTodayCol
-                    ? "#1e3a8a"
-                    : "var(--ncu-primary)",
+                  background: isTodayCol ? "#1e3a8a" : "var(--ncu-primary)",
                   color: "#fff",
                   fontWeight: 800,
                   fontSize: 17,
-                  borderRight:
-                    dayIdx === days.length - 1
-                      ? "none"
-                      : "1px solid rgba(0, 0, 0, 0.2)",
-                  boxShadow: isTodayCol
-                    ? "inset 0 -3.5px 0 #fbbf24"
-                    : "none",
+                  borderRight: dayIdx === days.length - 1 ? "none" : "1px solid rgba(0, 0, 0, 0.2)",
+                  boxShadow: isTodayCol ? "inset 0 -3.5px 0 #fbbf24" : "none",
                 }}
               >
                 週{day}
@@ -728,7 +846,6 @@ const TimetableDesktopView = ({
           })}
         </div>
 
-        {/* 10 Period Grid Body */}
         <div
           style={{
             display: "grid",
@@ -736,62 +853,14 @@ const TimetableDesktopView = ({
             position: "relative",
           }}
         >
-          {/* Column 1: Time Ruler */}
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {periods.map((period, idx) => {
-              const rowHeight = periodHeights[idx];
-              const isSlim = rowHeight === DESKTOP_EMPTY_ROW_HEIGHT;
-
-              return (
-                <div
-                  key={period.id}
-                  style={{
-                    height: rowHeight,
-                    borderBottom:
-                      idx === periods.length - 1
-                        ? "none"
-                        : "1px solid var(--ncu-border)",
-                    borderRight: "2px solid var(--ncu-ink)",
-                    background:
-                      period.id === "N"
-                        ? "rgba(0, 0, 0, 0.03)"
-                        : "var(--ncu-primary-light)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "2px 2px",
-                    textAlign: "center",
-                    opacity: isSlim ? 0.75 : 1,
-                  }}
-                >
-                  <strong
-                    style={{
-                      fontSize: isSlim ? 13 : 15,
-                      color: "var(--ncu-ink)",
-                      fontWeight: 700,
-                    }}
-                  >
-                    {period.id === "N" ? "午休" : `第 ${period.id} 節`}
-                  </strong>
-                  <span
-                    style={{
-                      fontSize: isSlim ? 10.5 : 12,
-                      color: "var(--ncu-muted)",
-                      marginTop: isSlim ? 0 : 2,
-                    }}
-                  >
-                    {period.time}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Columns 2-6: Day Columns (無間距無圓角 Flush 格線樣式) */}
+          <DesktopRulerColumn periodHeights={periodHeights} />
           {days.map((day, dayIdx) => {
             const spans = daySpans[dayIdx];
             const isTodayCol = dayIdx === todayDayIndex;
+            const spanSlots = spans.map((span, sIdx) => ({
+              span,
+              spanKey: `desktop-span-${day}-${sIdx}`,
+            }));
 
             return (
               <div
@@ -799,144 +868,13 @@ const TimetableDesktopView = ({
                 style={{
                   position: "relative",
                   height: totalBodyHeight,
-                  borderRight:
-                    dayIdx === days.length - 1
-                      ? "none"
-                      : "1px solid var(--ncu-border)",
+                  borderRight: dayIdx === days.length - 1 ? "none" : "1px solid var(--ncu-border)",
                   background: isTodayCol ? "rgba(49, 87, 200, 0.02)" : "var(--ncu-surface)",
                 }}
               >
-                {/* 緊貼無間隙、無圓角的純格線卡片 */}
-                {spans.map((span) => {
-                  const isMine = span.course.isMyCourse ?? false;
-                  const isRequired = span.course.courseType === "REQUIRED";
-                  const startTop = periodTops[span.startIdx];
-                  const spanHeight =
-                    periodTops[span.endIdx + 1] -
-                    periodTops[span.startIdx];
-
-                  const leftPct = (span.colIndex / span.totalCols) * 100;
-                  const widthPct = 100 / span.totalCols;
-
-                  const titleFontSize =
-                    span.totalCols === 1
-                      ? 18
-                      : span.totalCols === 2
-                        ? 16
-                        : span.totalCols === 3
-                          ? 14.5
-                          : 13.5;
-
-                  const teacherFontSize =
-                    span.totalCols === 1
-                      ? 14.5
-                      : span.totalCols === 2
-                        ? 13.5
-                        : 12.5;
-
-                  const roomFontSize =
-                    span.totalCols === 1
-                      ? 13
-                      : span.totalCols === 2
-                        ? 12
-                        : 11;
-
-                  return (
-                    <div
-                      key={`${span.course.name}-${span.course.teacher}-${span.startIdx}`}
-                      style={{
-                        position: "absolute",
-                        top: startTop,
-                        height: spanHeight,
-                        left: `${leftPct}%`,
-                        width: `${widthPct}%`,
-                        background: isMine
-                          ? "var(--ncu-star-light)"
-                          : "#ffffff",
-                        border: "1px solid var(--ncu-border)",
-                        padding: "8px 6px",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        textAlign: "center",
-                        gap: 4,
-                        boxShadow: isMine
-                          ? "inset 0 0 0 2px var(--ncu-star)"
-                          : "none",
-                        zIndex: isMine ? 3 : 2,
-                        overflow: "hidden",
-                        boxSizing: "border-box",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 4,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {isMine && (
-                          <IonIcon
-                            icon={star}
-                            style={{
-                              color: "var(--ncu-star)",
-                              fontSize: titleFontSize,
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
-                        <strong
-                          style={{
-                            fontSize: titleFontSize,
-                            fontWeight: 800,
-                            lineHeight: 1.3,
-                            color: "var(--ncu-ink)",
-                          }}
-                        >
-                          {span.course.name}
-                        </strong>
-                        {isRequired && (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              color: "var(--ncu-primary)",
-                              fontWeight: 700,
-                            }}
-                          >
-                            [必修]
-                          </span>
-                        )}
-                      </div>
-                      <span
-                        style={{
-                          fontSize: teacherFontSize,
-                          color: "var(--ncu-muted)",
-                          lineHeight: 1.3,
-                          fontWeight: 500,
-                        }}
-                      >
-                        {span.course.teacher}
-                      </span>
-                      {span.course.room && (
-                        <span
-                          style={{
-                            fontSize: roomFontSize,
-                            color: "var(--ncu-primary)",
-                            fontWeight: 700,
-                            background: "rgba(49, 87, 200, 0.08)",
-                            padding: "2px 8px",
-                            borderRadius: 4,
-                          }}
-                        >
-                          {span.course.room}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
+                {spanSlots.map(({ span, spanKey }) => (
+                  <DesktopCourseCard key={spanKey} span={span} periodTops={periodTops} />
+                ))}
               </div>
             );
           })}
@@ -1006,16 +944,16 @@ const TimetablePage = () => {
     isCisLoggedIn() ? "mine" : "all",
   );
 
-  // Auto-tick every 30 seconds so NOW/NEXT indicators update dynamically without page reload
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTimestamp(Date.now());
     }, 30000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
   }, []);
 
-  // If tab stays open past midnight (00:00), automatically advance selectedDay to the new day
   const prevDayRef = useRef(getDefaultDayIndex());
   useEffect(() => {
     const newDay = getDefaultDayIndex();
@@ -1032,10 +970,9 @@ const TimetablePage = () => {
   const [cisAuthenticated, setCisAuthenticated] = useState(isCisLoggedIn());
   const [showCisLogin, setShowCisLogin] = useState(false);
 
-  // Load default master courses (IM5000+ from S3 all.json)
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const loadDefaultCourses = async () => {
       setLoading(true);
       try {
         const courses = await fetchImMasterCourses();
@@ -1044,24 +981,22 @@ const TimetablePage = () => {
         }
       } catch (err) {
         if (!cancelled) {
-          setApiError(
-            err instanceof Error ? err.message : "載入碩士班課程資料失敗",
-          );
+          setApiError(err instanceof Error ? err.message : "載入碩士班課程資料失敗");
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+    void loadDefaultCourses();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // Fetch courses from CIS session when user links their session
   useEffect(() => {
-    if (!cisAuthenticated) return;
+    if (!cisAuthenticated) return undefined;
     let cancelled = false;
-    (async () => {
+    const loadCisCourses = async () => {
       setLoading(true);
       setApiError(null);
       try {
@@ -1083,27 +1018,24 @@ const TimetablePage = () => {
       } finally {
         if (!cancelled) setLoading(false);
       }
-    })();
+    };
+    void loadCisCourses();
     return () => {
       cancelled = true;
     };
   }, [cisAuthenticated]);
 
-  // Combine master courses with user selection & filter by viewScope
   const timetableData = useMemo(() => {
-    // In "mine" mode, directly build grid from CIS enrolled courses
     if (viewScope === "mine" && myCisCourses.length > 0) {
       return buildTimetableFromCisCourses(myCisCourses);
     }
 
     const map = buildTimetableMapFromMasterCourses(masterCourses);
     const result: Record<string, Course[]> = {};
-
     for (const [key, list] of Object.entries(map)) {
       result[key] = list.map((c) => mapMasterCourseToCourse(c, myCisCourses));
     }
 
-    // In "all" mode, also ensure any personal courses enrolled from CIS are in the grid with star
     if (myCisCourses.length > 0) {
       const cisMap = buildTimetableFromCisCourses(myCisCourses);
       for (const [key, cisList] of Object.entries(cisMap)) {
@@ -1121,10 +1053,7 @@ const TimetablePage = () => {
     return result;
   }, [masterCourses, myCisCourses, viewScope]);
 
-  const enrolledCount = useMemo(() => {
-    return myCisCourses.length;
-  }, [myCisCourses]);
-
+  const enrolledCount = useMemo(() => myCisCourses.length, [myCisCourses]);
   const dayIndex = Number(selectedDay);
   const { current: currentPeriodIndex, next: nextPeriodIndex } = useMemo(
     () => getTimeIndicators(timetableData, dayIndex),

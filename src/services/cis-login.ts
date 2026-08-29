@@ -81,28 +81,16 @@ export function validateJsessionIdFormat(raw: string): { valid: boolean; error?:
   return { valid: true };
 }
 
-/**
- * Validate a JSESSIONID via the server-side /ncu/cis/validate endpoint.
- * Performs client-side format validation first, then makes the request.
- */
-export async function cisLogin(
-  rawSessionId: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const formatCheck = validateJsessionIdFormat(rawSessionId);
-  if (!formatCheck.valid) {
-    return { ok: false, error: formatCheck.error };
-  }
-
-  const sessionId = sanitizeJsessionId(rawSessionId);
+const requestSessionValidation = async (
+  sessionId: string,
+): Promise<{ ok: boolean; error?: string }> => {
   try {
     const res = await fetch(
       `/ncu/cis/validate?jsessionid=${encodeURIComponent(sessionId)}`,
     );
-
     if (!res.ok) {
       return { ok: false, error: `驗證請求失敗 (${res.status})` };
     }
-
     const data = await res.json();
     if (data.valid) {
       setCisSession(sessionId);
@@ -116,6 +104,21 @@ export async function cisLogin(
       error: err instanceof Error ? err.message : "連線失敗",
     };
   }
+};
+
+/**
+ * Validate a JSESSIONID via the server-side /ncu/cis/validate endpoint.
+ * Performs client-side format validation first, then makes the request.
+ */
+export async function cisLogin(
+  rawSessionId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const formatCheck = validateJsessionIdFormat(rawSessionId);
+  if (!formatCheck.valid) {
+    return { ok: false, error: formatCheck.error };
+  }
+  const sessionId = sanitizeJsessionId(rawSessionId);
+  return await requestSessionValidation(sessionId);
 }
 
 /**
