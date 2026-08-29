@@ -81,6 +81,12 @@ describe("cis-login service", () => {
   });
 
   describe("cisLogin", () => {
+    const mockFetch = (response: { ok: boolean; body: Record<string, unknown> }) =>
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: response.ok,
+        json: async () => response.body,
+      } as Response);
+
     it("fails early without network request if format is invalid", async () => {
       const fetchSpy = vi.spyOn(globalThis, "fetch");
       const result = await cisLogin("invalid");
@@ -90,11 +96,7 @@ describe("cis-login service", () => {
     });
 
     it("makes network request and saves session when valid", async () => {
-      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ valid: true }),
-      } as Response);
-
+      mockFetch({ ok: true, body: { valid: true } });
       const result = await cisLogin("7DFF50FF6F2B55531B6A803D2DEAEF4C");
       expect(result.ok).toBe(true);
       expect(getCisSession()).toBe("7DFF50FF6F2B55531B6A803D2DEAEF4C");
@@ -102,11 +104,7 @@ describe("cis-login service", () => {
     });
 
     it("handles server-side invalid session response", async () => {
-      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ valid: false, error: "Session 過期" }),
-      } as Response);
-
+      mockFetch({ ok: true, body: { valid: false, error: "Session 過期" } });
       const result = await cisLogin("7DFF50FF6F2B55531B6A803D2DEAEF4C");
       expect(result.ok).toBe(false);
       expect(result.error).toContain("Session 過期");
