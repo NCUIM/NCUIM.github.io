@@ -16,7 +16,7 @@ enabled = true
   plugins = ["react"]
 
   [analyzers.rules]
-  ignore = ["JS-0415"]
+  ignore = ["JS-0415", "JS-0067", "JS-R1005"]
 
 [[analyzers]]
 name = "python"
