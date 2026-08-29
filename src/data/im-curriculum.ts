@@ -182,10 +182,8 @@ export const SYS_TRACK_FREE_ELECTIVES: readonly CurriculumCourse[] = [
 ];
 
 /** IM graduate courses not already named in the system-track curriculum count here. */
-// skipcq: JS-0067
-export function isSystemTrackFreeElectiveCode(code: string): boolean {
-  return /^IM[5-7]\d{3}[A-Z*]?$/.test(code) || /^MT601[1-9][A-Z*]?$/.test(code);
-}
+export const isSystemTrackFreeElectiveCode = (code: string): boolean =>
+  /^IM[5-7]\d{3}[A-Z*]?$/.test(code) || /^MT601[1-9][A-Z*]?$/.test(code);
 
 // ── Graduation Gates (畢業門檻) ────────────────────────────────
 
@@ -307,34 +305,30 @@ export interface CreditCalculationResult {
   readonly sectionResults: Record<string, SectionCreditResult>;
 }
 
-// skipcq: JS-0067
-function countSelected(ids: readonly string[], options: readonly string[]): number {
-  return options.filter((id) => ids.includes(id)).length;
-}
+const countSelected = (ids: readonly string[], options: readonly string[]): number =>
+  options.filter((id) => ids.includes(id)).length;
 
-function sumCredits(ids: readonly string[], courses: readonly CurriculumCourse[]): number {
-  return courses.filter((c) => ids.includes(c.id)).reduce((s, c) => s + c.credits, 0);
-}
+const sumCredits = (ids: readonly string[], courses: readonly CurriculumCourse[]): number =>
+  courses.filter((c) => ids.includes(c.id)).reduce((s, c) => s + c.credits, 0);
 
-function getMgmtReqHint(hasMulti: boolean, cnt6: number): string | undefined {
-  if (hasMulti && cnt6 >= 3) return undefined;
-  if (!hasMulti && cnt6 < 3) return `缺「多變量分析」且六選三尚缺 ${3 - cnt6} 門`;
-  if (!hasMulti) return "必修「多變量分析」尚未修習";
-  return `六選三尚缺 ${3 - cnt6} 門`;
-}
+const getMgmtReqHint = (hasMulti: boolean, cnt6: number): string | undefined => {
+  if (hasMulti) {
+    return cnt6 >= 3 ? undefined : `六選三尚缺 ${3 - cnt6} 門`;
+  }
+  return cnt6 < 3 ? `缺「多變量分析」且六選三尚缺 ${3 - cnt6} 門` : "必修「多變量分析」尚未修習";
+};
 
-function getSysReqHint(hasNet: boolean, cnt4: number): string | undefined {
-  if (hasNet && cnt4 >= 1) return undefined;
-  if (!hasNet && cnt4 === 0) return "缺「企業電腦網路」且管理課程四選一尚未修習";
-  if (!hasNet) return "必修「企業電腦網路」尚未修習";
-  return "管理課程四選一尚未修習";
-}
+const getSysReqHint = (hasNet: boolean, cnt4: number): string | undefined => {
+  if (hasNet) {
+    return cnt4 >= 1 ? undefined : "管理課程四選一尚未修習";
+  }
+  return cnt4 === 0 ? "缺「企業電腦網路」且管理課程四選一尚未修習" : "必修「企業電腦網路」尚未修習";
+};
 
-function getElectiveHint(earned: number, target: number): string | undefined {
-  return earned >= target ? undefined : `尚缺 ${target - earned} 學分`;
-}
+const getElectiveHint = (earned: number, target: number): string | undefined =>
+  earned >= target ? undefined : `尚缺 ${target - earned} 學分`;
 
-function calcMgmtTrackSections(ids: readonly string[]): Record<string, SectionCreditResult> {
+const calcMgmtTrackSections = (ids: readonly string[]): Record<string, SectionCreditResult> => {
   const hasMulti = ids.includes("IM6053");
   const cnt6 = countSelected(ids, ["IM6014", "IM7071", "IM6041", "IM6082", "IM6069", "IM7065"]);
   const reqMet = hasMulti && cnt6 >= 3;
@@ -353,9 +347,9 @@ function calcMgmtTrackSections(ids: readonly string[]): Record<string, SectionCr
       hint: getElectiveHint(electCr, 9),
     },
   };
-}
+};
 
-function calcSysTrackSections(ids: readonly string[]): Record<string, SectionCreditResult> {
+const calcSysTrackSections = (ids: readonly string[]): Record<string, SectionCreditResult> => {
   const hasNet = ids.includes("IM7071-s");
   const cnt4 = countSelected(ids, ["IM6041-s", "IM6082-s", "IM6069-s", "IM7065-s"]);
   const reqMet = hasNet && cnt4 >= 1;
@@ -381,23 +375,15 @@ function calcSysTrackSections(ids: readonly string[]): Record<string, SectionCre
       hint: getElectiveHint(freeCr, 3),
     },
   };
-}
+};
 
-// skipcq: JS-0067 JS-R1005
-export function calculateTrackCredits(
-  track: TrackType,
-  selectedCourseIds: readonly string[],
-): CreditCalculationResult {
-  const config = TRACK_CONFIGS[track];
-  const sectionResults: Record<string, SectionCreditResult> = {};
-
-  // 1. 共同必修檢核 (All 5 courses must be taken, 12 cr)
+const calcCommonReqSection = (selectedCourseIds: readonly string[]): SectionCreditResult => {
   const commonSelected = COMMON_REQUIRED_COURSES.filter((c) =>
     selectedCourseIds.includes(c.id),
   );
   const commonEarned = commonSelected.reduce((sum, c) => sum + c.credits, 0);
   const commonIsMet = commonSelected.length === COMMON_REQUIRED_COURSES.length;
-  sectionResults["common-req"] = {
+  return {
     earned: commonEarned,
     target: 12,
     isMet: commonIsMet,
@@ -405,16 +391,20 @@ export function calculateTrackCredits(
       ? undefined
       : `尚缺 ${COMMON_REQUIRED_COURSES.length - commonSelected.length} 門所必修`,
   };
+};
 
-  // 2. 組別專屬計算
-  const trackSections = track === "mgmt"
-    ? calcMgmtTrackSections(selectedCourseIds)
-    : calcSysTrackSections(selectedCourseIds);
-  for (const [id, result] of Object.entries(trackSections)) {
-    sectionResults[id] = result;
-  }
+export const calculateTrackCredits = (
+  track: TrackType,
+  selectedCourseIds: readonly string[],
+): CreditCalculationResult => {
+  const config = TRACK_CONFIGS[track];
+  const sectionResults: Record<string, SectionCreditResult> = {
+    "common-req": calcCommonReqSection(selectedCourseIds),
+    ...(track === "mgmt"
+      ? calcMgmtTrackSections(selectedCourseIds)
+      : calcSysTrackSections(selectedCourseIds)),
+  };
 
-  // 3. 總學分與畢業資格計算
   let totalEarned = 0;
   for (const res of Object.values(sectionResults)) {
     totalEarned += res.earned;
@@ -436,4 +426,4 @@ export function calculateTrackCredits(
     isGraduationEligible,
     sectionResults,
   };
-}
+};

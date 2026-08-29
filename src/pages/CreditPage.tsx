@@ -58,38 +58,36 @@ const STORAGE_KEY_GATES = "ncu_selected_gates";
 const NORM_RE = /[\s\-_()（）]/gu;
 const norm = (s: string) => s.replace(NORM_RE, "");
 
-function matchesCode(cisCode?: string, courseCode?: string): boolean {
+const matchesCode = (cisCode?: string, courseCode?: string): boolean => {
   if (!cisCode || !courseCode) return false;
   return cisCode.includes(courseCode) || courseCode.includes(cisCode);
-}
+};
 
-function matchesName(cisName: string, courseName: string): boolean {
+const matchesName = (cisName: string, courseName: string): boolean => {
   const [a, b] = [norm(cisName), norm(courseName)];
   return a.length >= 2 && b.length >= 2 && (a.includes(b) || b.includes(a));
-}
+};
 
-function matchesCurriculumCourse(cis: CisCourse, course: CurriculumCourse): boolean {
-  return matchesCode(cis.classNo, course.code) || matchesName(cis.name, course.name);
-}
+const matchesCurriculumCourse = (cis: CisCourse, course: CurriculumCourse): boolean =>
+  matchesCode(cis.classNo, course.code) || matchesName(cis.name, course.name);
 
-function hasUnmatchedSysFreeElective(
+const hasUnmatchedSysFreeElective = (
   cisCourses: readonly CisCourse[],
   config: (typeof TRACK_CONFIGS)[TrackType],
-): boolean {
-  return cisCourses.some(
+): boolean =>
+  cisCourses.some(
     (cis) =>
       isSystemTrackFreeElectiveCode(cis.classNo) &&
       !config.sections.some((s) =>
         s.courses.some((course) => matchesCurriculumCourse(cis, course)),
       ),
   );
-}
 
-function matchCisToCurriculum(
+const matchCisToCurriculum = (
   cisCourses: readonly CisCourse[],
   config: (typeof TRACK_CONFIGS)[TrackType],
   track: TrackType,
-): string[] {
+): string[] => {
   const ids: string[] = [];
   for (const section of config.sections) {
     for (const c of section.courses) {
@@ -102,7 +100,7 @@ function matchCisToCurriculum(
     ids.push("IM_FREE");
   }
   return ids;
-}
+};
 
 // ---------------------------------------------------------------------------
 // Sub-components: Header & Top Controls
