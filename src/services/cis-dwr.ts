@@ -45,7 +45,9 @@ export async function initDwrEngine(): Promise<void> {
     scriptSessionId = match[1];
   } else {
     // Generate a random one if not found
-    scriptSessionId = Math.random().toString(36).slice(2);
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    scriptSessionId = Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
   }
 }
 

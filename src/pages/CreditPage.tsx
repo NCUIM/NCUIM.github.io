@@ -794,61 +794,38 @@ const CreditPage: React.FC = () => {
                 gap: 16,
               }}
             >
-              {/* 所先修 */}
-              <div
-                style={{
-                  background: "var(--ncu-surface)",
-                  borderRadius: "var(--ncu-radius-md)",
-                  border: "1.5px solid var(--ncu-border)",
-                  padding: "12px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                }}
-              >
+              {[
+                { label: "🏢 所先修", items: currentConfig.prereqs.common },
+                { label: `🎯 組先修${track === "mgmt" ? "（3 選 2）" : ""}`, items: currentConfig.prereqs.track },
+              ].map(({ label, items }) => (
                 <div
+                  key={label}
                   style={{
-                    fontSize: 14,
-                    fontWeight: 800,
-                    color: "var(--ncu-primary)",
-                    marginBottom: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
+                    background: "var(--ncu-surface)",
+                    borderRadius: "var(--ncu-radius-md)",
+                    border: "1.5px solid var(--ncu-border)",
+                    padding: "12px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
                   }}
                 >
-                  <span>🏢 所先修</span>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 800,
+                      color: "var(--ncu-primary)",
+                      marginBottom: 8,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <span>{label}</span>
+                  </div>
+                  <IonList style={{ margin: 0, background: "transparent" }}>
+                    {items.map(renderPrereqItem)}
+                  </IonList>
                 </div>
-                <IonList style={{ margin: 0, background: "transparent" }}>
-                  {currentConfig.prereqs.common.map(renderPrereqItem)}
-                </IonList>
-              </div>
-
-              {/* 組先修 */}
-              <div
-                style={{
-                  background: "var(--ncu-surface)",
-                  borderRadius: "var(--ncu-radius-md)",
-                  border: "1.5px solid var(--ncu-border)",
-                  padding: "12px",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 800,
-                    color: "var(--ncu-primary)",
-                    marginBottom: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <span>🎯 組先修 {track === "mgmt" ? "（3 選 2）" : ""}</span>
-                </div>
-                <IonList style={{ margin: 0, background: "transparent" }}>
-                  {currentConfig.prereqs.track.map(renderPrereqItem)}
-                </IonList>
-              </div>
+              ))}
             </div>
           </div>
 

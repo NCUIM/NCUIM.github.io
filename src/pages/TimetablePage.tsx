@@ -150,6 +150,13 @@ function mapMasterCourseToCourse(
   };
 }
 
+function areSameCourse(a: Course, b: Course): boolean {
+  return (
+    (Boolean(a.id) && Boolean(b.id) && a.id === b.id) ||
+    (a.name.trim() === b.name.trim() && a.teacher.trim() === b.teacher.trim())
+  );
+}
+
 function buildTimetableFromCisCourses(courses: readonly CisCourse[]): Record<string, Course[]> {
   const DAY_MAP: Record<string, number> = {
     "一": 0, "二": 1, "三": 2, "四": 3, "五": 4,
@@ -231,12 +238,7 @@ function getDayFixedTracks(
       while (end + 1 < periods.length) {
         const nextP = periods[end + 1];
         const nextCourses = timetableData[`${nextP.id}-${dayIndex}`] || [];
-        const isMatch = nextCourses.some(
-          (nc) =>
-            (nc.id && c.id && nc.id === c.id) ||
-            (nc.name.trim() === c.name.trim() &&
-              nc.teacher.trim() === c.teacher.trim()),
-        );
+        const isMatch = nextCourses.some((nc) => areSameCourse(nc, c));
         if (isMatch) {
           end++;
         } else {
@@ -316,14 +318,7 @@ function getDesktopCourseSpans(
       while (end + 1 < periods.length) {
         const nextP = periods[end + 1];
         const nextCourses = timetableData[`${nextP.id}-${dayIndex}`] || [];
-        if (
-          nextCourses.some(
-            (nc) =>
-              (nc.id && c.id && nc.id === c.id) ||
-              (nc.name.trim() === c.name.trim() &&
-                nc.teacher.trim() === c.teacher.trim()),
-          )
-        ) {
+        if (nextCourses.some((nc) => areSameCourse(nc, c))) {
           end++;
         } else {
           break;

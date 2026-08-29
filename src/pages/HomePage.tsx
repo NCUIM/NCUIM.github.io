@@ -87,6 +87,9 @@ const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
   >
     <div
       onClick={onLogoClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onLogoClick(); }}
+      tabIndex={0}
+      role="button"
       style={{
         width: 72,
         height: 72,
@@ -336,7 +339,7 @@ const HomePage = () => {
         {
           text: "前往 CTFd 戰場 🚀",
           handler: () => {
-            window.open("https://im2026ctf.duckdns.org/", "_blank");
+            window.open("https://im2026ctf.duckdns.org/", "_blank", "noopener,noreferrer");
           },
         },
       ],
