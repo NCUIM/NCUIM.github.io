@@ -123,10 +123,7 @@ const spa404Plugin = (): Plugin => ({
 });
 
 export default defineConfig({
-  base:
-    process.env.GITHUB_PAGES === "true" || process.env.GITHUB_ACTIONS
-      ? "/NCUIM2026-Fresher/"
-      : "/",
+  base: "/",
   plugins: [react(), cisValidatePlugin(), spa404Plugin()],
   envPrefix: ["VITE_", "FIREBASE_"],
   server: {
