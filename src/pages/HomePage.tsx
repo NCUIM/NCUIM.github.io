@@ -285,7 +285,7 @@ const ModuleCardItem = ({
 const HomeHeader = () => (
   <IonHeader>
     <IonToolbar>
-      <IonTitle>NCUIM 2026 Fresher Mixer</IonTitle>
+      <IonTitle>NCU IM</IonTitle>
     </IonToolbar>
   </IonHeader>
 );
