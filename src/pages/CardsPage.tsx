@@ -429,8 +429,12 @@ const UserPageFooter = () => (
     style={{
       textAlign: "center",
       padding: "24px 16px 36px",
-      fontSize: 12.5,
+      fontSize: 12,
       color: "var(--ncu-muted)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 8,
     }}
   >
     <a
@@ -449,6 +453,14 @@ const UserPageFooter = () => (
       <IonIcon icon={logoGithub} style={{ fontSize: 14 }} />
       <span>歡迎參與專案貢獻 (GitHub) ↗</span>
     </a>
+
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
+      <img
+        src="https://komarev.com/ghpvc/?username=ncuim-github-io&color=2563eb&style=flat-square&label=VISITORS"
+        alt="Visitors Counter"
+        style={{ height: 18, borderRadius: 3 }}
+      />
+    </div>
   </div>
 );
 
