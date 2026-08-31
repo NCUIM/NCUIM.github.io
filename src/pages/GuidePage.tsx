@@ -80,20 +80,26 @@ const ResourceItem = ({
     style={{ "--background": "var(--ncu-surface)", cursor: "pointer" }}
   >
     <IonLabel style={{ margin: "12px 0" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 5 }}>
         {item.tag && (
           <IonBadge
             color={badgeColor}
-            style={{ fontSize: 11, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}
+            style={{
+              fontSize: 13.5,
+              fontWeight: 800,
+              padding: "4px 8px",
+              borderRadius: 6,
+              letterSpacing: 0.3,
+            }}
           >
             {item.tag}
           </IonBadge>
         )}
-        <strong style={{ fontSize: 15.5, fontWeight: 700, color: "var(--ncu-ink)" }}>
+        <strong style={{ fontSize: 16, fontWeight: 800, color: "var(--ncu-ink)" }}>
           {item.title}
         </strong>
       </div>
-      <p style={{ fontSize: 13, color: "var(--ncu-muted)", lineHeight: 1.4, margin: 0 }}>
+      <p style={{ fontSize: 13, color: "var(--ncu-muted)", lineHeight: 1.45, margin: 0 }}>
         {item.description}
       </p>
     </IonLabel>
