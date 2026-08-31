@@ -34,15 +34,6 @@ interface ModuleCard {
 
 const modules: readonly ModuleCard[] = [
   {
-    title: "研究室座位表",
-    subtitle: "研究室座位與格局圖",
-    icon: map,
-    route: "/seats",
-    color: "var(--ncu-muted)",
-    badge: "即將開放",
-    disabled: true,
-  },
-  {
     title: "全系課表",
     subtitle: "課表與教室時段查詢",
     icon: calendar,
@@ -55,6 +46,15 @@ const modules: readonly ModuleCard[] = [
     icon: calculator,
     route: "/tools/credit",
     color: "var(--ncu-success)",
+  },
+  {
+    title: "研究室座位表",
+    subtitle: "研究室座位與格局圖",
+    icon: map,
+    route: "/seats",
+    color: "var(--ncu-muted)",
+    badge: "即將開放",
+    disabled: true,
   },
   {
     title: "抽籤大會",
