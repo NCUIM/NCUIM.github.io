@@ -107,14 +107,14 @@ const NcuimLogoIcon = () => (
   </svg>
 );
 
-const getStageHint = (stage: number): string => {
+const getStageIcon = (stage: number): string => {
   if (stage <= 0) return "";
-  if (stage <= 4) return `⚡ 訊號探測中 (${stage}/20)`;
-  if (stage <= 8) return `🔓 核心解碼中 (${stage}/20)`;
-  if (stage <= 12) return `🔥 防火牆破譯 (${stage}/20)`;
-  if (stage <= 16) return `🚨 系統即將超載 (${stage}/20)`;
-  if (stage < 20) return `💥 臨界能量充填 (${stage}/20)`;
-  return isCtfEnded() ? "🏁 查看 CTF 最終榜單！" : "🚩 CTF 傳送門開啟！";
+  if (stage <= 4) return "⚡";
+  if (stage <= 8) return "🔓";
+  if (stage <= 12) return "🔥";
+  if (stage <= 16) return "🚨";
+  if (stage < 20) return "💥";
+  return isCtfEnded() ? "🏆" : "🚩";
 };
 
 const getLogoStyle = (stage: number): React.CSSProperties => {
@@ -238,26 +238,28 @@ const HeroHeader = ({
             top: `calc(50% + ${particle.offsetY}px)`,
             left: particle.side === "right" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
             right: particle.side === "left" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
-            whiteSpace: "nowrap",
-            fontSize: 12,
-            fontWeight: 900,
-            letterSpacing: 0.5,
-            color: particle.stage >= 4 ? "#ff4d4f" : "#38bdf8",
-            background: particle.stage >= 4 ? "rgba(15, 23, 42, 0.94)" : "rgba(15, 23, 42, 0.9)",
-            border: `1.5px solid ${particle.stage >= 4 ? "#ef4444" : "#38bdf8"}`,
-            padding: "3px 12px",
-            borderRadius: 20,
-            boxShadow: particle.stage >= 4
-              ? "0 0 16px rgba(239, 68, 68, 0.5)"
-              : "0 0 14px rgba(56, 189, 248, 0.5)",
+            fontSize: 20,
+            lineHeight: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: particle.stage >= 13 ? "rgba(15, 23, 42, 0.94)" : "rgba(15, 23, 42, 0.88)",
+            border: `1.5px solid ${particle.stage >= 13 ? "#ef4444" : "#38bdf8"}`,
+            boxShadow: particle.stage >= 13
+              ? "0 0 16px rgba(239, 68, 68, 0.6)"
+              : "0 0 14px rgba(56, 189, 248, 0.6)",
             animation: particle.side === "left"
               ? "cyberGlowParticleLeft 1.2s ease-out forwards"
               : "cyberGlowParticleRight 1.2s ease-out forwards",
-            willChange: "transform, opacity, filter",
+            willChange: "transform, opacity",
             transformOrigin: "center center",
             backfaceVisibility: "hidden",
             pointerEvents: "none",
             zIndex: 10,
+            userSelect: "none",
           }}
         >
           {particle.text}
@@ -735,7 +737,7 @@ const HomePage = () => {
 
       setParticle({
         stage: next,
-        text: getStageHint(next),
+        text: getStageIcon(next),
         side,
         sideOffset,
         offsetY,
