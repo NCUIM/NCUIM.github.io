@@ -36,6 +36,12 @@
     "subtitle": "活動報名、校外租屋、二手交流與學生社群討論區",
     "items": [
       {
+        "title": "新生知訊網 · 校園生活地圖",
+        "description": "中大校園互動地圖、各館舍地標、生活設施與周邊美食商圈完整導覽",
+        "url": "https://ncufresh.ncu.edu.tw/map",
+        "tag": "校園地圖"
+      },
+      {
         "title": "iNCU 整合服務首頁",
         "description": "學校各項行政服務、校園公佈欄公告與即時重要通知整合",
         "url": "https://cis.ncu.edu.tw/iNCU/home",
@@ -58,12 +64,6 @@
         "description": "校內二手教科書、家具家電、生活用品二手出清與轉讓",
         "url": "https://www.facebook.com/groups/209055389218793/",
         "tag": "二手交易"
-      },
-      {
-        "title": "新生知訊網 · 校園生活地圖",
-        "description": "中大校園互動地圖、各館舍地標、生活設施與周邊美食商圈完整導覽",
-        "url": "https://ncufresh.ncu.edu.tw/map",
-        "tag": "校園地圖"
       },
       {
         "title": "雲端租屋生活網",
