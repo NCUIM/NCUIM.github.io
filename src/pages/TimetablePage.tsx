@@ -145,26 +145,39 @@ const getTimeIndicators = (
   return { current, next };
 };
 
-const isTeacherMatch = (teachers: readonly string[], target: string): boolean => {
+const isTeacherMatch = (teachers: readonly string[] = [], target?: string): boolean => {
+  if (!target) return false;
   const tTrim = target.trim();
+  if (tTrim.length === 0) return false;
   return teachers.some((t) => {
+    if (!t) return false;
     const item = t.trim();
     return item.length > 0 && (tTrim.includes(item) || item.includes(tTrim));
   });
 };
 
 const isSerialMatch = (masterSerial: number, cisSerial?: string): boolean =>
-  Boolean(cisSerial && String(masterSerial) === String(cisSerial));
+  Boolean(cisSerial && String(masterSerial) === String(cisSerial).trim());
 
-const isClassNoMatch = (masterNo: string, cisNo?: string): boolean =>
-  Boolean(cisNo && masterNo && cisNo === masterNo);
+const isClassNoMatch = (masterNo: string, cisNo?: string): boolean => {
+  if (!cisNo || !masterNo) return false;
+  const cClean = cisNo.replace(/[-*]/g, "").trim().toUpperCase();
+  const mClean = masterNo.replace(/[-*]/g, "").trim().toUpperCase();
+  return cClean.length >= 4 && (cClean === mClean || cClean.startsWith(mClean) || mClean.startsWith(cClean));
+};
 
 // skipcq: JS-R1005
-const isCourseMatch = (master: MasterCourseItem, cis: CisCourse): boolean => {
+const isCourseMatch = (master: MasterCourseItem, cis: Partial<CisCourse>): boolean => {
   if (isSerialMatch(master.serialNo, cis.serialNo)) return true;
   if (isClassNoMatch(master.classNo, cis.classNo)) return true;
-  const isSameTitle = cis.name.trim() === master.title.trim();
-  return isSameTitle && isTeacherMatch(master.teachers, cis.teacher);
+  const cisTitle = cleanCourseTitle(cis.name || "");
+  const masterTitle = cleanCourseTitle(master.title || "");
+  const isSameTitle = cisTitle.length > 0 && cisTitle === masterTitle;
+  if (isSameTitle) {
+    if (!cis.teacher) return true;
+    return isTeacherMatch(master.teachers, cis.teacher);
+  }
+  return false;
 };
 
 const matchCisCourse = (
