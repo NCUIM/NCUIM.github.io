@@ -157,6 +157,9 @@ const CreditPageHeader = ({
   </IonHeader>
 );
 
+const CURRICULUM_PDF_URL =
+  "https://im.mgt.ncu.edu.tw/download/newpost/115%E5%AD%B8%E5%B9%B4%E5%BA%A6%E5%85%A5%E5%AD%B8%E9%81%A9%E7%94%A8-%E8%B3%87%E7%AE%A1%E7%B3%BB%E7%A2%A9%E5%A3%AB%E7%8F%AD%E5%BF%85%E4%BF%AE%E5%8F%8A%E9%81%B8%E4%BF%AE%E7%A7%91%E7%9B%AE%E8%A1%A8-v1150609.pdf";
+
 const TrackSelectorContent = ({
   track,
   onSelectTrack,
@@ -171,12 +174,29 @@ const TrackSelectorContent = ({
         alignItems: "center",
         justifyContent: "space-between",
         marginBottom: 8,
+        flexWrap: "wrap",
+        gap: 6,
       }}
     >
       <span style={{ fontWeight: 700, color: "var(--ncu-ink)", fontSize: 15 }}>
         選擇修讀組別
       </span>
-      <span style={{ fontSize: 13, color: "var(--ncu-muted)" }}>115 學年度適用</span>
+      <a
+        href={CURRICULUM_PDF_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          fontSize: 12.5,
+          color: "var(--ncu-primary)",
+          textDecoration: "none",
+          fontWeight: 700,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 3,
+        }}
+      >
+        <span>115 必選修科目表 PDF ↗</span>
+      </a>
     </div>
     <IonSegment
       value={track}
@@ -677,6 +697,25 @@ const CreditPageBody = ({
         selectedGateIds={selectedGateIds}
         onToggleGate={onToggleGate}
       />
+
+      <div
+        style={{
+          textAlign: "center",
+          padding: "8px 8px 24px",
+          fontSize: 12.5,
+          color: "var(--ncu-muted)",
+        }}
+      >
+        <span>規定來源依據：</span>
+        <a
+          href={CURRICULUM_PDF_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "var(--ncu-primary)", fontWeight: 700, textDecoration: "underline" }}
+        >
+          115 學年度入學適用 資管系碩士班必修及選修科目表 (PDF) ↗
+        </a>
+      </div>
     </div>
   </IonContent>
 );
