@@ -208,56 +208,26 @@ const HeroHeader = ({
     <style>{`
       @keyframes cyberGlowParticleLeft {
         0% {
-          opacity: 0;
-          transform: translate3d(0, 8px, 0) scale(0.92);
-          filter: blur(0px);
-        }
-        15% {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
           filter: blur(0px);
         }
-        45% {
-          opacity: 0.95;
-          transform: translate3d(0, -8px, 0) scale(0.94);
-          filter: blur(0px);
-        }
-        75% {
-          opacity: 0.5;
-          transform: translate3d(0, -20px, 0) scale(0.78);
-          filter: blur(3px);
-        }
         100% {
           opacity: 0;
-          transform: translate3d(0, -32px, 0) scale(0.6);
-          filter: blur(6px);
+          transform: translate3d(0, -42px, 0) scale(0.2);
+          filter: blur(8px);
         }
       }
       @keyframes cyberGlowParticleRight {
         0% {
-          opacity: 0;
-          transform: translate3d(0, 8px, 0) scale(0.92);
-          filter: blur(0px);
-        }
-        15% {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
           filter: blur(0px);
         }
-        45% {
-          opacity: 0.95;
-          transform: translate3d(0, -8px, 0) scale(0.94);
-          filter: blur(0px);
-        }
-        75% {
-          opacity: 0.5;
-          transform: translate3d(0, -20px, 0) scale(0.78);
-          filter: blur(3px);
-        }
         100% {
           opacity: 0;
-          transform: translate3d(0, -32px, 0) scale(0.6);
-          filter: blur(6px);
+          transform: translate3d(0, -42px, 0) scale(0.2);
+          filter: blur(8px);
         }
       }
     `}</style>
@@ -281,7 +251,7 @@ const HeroHeader = ({
             left: particle.side === "right" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
             right: particle.side === "left" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
             whiteSpace: "nowrap",
-            fontSize: `${11.5 * particle.scale}px`,
+            fontSize: 12,
             fontWeight: 900,
             letterSpacing: 0.5,
             color: particle.stage >= 4 ? "#ff4d4f" : "#38bdf8",
@@ -293,9 +263,10 @@ const HeroHeader = ({
               ? "0 0 16px rgba(239, 68, 68, 0.5)"
               : "0 0 14px rgba(56, 189, 248, 0.5)",
             animation: particle.side === "left"
-              ? "cyberGlowParticleLeft 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards"
-              : "cyberGlowParticleRight 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards",
+              ? "cyberGlowParticleLeft 1.2s ease-out forwards"
+              : "cyberGlowParticleRight 1.2s ease-out forwards",
             willChange: "transform, opacity, filter",
+            transformOrigin: "center center",
             backfaceVisibility: "hidden",
             pointerEvents: "none",
             zIndex: 10,
