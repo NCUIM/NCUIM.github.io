@@ -107,7 +107,86 @@ const NcuimLogoIcon = () => (
   </svg>
 );
 
-const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
+const STAGE_HINTS = [
+  "",
+  "⚡ 訊號探測中 (1/5)",
+  "🔓 核心解碼中 (2/5)",
+  "🔥 防火牆破譯 (3/5)",
+  "🚨 系統即將超載 (4/5)",
+  "🚩 CTF 傳送門開啟！",
+];
+
+const getLogoStyle = (stage: number): React.CSSProperties => {
+  const base: React.CSSProperties = {
+    width: 72,
+    height: 72,
+    marginBottom: stage > 0 ? 6 : 14,
+    borderRadius: "20px",
+    border: "2.5px solid var(--ncu-ink)",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#1b2a4a",
+    cursor: "pointer",
+    userSelect: "none",
+    padding: 0,
+    transition: "all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)",
+  };
+
+  switch (stage) {
+    case 1:
+      return {
+        ...base,
+        transform: "scale(1.08) translateY(-2px)",
+        boxShadow: "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)",
+        filter: "brightness(1.15)",
+      };
+    case 2:
+      return {
+        ...base,
+        transform: "scale(1.15) rotate(10deg)",
+        boxShadow: "0 0 24px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)",
+        filter: "hue-rotate(60deg) brightness(1.2)",
+      };
+    case 3:
+      return {
+        ...base,
+        transform: "scale(1.22) rotate(-12deg)",
+        boxShadow: "0 0 32px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)",
+        filter: "hue-rotate(160deg) contrast(1.2) brightness(1.25)",
+      };
+    case 4:
+      return {
+        ...base,
+        transform: "scale(1.28) rotate(180deg)",
+        boxShadow: "0 0 45px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)",
+        filter: "hue-rotate(270deg) contrast(1.4) brightness(1.3)",
+      };
+    case 5:
+      return {
+        ...base,
+        transform: "scale(1.36) rotate(360deg)",
+        boxShadow: "0 0 55px #10b981, 0 0 30px #38bdf8, var(--ncu-shadow-hard)",
+        filter: "hue-rotate(360deg) contrast(1.6) brightness(1.4)",
+      };
+    default:
+      return {
+        ...base,
+        boxShadow: "var(--ncu-shadow-hard)",
+        transform: "none",
+        filter: "none",
+      };
+  }
+};
+
+const HeroHeader = ({
+  stage,
+  onLogoClick,
+}: Readonly<{
+  stage: number;
+  onLogoClick: () => void;
+}>) => (
   <div
     style={{
       textAlign: "center",
@@ -121,27 +200,26 @@ const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
       type="button"
       onClick={onLogoClick}
       aria-label="NCUIM Logo"
-      style={{
-        width: 72,
-        height: 72,
-        marginBottom: 14,
-        borderRadius: "20px",
-        boxShadow: "var(--ncu-shadow-hard)",
-        border: "2.5px solid var(--ncu-ink)",
-        overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#1b2a4a",
-        cursor: "pointer",
-        transition: "transform 0.1s ease",
-        userSelect: "none",
-        padding: 0,
-      }}
+      style={getLogoStyle(stage)}
       title="NCUIM"
     >
       <NcuimLogoIcon />
     </button>
+    {stage > 0 && (
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          color: stage >= 4 ? "#ef4444" : "var(--ncu-primary)",
+          marginBottom: 8,
+          background: "rgba(27, 42, 74, 0.08)",
+          padding: "2px 10px",
+          borderRadius: 12,
+        }}
+      >
+        {STAGE_HINTS[stage]}
+      </div>
+    )}
     <h1
       style={{
         fontSize: "var(--ncu-font-size-3xl)",
@@ -501,12 +579,14 @@ const AnnouncementModal = ({
 );
 
 const HomeBody = ({
+  stage,
   hovered,
   onHover,
   onLeave,
   onLogoClick,
   onOpenAnnouncements,
 }: Readonly<{
+  stage: number;
   hovered: string | null;
   onHover: (route: string) => void;
   onLeave: () => void;
@@ -515,7 +595,7 @@ const HomeBody = ({
 }>) => (
   <IonContent className="ion-padding">
     <div style={{ maxWidth: 680, margin: "0 auto" }}>
-      <HeroHeader onLogoClick={onLogoClick} />
+      <HeroHeader stage={stage} onLogoClick={onLogoClick} />
       <AnnouncementBar onOpen={onOpenAnnouncements} />
       <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
     </div>
@@ -525,11 +605,10 @@ const HomeBody = ({
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [easterEggStage, setEasterEggStage] = useState(0);
   const [presentAlert] = useIonAlert();
 
-  // Easter egg click counter
-  const clickCountRef = useRef(0);
-  const lastClickTimeRef = useRef(0);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // DevTools console easter egg
   useEffect(() => {
@@ -560,24 +639,32 @@ const HomePage = () => {
   }, [presentAlert]);
 
   const handleSecretTap = useCallback(() => {
-    const now = Date.now();
-    if (now - lastClickTimeRef.current > 2000) {
-      clickCountRef.current = 1;
-    } else {
-      clickCountRef.current += 1;
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
     }
-    lastClickTimeRef.current = now;
 
-    if (clickCountRef.current >= 5) {
-      clickCountRef.current = 0;
-      triggerEasterEgg();
-    }
+    setEasterEggStage((prev) => {
+      const next = prev + 1;
+      if (next >= 5) {
+        setTimeout(() => {
+          triggerEasterEgg();
+          setEasterEggStage(0);
+        }, 350);
+        return 5;
+      }
+      return next;
+    });
+
+    resetTimerRef.current = setTimeout(() => {
+      setEasterEggStage(0);
+    }, 2800);
   }, [triggerEasterEgg]);
 
   return (
     <IonPage>
       <HomeHeader />
       <HomeBody
+        stage={easterEggStage}
         hovered={hovered}
         onHover={setHovered}
         onLeave={() => setHovered(null)}
