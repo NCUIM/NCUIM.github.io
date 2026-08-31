@@ -5,6 +5,7 @@ import {
   IonTitle,
   IonBackButton,
   IonButtons,
+  IonButton,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -15,57 +16,50 @@ import {
   IonLabel,
   IonIcon,
   IonBadge,
+  IonSpinner,
+  IonRefresher,
+  IonRefresherContent,
+  type RefresherEventDetail,
 } from "@ionic/react";
-import { trophy, medal, ribbon } from "ionicons/icons";
-import { useState } from "react";
+import {
+  trophy,
+  medal,
+  ribbon,
+  refreshOutline,
+  peopleOutline,
+} from "ionicons/icons";
+import { useState, useEffect, useCallback } from "react";
+import {
+  fetchLiveLeaderboard,
+  getSavedParticipantInfo,
+  type LeaderboardEntry,
+  type LeaderboardResponse,
+  type SavedParticipantInfo,
+} from "../services/card-event-api";
 
-interface Player {
-  readonly rank: number;
-  readonly name: string;
-  readonly score: number;
-  readonly cards: number;
-  readonly emoji: string;
-}
-
-const mockLeaderboard: readonly Player[] = [
-  { rank: 1, name: "王小明", score: 280, cards: 14, emoji: "🦊" },
-  { rank: 2, name: "李小華", score: 240, cards: 12, emoji: "🐼" },
-  { rank: 3, name: "張大同", score: 220, cards: 11, emoji: "🦁" },
-  { rank: 4, name: "陳小美", score: 180, cards: 9, emoji: "🐨" },
-  { rank: 5, name: "林志豪", score: 160, cards: 8, emoji: "🐯" },
-  { rank: 6, name: "黃雅婷", score: 140, cards: 7, emoji: "🐰" },
-  { rank: 7, name: "趙小雲", score: 120, cards: 6, emoji: "🦄" },
-  { rank: 8, name: "孫悟空", score: 100, cards: 5, emoji: "🐵" },
-];
-
-const mockUserRank: Player = {
-  rank: 12,
-  name: "你（測試使用者）",
-  score: 60,
-  cards: 3,
-  emoji: "🐱",
-};
-
-const RankIcon = ({ rank }: Readonly<{ rank: number }>) => {
-  if (rank === 1)
+const RankBadge = ({ rank }: Readonly<{ rank: number }>) => {
+  if (rank === 1) {
     return <IonIcon icon={trophy} style={{ fontSize: 24, color: "var(--ncu-star)" }} />;
-  if (rank === 2)
-    return <IonIcon icon={medal} style={{ fontSize: 22, color: "#aaa" }} />;
-  if (rank === 3)
+  }
+  if (rank === 2) {
+    return <IonIcon icon={medal} style={{ fontSize: 22, color: "#94a3b8" }} />;
+  }
+  if (rank === 3) {
     return <IonIcon icon={ribbon} style={{ fontSize: 22, color: "#cd7f32" }} />;
+  }
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 28,
-        height: 28,
+        width: 26,
+        height: 26,
         borderRadius: "50%",
         background: "var(--ncu-primary-light)",
         color: "var(--ncu-primary)",
-        fontWeight: "var(--ncu-font-weight-bold)",
-        fontSize: "var(--ncu-font-size-sm)",
+        fontWeight: 700,
+        fontSize: "12px",
       }}
     >
       {rank}
@@ -73,167 +67,213 @@ const RankIcon = ({ rank }: Readonly<{ rank: number }>) => {
   );
 };
 
-const UserRankDetails = ({ userRank }: Readonly<{ userRank: Player }>) => (
-  <div style={{ flex: 1 }}>
-    <div style={{ fontWeight: "var(--ncu-font-weight-bold)", fontSize: "var(--ncu-font-size-lg)" }}>
-      {userRank.name}
-    </div>
-    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-      {userRank.cards} 張卡片
-    </div>
-  </div>
-);
-
-const UserRankScore = ({ userRank }: Readonly<{ userRank: Player }>) => (
-  <div style={{ textAlign: "right" }}>
-    <div
-      style={{
-        fontSize: "var(--ncu-font-size-2xl)",
-        fontWeight: "var(--ncu-font-weight-bold)",
-        color: "var(--ncu-primary)",
-      }}
-    >
-      #{userRank.rank}
-    </div>
-    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-sm)" }}>
-      {userRank.score} 分
-    </div>
-  </div>
-);
-
-const UserRankRow = ({ userRank }: Readonly<{ userRank: Player }>) => (
-  <div style={{ display: "flex", alignItems: "center", gap: "var(--ncu-space-3)" }}>
-    <span style={{ fontSize: 36 }}>{userRank.emoji}</span>
-    <UserRankDetails userRank={userRank} />
-    <UserRankScore userRank={userRank} />
-  </div>
-);
-
-const MyRankTitle = () => (
-  <IonCardTitle style={{ fontSize: "var(--ncu-font-size-sm)", color: "var(--ncu-muted)" }}>
-    我的排名 <IonBadge color="medium">Demo</IonBadge>
-  </IonCardTitle>
-);
-
-const MyRankCard = ({ userRank }: Readonly<{ userRank: Player }>) => (
-  <div style={{ padding: "var(--ncu-space-4)", paddingBottom: 0, flexShrink: 0 }}>
-    <IonCard
-      style={{
-        margin: 0,
-        border: "2px solid var(--ncu-primary)",
-        background: "var(--ncu-primary-light)",
-      }}
-    >
-      <IonCardHeader>
-        <MyRankTitle />
-      </IonCardHeader>
-      <IonCardContent>
-        <UserRankRow userRank={userRank} />
-      </IonCardContent>
-    </IonCard>
-  </div>
-);
-
-const PlayerScoreBadge = ({ score }: Readonly<{ score: number }>) => (
-  <div slot="end" style={{ textAlign: "right" }}>
-    <span
-      style={{
-        fontWeight: "var(--ncu-font-weight-bold)",
-        color: "var(--ncu-primary)",
-        fontSize: "var(--ncu-font-size-md)",
-      }}
-    >
-      {score}
-    </span>
-    <span style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-xs)", marginLeft: 2 }}>
-      分
-    </span>
-  </div>
-);
-
-const RankingPlayerInfo = ({
-  name,
-  cards,
+const LeaderboardPlayerItem = ({
+  player,
+  isMe,
 }: Readonly<{
-  name: string;
-  cards: number;
+  player: LeaderboardEntry;
+  isMe: boolean;
 }>) => (
-  <IonLabel>
-    <div style={{ fontWeight: "var(--ncu-font-weight-bold)" }}>{name}</div>
-    <div style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-xs)" }}>
-      {cards} 張卡片
+  <IonItem
+    lines="full"
+    style={{
+      "--background": isMe ? "var(--ncu-primary-light)" : "transparent",
+    }}
+  >
+    <div slot="start" style={{ marginRight: "var(--ncu-space-3)", minWidth: 28, textAlign: "center" }}>
+      <RankBadge rank={player.rank} />
     </div>
-  </IonLabel>
-);
-
-const RankingItem = ({ player }: Readonly<{ player: Player }>) => (
-  <IonItem lines="full">
-    <div slot="start" style={{ marginRight: "var(--ncu-space-3)", minWidth: 32 }}>
-      <RankIcon rank={player.rank} />
+    <IonLabel>
+      <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+        <span>{player.nickname}</span>
+        {isMe && <IonBadge color="primary" style={{ fontSize: 10 }}>我</IonBadge>}
+      </div>
+    </IonLabel>
+    <div slot="end" style={{ textAlign: "right" }}>
+      <span
+        style={{
+          fontWeight: 800,
+          color: "var(--ncu-primary)",
+          fontSize: "var(--ncu-font-size-md)",
+        }}
+      >
+        {player.score}
+      </span>
+      <span style={{ color: "var(--ncu-muted)", fontSize: "var(--ncu-font-size-xs)", marginLeft: 3 }}>
+        pts
+      </span>
     </div>
-    <span style={{ fontSize: 24, marginRight: "var(--ncu-space-3)" }}>
-      {player.emoji}
-    </span>
-    <RankingPlayerInfo name={player.name} cards={player.cards} />
-    <PlayerScoreBadge score={player.score} />
   </IonItem>
 );
 
-const LeaderboardList = ({ players }: Readonly<{ players: readonly Player[] }>) => (
-  <IonList lines="full">
-    {players.map((player) => (
-      <RankingItem key={player.rank} player={player} />
-    ))}
-  </IonList>
-);
-
-const LeaderboardCard = ({ players }: Readonly<{ players: readonly Player[] }>) => (
-  <div style={{ flex: 1, padding: "var(--ncu-space-4)", minHeight: 0 }}>
-    <IonCard style={{ margin: 0, height: "100%", display: "flex", flexDirection: "column" }}>
-      <IonCardHeader style={{ paddingBottom: "var(--ncu-space-2)", flexShrink: 0 }}>
-        <IonCardTitle style={{ fontSize: "var(--ncu-font-size-md)" }}>
-          全體排名
-        </IonCardTitle>
-      </IonCardHeader>
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        <LeaderboardList players={players} />
-      </div>
-    </IonCard>
-  </div>
-);
-
-const LeaderboardHeader = () => (
-  <IonHeader>
-    <IonToolbar>
-      <IonButtons slot="start">
-        <IonBackButton defaultHref="/cards" text="" />
-      </IonButtons>
-      <IonTitle>排行榜</IonTitle>
-    </IonToolbar>
-  </IonHeader>
-);
-
-const LeaderboardBody = ({
-  userRank,
-  players,
+const LeaderboardSummaryCard = ({
+  data,
+  savedUser,
 }: Readonly<{
-  userRank: Player;
-  players: readonly Player[];
-}>) => (
-  <IonContent fullscreen className="ncu-leaderboard-content" style={{ display: "flex", flexDirection: "column" }}>
-    <MyRankCard userRank={userRank} />
-    <LeaderboardCard players={players} />
-  </IonContent>
-);
+  data: LeaderboardResponse | null;
+  savedUser: SavedParticipantInfo | null;
+}>) => {
+  const myRankEntry = data?.top.find(
+    (p) => savedUser && p.nickname === savedUser.label,
+  );
+
+  return (
+    <IonCard
+      style={{
+        margin: "16px 16px 8px",
+        background: "linear-gradient(135deg, #1b2a4a 0%, #2b4c7e 100%)",
+        color: "#fff",
+        borderRadius: "var(--ncu-radius-lg)",
+        boxShadow: "var(--ncu-shadow-hard)",
+      }}
+    >
+      <IonCardContent style={{ padding: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: "12px", color: "#93c5fd", fontWeight: 700, letterSpacing: 1 }}>
+              {data?.event.name ?? "NCUIM2026-Fresher"}
+            </div>
+            <h2 style={{ fontSize: "20px", fontWeight: 800, margin: "4px 0 0", color: "#fff" }}>
+              迎新即時排行榜
+            </h2>
+          </div>
+          <IonBadge color="light" style={{ padding: "6px 10px", fontSize: "13px", fontWeight: 700 }}>
+            <IonIcon icon={peopleOutline} style={{ marginRight: 4, verticalAlign: "middle" }} />
+            {data ? `${data.totalRanked} 人在榜` : "載入中..."}
+          </IonBadge>
+        </div>
+
+        {savedUser && (
+          <div
+            style={{
+              marginTop: "12px",
+              paddingTop: "12px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.15)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <span style={{ fontSize: "12px", color: "#cbd5e1" }}>已報到身分：</span>
+              <span style={{ fontWeight: 700, marginLeft: 4 }}>{savedUser.label}</span>
+            </div>
+            {myRankEntry && (
+              <IonBadge color="warning" style={{ fontWeight: 800 }}>
+                目前第 {myRankEntry.rank} 名 ({myRankEntry.score} 分)
+              </IonBadge>
+            )}
+          </div>
+        )}
+      </IonCardContent>
+    </IonCard>
+  );
+};
 
 const LeaderboardPage = () => {
-  const [players] = useState<readonly Player[]>(mockLeaderboard);
-  const [userRank] = useState<Player>(mockUserRank);
+  const [data, setData] = useState<LeaderboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [savedUser, setSavedUser] = useState<SavedParticipantInfo | null>(null);
+
+  const loadLeaderboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetchLiveLeaderboard();
+      setData(res);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "排行榜載入失敗");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setSavedUser(getSavedParticipantInfo());
+    loadLeaderboard();
+  }, [loadLeaderboard]);
+
+  const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
+    try {
+      const res = await fetchLiveLeaderboard();
+      setData(res);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "更新失敗");
+    } finally {
+      event.detail.complete();
+    }
+  };
 
   return (
     <IonPage>
-      <LeaderboardHeader />
-      <LeaderboardBody userRank={userRank} players={players} />
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/cards" text="" />
+          </IonButtons>
+          <IonTitle>即時排行榜</IonTitle>
+          <IonButtons slot="end">
+            <IonButton onClick={loadLeaderboard} aria-label="重新整理">
+              <IonIcon icon={refreshOutline} />
+            </IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+
+      <IonContent fullscreen className="ncu-leaderboard-content">
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
+        <LeaderboardSummaryCard data={data} savedUser={savedUser} />
+
+        <div style={{ padding: "0 16px 16px" }}>
+          <IonCard style={{ margin: 0 }}>
+            <IonCardHeader style={{ paddingBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <IonCardTitle style={{ fontSize: "16px" }}>Top 10 排行</IonCardTitle>
+                {data && (
+                  <span style={{ fontSize: "11px", color: "var(--ncu-muted)" }}>
+                    更新於 {new Date(data.updatedAt).toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+            </IonCardHeader>
+
+            {loading && !data && (
+              <div style={{ textAlign: "center", padding: "32px 0" }}>
+                <IonSpinner name="crescent" />
+                <p style={{ color: "var(--ncu-muted)", fontSize: "13px", marginTop: 8 }}>
+                  正在載入最新名次…
+                </p>
+              </div>
+            )}
+
+            {error && !data && (
+              <div style={{ textAlign: "center", padding: "24px 16px", color: "var(--ncu-danger)" }}>
+                <p>{error}</p>
+                <IonButton size="small" fill="outline" onClick={loadLeaderboard}>
+                  點此重試
+                </IonButton>
+              </div>
+            )}
+
+            {data && (
+              <IonList lines="full">
+                {data.top.map((player) => (
+                  <LeaderboardPlayerItem
+                    key={`${player.rank}-${player.nickname}`}
+                    player={player}
+                    isMe={savedUser?.label === player.nickname}
+                  />
+                ))}
+              </IonList>
+            )}
+          </IonCard>
+        </div>
+      </IonContent>
     </IonPage>
   );
 };
