@@ -154,7 +154,7 @@ const HeroHeader = ({ onLogoClick }: Readonly<{ onLogoClick: () => void }>) => (
         margin: "var(--ncu-space-1) 0 0",
       }}
     >
-      CIM-Life 綜合服務與生活入口平台
+      CIM-Life 中央資管通
     </p>
   </div>
 );
