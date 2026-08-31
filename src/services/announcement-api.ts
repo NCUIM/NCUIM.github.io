@@ -104,27 +104,66 @@ export const parseGitHubIssue = (issue: GitHubIssue): AnnouncementItem => {
   const rawBody = issue.body || "";
   const labelNames = issue.labels.map((l) => (typeof l === "string" ? l : l.name).toLowerCase());
 
-  // Category resolution
+  // Category resolution (check labels OR issue form dropdown value)
+  const formCategory = extractFormField(rawBody, /###\s+(?:公告類別|Category)[^\n]*/i).toLowerCase();
   let category: AnnouncementCategory = "general";
-  if (labelNames.some((l) => l.includes("course") || l.includes("選課") || l.includes("學分"))) {
+  if (
+    labelNames.some((l) => l.includes("course") || l.includes("選課") || l.includes("學分")) ||
+    formCategory.includes("course") ||
+    formCategory.includes("選課") ||
+    formCategory.includes("學分")
+  ) {
     category = "course";
-  } else if (labelNames.some((l) => l.includes("event") || l.includes("迎新") || l.includes("活動"))) {
+  } else if (
+    labelNames.some((l) => l.includes("event") || l.includes("迎新") || l.includes("活動")) ||
+    formCategory.includes("event") ||
+    formCategory.includes("迎新") ||
+    formCategory.includes("活動")
+  ) {
     category = "event";
-  } else if (labelNames.some((l) => l.includes("department") || l.includes("系所") || l.includes("行政"))) {
+  } else if (
+    labelNames.some((l) => l.includes("department") || l.includes("系所") || l.includes("行政")) ||
+    formCategory.includes("department") ||
+    formCategory.includes("系所") ||
+    formCategory.includes("行政")
+  ) {
     category = "department";
-  } else if (labelNames.some((l) => l.includes("career") || l.includes("獎助") || l.includes("職涯"))) {
+  } else if (
+    labelNames.some((l) => l.includes("career") || l.includes("獎助") || l.includes("職涯")) ||
+    formCategory.includes("career") ||
+    formCategory.includes("獎助") ||
+    formCategory.includes("職涯")
+  ) {
     category = "career";
-  } else if (labelNames.some((l) => l.includes("system") || l.includes("系統") || l.includes("維護"))) {
+  } else if (
+    labelNames.some((l) => l.includes("system") || l.includes("系統") || l.includes("維護")) ||
+    formCategory.includes("system") ||
+    formCategory.includes("系統") ||
+    formCategory.includes("維護")
+  ) {
     category = "system";
   }
 
-  // Priority resolution
+  // Priority resolution (check labels OR issue form dropdown value)
+  const formPriority = extractFormField(rawBody, /###\s+(?:重要程度|Priority)[^\n]*/i).toLowerCase();
   let priority: AnnouncementPriority = "normal";
-  if (labelNames.some((l) => l.includes("urgent") || l.includes("緊急"))) {
+  if (
+    labelNames.some((l) => l.includes("urgent") || l.includes("緊急")) ||
+    formPriority.includes("urgent") ||
+    formPriority.includes("緊急")
+  ) {
     priority = "urgent";
-  } else if (labelNames.some((l) => l.includes("high") || l.includes("重要"))) {
+  } else if (
+    labelNames.some((l) => l.includes("high") || l.includes("重要")) ||
+    formPriority.includes("high") ||
+    formPriority.includes("重要")
+  ) {
     priority = "high";
-  } else if (labelNames.some((l) => l.includes("low") || l.includes("參考"))) {
+  } else if (
+    labelNames.some((l) => l.includes("low") || l.includes("參考")) ||
+    formPriority.includes("low") ||
+    formPriority.includes("參考")
+  ) {
     priority = "low";
   }
 
