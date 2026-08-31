@@ -87,7 +87,7 @@ const GuideIntroHeader = () => (
       中大生活與實用入口
     </h1>
     <p style={{ fontSize: 14, color: "var(--ncu-muted)", margin: 0 }}>
-      收錄資管所新生常用之校園系統、生活服務與開發者軟體資源
+      收錄資管所常用之校園系統、生活服務與開發者軟體資源
     </p>
   </div>
 );
@@ -141,7 +141,7 @@ const GuidePageBody = () => (
 const GuidePageHeader = () => (
   <IonHeader>
     <IonToolbar>
-      <IonTitle>常用資源與新生導航</IonTitle>
+      <IonTitle>常用資源與校園導航</IonTitle>
     </IonToolbar>
   </IonHeader>
 );
