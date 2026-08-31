@@ -25,7 +25,18 @@ import {
   sparkles,
   megaphoneOutline,
   chevronForwardOutline,
+  openOutline,
+  pricetagOutline,
+  timeOutline,
 } from "ionicons/icons";
+import {
+  AnnouncementItem,
+  AnnouncementCategory,
+  CATEGORY_LABELS,
+  PRIORITY_CONFIG,
+  BUILTIN_ANNOUNCEMENTS,
+  fetchAnnouncements,
+} from "../services/announcement-api";
 
 interface ModuleCard {
   readonly title: string;
@@ -468,32 +479,18 @@ const HomeModuleList = ({
   );
 };
 
-interface AnnouncementItem {
-  readonly id: string;
-  readonly title: string;
-  readonly author: string;
-  readonly role: string;
-  readonly date: string;
-  readonly content: string;
-  readonly badge?: string;
-}
-
-const announcements: readonly AnnouncementItem[] = [
-  {
-    id: "rep-welcome-2026",
-    title: "所代阿駿對新生們的期盼",
-    author: "阿駿",
-    role: "資管所所代",
-    date: "2026/09",
-    badge: "所代的話",
-    content:
-      "歡迎各位加入中央資管大家庭！研究所這兩年不僅是專業知識與研究能力的深化，更是探索熱情、結識一生摯友與夥伴的寶貴旅程。期許大家勇於發問、主動跨出舒適圈，在遇到學業與研究挑戰時彼此扶持、共同成長。願大家在中央資管發光發熱，收穫最充實而難忘的碩士生涯！",
-  },
-];
-
-const AnnouncementBar = ({ onOpen }: Readonly<{ onOpen: () => void }>) => {
+const AnnouncementBar = ({
+  announcements,
+  onOpen,
+}: Readonly<{
+  announcements: readonly AnnouncementItem[];
+  onOpen: () => void;
+}>) => {
   const latest = announcements[0];
   if (!latest) return null;
+
+  const isUrgent = latest.priority === "urgent";
+  const priorityConfig = PRIORITY_CONFIG[latest.priority];
 
   return (
     <div
@@ -501,34 +498,35 @@ const AnnouncementBar = ({ onOpen }: Readonly<{ onOpen: () => void }>) => {
       style={{
         margin: "0 0 16px",
         padding: "10px 14px",
-        background: "var(--ncu-surface)",
-        border: "1.5px solid var(--ncu-ink)",
+        background: isUrgent ? "rgba(239, 68, 68, 0.08)" : "var(--ncu-surface)",
+        border: isUrgent ? "2px solid #ef4444" : "1.5px solid var(--ncu-ink)",
         borderRadius: "var(--ncu-radius-md)",
-        boxShadow: "var(--ncu-shadow-sm)",
+        boxShadow: isUrgent ? "0 0 12px rgba(239, 68, 68, 0.25)" : "var(--ncu-shadow-sm)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         gap: 10,
         cursor: "pointer",
+        transition: "all 0.2s ease",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
         <div
           style={{
-            width: 24,
-            height: 24,
+            padding: "2px 6px",
             borderRadius: "6px",
-            background: "rgba(27, 42, 74, 0.08)",
+            background: isUrgent ? "#ef4444" : "rgba(27, 42, 74, 0.08)",
+            color: isUrgent ? "#ffffff" : "var(--ncu-primary)",
+            fontSize: 11,
+            fontWeight: 800,
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
+            gap: 3,
             flexShrink: 0,
           }}
         >
-          <IonIcon
-            icon={megaphoneOutline}
-            style={{ fontSize: 14, color: "var(--ncu-primary)" }}
-          />
+          <span>{priorityConfig.icon}</span>
+          <span>{isUrgent ? "緊急置頂" : "公告"}</span>
         </div>
         <span
           style={{
@@ -564,92 +562,307 @@ const AnnouncementBar = ({ onOpen }: Readonly<{ onOpen: () => void }>) => {
 
 const AnnouncementModal = ({
   isOpen,
+  announcements,
   onDismiss,
 }: Readonly<{
   isOpen: boolean;
+  announcements: readonly AnnouncementItem[];
   onDismiss: () => void;
-}>) => (
-  <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-    <IonHeader>
-      <IonToolbar>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 12 }}>
-          <IonIcon icon={megaphoneOutline} style={{ fontSize: 18, color: "var(--ncu-primary)" }} />
-          <IonTitle style={{ padding: 0 }}>最新公告與消息</IonTitle>
-        </div>
-        <IonButtons slot="end">
-          <IonButton onClick={onDismiss}>關閉</IonButton>
-        </IonButtons>
-      </IonToolbar>
-    </IonHeader>
-    <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
-        {announcements.map((item) => (
-          <IonCard
-            key={item.id}
+}>) => {
+  const [selectedCategory, setSelectedCategory] = useState<AnnouncementCategory>("all");
+
+  const categories: readonly AnnouncementCategory[] = [
+    "all",
+    "course",
+    "event",
+    "department",
+    "career",
+    "system",
+    "general",
+  ];
+
+  const filtered =
+    selectedCategory === "all"
+      ? announcements
+      : announcements.filter((item) => item.category === selectedCategory);
+
+  return (
+    <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
+      <IonHeader>
+        <IonToolbar>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 12 }}>
+            <IonIcon icon={megaphoneOutline} style={{ fontSize: 18, color: "var(--ncu-primary)" }} />
+            <IonTitle style={{ padding: 0 }}>最新公告與消息</IonTitle>
+          </div>
+          <IonButtons slot="end">
+            <IonButton onClick={onDismiss}>關閉</IonButton>
+          </IonButtons>
+        </IonToolbar>
+      </IonHeader>
+      <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          {/* Category Filter Tabs */}
+          <div
             style={{
-              margin: "0 0 16px",
-              border: "2px solid var(--ncu-ink)",
-              borderRadius: "var(--ncu-radius-md)",
-              boxShadow: "var(--ncu-shadow-hard)",
-              background: "var(--ncu-surface)",
+              display: "flex",
+              gap: 8,
+              overflowX: "auto",
+              paddingBottom: 14,
+              marginBottom: 8,
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
             }}
           >
-            <IonCardHeader style={{ padding: "16px 16px 10px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  marginBottom: 6,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <IonIcon
-                    icon={megaphoneOutline}
-                    style={{ fontSize: 17, color: "var(--ncu-primary)", flexShrink: 0 }}
-                  />
-                  <IonCardTitle style={{ fontSize: 16, fontWeight: 800, color: "var(--ncu-ink)" }}>
-                    {item.title}
-                  </IonCardTitle>
-                </div>
-                <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>{item.date}</span>
-              </div>
-            </IonCardHeader>
-            <IonCardContent
+            {categories.map((cat) => {
+              const info = CATEGORY_LABELS[cat];
+              const isSelected = selectedCategory === cat;
+              const count =
+                cat === "all"
+                  ? announcements.length
+                  : announcements.filter((item) => item.category === cat).length;
+
+              if (cat !== "all" && count === 0) return null;
+
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "5px 12px",
+                    borderRadius: 20,
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? 800 : 600,
+                    border: isSelected ? "1.5px solid var(--ncu-ink)" : "1px solid var(--ncu-border)",
+                    background: isSelected ? "var(--ncu-ink)" : "var(--ncu-surface)",
+                    color: isSelected ? "#ffffff" : "var(--ncu-ink)",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    boxShadow: isSelected ? "var(--ncu-shadow-sm)" : "none",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <span>{info.icon}</span>
+                  <span>{info.label}</span>
+                  <span style={{ opacity: 0.75, fontSize: 11 }}>({count})</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {filtered.length === 0 ? (
+            <div
               style={{
-                padding: "0 16px 16px",
-                fontSize: 14,
-                color: "var(--ncu-ink)",
-                lineHeight: 1.7,
+                textAlign: "center",
+                padding: "48px 16px",
+                color: "var(--ncu-muted)",
+                background: "var(--ncu-surface)",
+                borderRadius: "var(--ncu-radius-md)",
+                border: "1px dashed var(--ncu-border)",
               }}
             >
-              <p style={{ margin: "0 0 12px", whiteSpace: "pre-line" }}>{item.content}</p>
-              <div
-                style={{
-                  textAlign: "right",
-                  fontSize: 13,
-                  color: "var(--ncu-muted)",
-                  fontWeight: 700,
-                  borderTop: "1px dashed var(--ncu-border)",
-                  paddingTop: 8,
-                }}
-              >
-                —— {item.role} · {item.author}
-              </div>
-            </IonCardContent>
-          </IonCard>
-        ))}
-      </div>
-    </IonContent>
-  </IonModal>
-);
+              <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
+              <div style={{ fontWeight: 700, fontSize: 15 }}>此分類目前尚無公告</div>
+            </div>
+          ) : (
+            filtered.map((item) => {
+              const priorityConfig = PRIORITY_CONFIG[item.priority];
+              const categoryConfig = CATEGORY_LABELS[item.category];
+
+              return (
+                <IonCard
+                  key={item.id}
+                  style={{
+                    margin: "0 0 16px",
+                    border:
+                      item.priority === "urgent" ? "2.5px solid #ef4444" : "2px solid var(--ncu-ink)",
+                    borderRadius: "var(--ncu-radius-md)",
+                    boxShadow:
+                      item.priority === "urgent"
+                        ? "0 0 16px rgba(239, 68, 68, 0.2)"
+                        : "var(--ncu-shadow-hard)",
+                    background: "var(--ncu-surface)",
+                  }}
+                >
+                  <IonCardHeader style={{ padding: "16px 16px 10px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                            background: priorityConfig.badgeColor,
+                            color: "#ffffff",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 3,
+                          }}
+                        >
+                          <span>{priorityConfig.icon}</span>
+                          <span>{priorityConfig.label}</span>
+                        </span>
+
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                            background: "rgba(27, 42, 74, 0.08)",
+                            color: "var(--ncu-ink)",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 3,
+                          }}
+                        >
+                          <span>{categoryConfig.icon}</span>
+                          <span>{categoryConfig.label}</span>
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 12, color: "var(--ncu-muted)", fontWeight: 600 }}>
+                        {item.date}
+                      </span>
+                    </div>
+
+                    <IonCardTitle
+                      style={{
+                        fontSize: 16.5,
+                        fontWeight: 800,
+                        color: "var(--ncu-ink)",
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {item.title}
+                    </IonCardTitle>
+
+                    {item.milestone && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          padding: "6px 10px",
+                          borderRadius: 8,
+                          background: "rgba(59, 130, 246, 0.08)",
+                          border: "1px solid rgba(59, 130, 246, 0.25)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontSize: 12,
+                          color: "#1e40af",
+                          fontWeight: 700,
+                        }}
+                      >
+                        <IonIcon icon={timeOutline} style={{ fontSize: 14 }} />
+                        <span>階段：{item.milestone.title}</span>
+                        {item.milestone.dueOn && (
+                          <span style={{ opacity: 0.85 }}>(截止：{item.milestone.dueOn})</span>
+                        )}
+                      </div>
+                    )}
+                  </IonCardHeader>
+
+                  <IonCardContent
+                    style={{
+                      padding: "0 16px 16px",
+                      fontSize: 14,
+                      color: "var(--ncu-ink)",
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    <p style={{ margin: "0 0 14px", whiteSpace: "pre-line" }}>{item.content}</p>
+
+                    {item.actionUrl && (
+                      <div style={{ marginBottom: 14 }}>
+                        <button
+                          type="button"
+                          onClick={() => window.open(item.actionUrl, "_blank", "noopener,noreferrer")}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "6px 14px",
+                            borderRadius: 8,
+                            border: "1.5px solid var(--ncu-ink)",
+                            background: "var(--ncu-surface)",
+                            color: "var(--ncu-ink)",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            boxShadow: "var(--ncu-shadow-sm)",
+                          }}
+                        >
+                          <IonIcon icon={openOutline} style={{ fontSize: 14 }} />
+                          <span>開啟相關連結 ↗</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 8,
+                        fontSize: 12.5,
+                        color: "var(--ncu-muted)",
+                        fontWeight: 700,
+                        borderTop: "1px dashed var(--ncu-border)",
+                        paddingTop: 10,
+                      }}
+                    >
+                      <div>
+                        —— {item.role} · {item.author}
+                      </div>
+
+                      {item.htmlUrl && (
+                        <a
+                          href={item.htmlUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "var(--ncu-primary)",
+                            textDecoration: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            fontSize: 12,
+                          }}
+                        >
+                          <span>在 GitHub 檢視討論</span>
+                          <IonIcon icon={openOutline} style={{ fontSize: 12 }} />
+                        </a>
+                      )}
+                    </div>
+                  </IonCardContent>
+                </IonCard>
+              );
+            })
+          )}
+        </div>
+      </IonContent>
+    </IonModal>
+  );
+};
 
 const HomeBody = ({
   stage,
   isUnlocked,
   particles,
+  announcements,
   hovered,
   onHover,
   onLeave,
@@ -659,6 +872,7 @@ const HomeBody = ({
   stage: number;
   isUnlocked: boolean;
   particles: ParticleData[];
+  announcements: readonly AnnouncementItem[];
   hovered: string | null;
   onHover: (route: string) => void;
   onLeave: () => void;
@@ -673,7 +887,7 @@ const HomeBody = ({
         particles={particles}
         onLogoClick={onLogoClick}
       />
-      <AnnouncementBar onOpen={onOpenAnnouncements} />
+      <AnnouncementBar announcements={announcements} onOpen={onOpenAnnouncements} />
       <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
     </div>
   </IonContent>
@@ -696,12 +910,22 @@ const isCtfEnded = (): boolean => {
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [announcements, setAnnouncements] = useState<readonly AnnouncementItem[]>(BUILTIN_ANNOUNCEMENTS);
   const [easterEggStage, setEasterEggStage] = useState(0);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [particles, setParticles] = useState<ParticleData[]>([]);
   const [presentAlert] = useIonAlert();
 
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Fetch latest announcements from GitHub (SWR)
+  useEffect(() => {
+    fetchAnnouncements().then((data) => {
+      if (data && data.length > 0) {
+        setAnnouncements(data);
+      }
+    });
+  }, []);
 
   const addParticle = useCallback((stage: number, text: string) => {
     const side = Math.random() < 0.5 ? "left" : "right";
@@ -843,6 +1067,7 @@ const HomePage = () => {
         stage={easterEggStage}
         isUnlocked={isUnlocked}
         particles={particles}
+        announcements={announcements}
         hovered={hovered}
         onHover={setHovered}
         onLeave={() => setHovered(null)}
@@ -851,6 +1076,7 @@ const HomePage = () => {
       />
       <AnnouncementModal
         isOpen={showAnnouncements}
+        announcements={announcements}
         onDismiss={() => setShowAnnouncements(false)}
       />
     </IonPage>
