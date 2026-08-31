@@ -17,6 +17,7 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  useIonToast,
 } from "@ionic/react";
 import { isCisLoggedIn, cisLogout } from "../services/cis-login";
 import { fetchCisSelectedCourses, type CisCourse } from "../services/cis-course-api";
@@ -27,6 +28,8 @@ import {
 } from "../services/all-courses-api";
 import { star, swapHorizontalOutline, linkOutline } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
+
+const STORAGE_KEY_CIS_COURSES = "ncu_my_cis_courses";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -1076,6 +1079,7 @@ const computeMergedTimetableData = (
 };
 
 const TimetablePage = () => {
+  const [presentToast] = useIonToast();
   const defaultDay = getDefaultDayIndex();
   const [selectedDay, setSelectedDay] = useState(String(defaultDay));
   const [viewScope, setViewScope] = useState<"all" | "mine">(() =>
@@ -1102,11 +1106,56 @@ const TimetablePage = () => {
   }, [currentTimestamp]);
 
   const [masterCourses, setMasterCourses] = useState<MasterCourseItem[]>([]);
-  const [myCisCourses, setMyCisCourses] = useState<CisCourse[]>([]);
+  const [myCisCourses, setMyCisCourses] = useState<CisCourse[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_CIS_COURSES);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [cisAuthenticated, setCisAuthenticated] = useState(isCisLoggedIn());
+  const [cisAuthenticated, setCisAuthenticated] = useState(
+    () => isCisLoggedIn() || Boolean(localStorage.getItem(STORAGE_KEY_CIS_COURSES)),
+  );
   const [showCisLogin, setShowCisLogin] = useState(false);
+
+  useEffect(() => {
+    const handleHashSync = () => {
+      const hash = window.location.hash;
+      if (!hash?.includes("cis_data=")) return;
+      try {
+        const rawParam = hash.replace(/^#.*?cis_data=/, "");
+        const decoded = decodeURIComponent(rawParam);
+        const cisCourses: CisCourse[] = JSON.parse(decoded);
+        if (Array.isArray(cisCourses) && cisCourses.length > 0) {
+          setMyCisCourses(cisCourses);
+          localStorage.setItem(STORAGE_KEY_CIS_COURSES, JSON.stringify(cisCourses));
+          setCisAuthenticated(true);
+          setViewScope("mine");
+          presentToast({
+            message: `🎉 成功從課務系統同步 ${cisCourses.length} 門修課紀錄至課表！`,
+            duration: 4000,
+            color: "success",
+            position: "top",
+          });
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+      } catch {
+        presentToast({
+          message: "課務資料解析失敗，請重新嘗試同步",
+          duration: 3000,
+          color: "danger",
+          position: "top",
+        });
+      }
+    };
+
+    handleHashSync();
+    window.addEventListener("hashchange", handleHashSync);
+    return () => window.removeEventListener("hashchange", handleHashSync);
+  }, [presentToast]);
 
   const syncDefaultCourses = useCallback(async () => {
     setLoading(true);
@@ -1127,6 +1176,9 @@ const TimetablePage = () => {
   }, [syncDefaultCourses]);
 
   const syncCisCourses = useCallback(async () => {
+    if (localStorage.getItem(STORAGE_KEY_CIS_COURSES)) {
+      return;
+    }
     setLoading(true);
     setApiError(null);
     try {
@@ -1187,6 +1239,7 @@ const TimetablePage = () => {
 
   const handleLogout = useCallback(() => {
     cisLogout();
+    localStorage.removeItem(STORAGE_KEY_CIS_COURSES);
     setCisAuthenticated(false);
     setMyCisCourses([]);
     setViewScope("all");
