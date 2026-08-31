@@ -107,14 +107,15 @@ const NcuimLogoIcon = () => (
   </svg>
 );
 
-const STAGE_HINTS = [
-  "",
-  "⚡ 訊號探測中 (1/5)",
-  "🔓 核心解碼中 (2/5)",
-  "🔥 防火牆破譯 (3/5)",
-  "🚨 系統即將超載 (4/5)",
-  "🚩 CTF 傳送門開啟！",
-];
+const getStageHint = (stage: number): string => {
+  if (stage <= 0) return "";
+  if (stage <= 4) return `⚡ 訊號探測中 (${stage}/20)`;
+  if (stage <= 8) return `🔓 核心解碼中 (${stage}/20)`;
+  if (stage <= 12) return `🔥 防火牆破譯 (${stage}/20)`;
+  if (stage <= 16) return `🚨 系統即將超載 (${stage}/20)`;
+  if (stage < 20) return `💥 臨界能量充填 (${stage}/20)`;
+  return isCtfEnded() ? "🏁 查看 CTF 最終榜單！" : "🚩 CTF 傳送門開啟！";
+};
 
 const getLogoStyle = (stage: number): React.CSSProperties => {
   const base: React.CSSProperties = {
@@ -131,49 +132,40 @@ const getLogoStyle = (stage: number): React.CSSProperties => {
     cursor: "pointer",
     userSelect: "none",
     padding: 0,
-    transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease",
+    transition: "transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease",
     willChange: "transform, box-shadow",
     backfaceVisibility: "hidden",
   };
 
-  switch (stage) {
-    case 1:
-      return {
-        ...base,
-        transform: "translate3d(0, -2px, 0) scale(1.06)",
-        boxShadow: "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)",
-      };
-    case 2:
-      return {
-        ...base,
-        transform: "scale(1.12) rotate(10deg)",
-        boxShadow: "0 0 22px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)",
-      };
-    case 3:
-      return {
-        ...base,
-        transform: "scale(1.18) rotate(-12deg)",
-        boxShadow: "0 0 28px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)",
-      };
-    case 4:
-      return {
-        ...base,
-        transform: "scale(1.24) rotate(180deg)",
-        boxShadow: "0 0 36px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)",
-      };
-    case 5:
-      return {
-        ...base,
-        transform: "scale(1.32) rotate(360deg)",
-        boxShadow: "0 0 45px #10b981, 0 0 24px #38bdf8, var(--ncu-shadow-hard)",
-      };
-    default:
-      return {
-        ...base,
-        boxShadow: "var(--ncu-shadow-hard)",
-        transform: "none",
-      };
+  if (stage <= 0) {
+    return {
+      ...base,
+      boxShadow: "var(--ncu-shadow-hard)",
+      transform: "none",
+    };
   }
+
+  const scale = 1.0 + (stage / 20) * 0.32;
+  const rotate = stage >= 20 ? 360 : (stage % 2 === 0 ? stage * 1.2 : -stage * 1.2);
+  let boxShadow = "var(--ncu-shadow-hard)";
+
+  if (stage >= 17) {
+    boxShadow = "0 0 45px #10b981, 0 0 24px #38bdf8, var(--ncu-shadow-hard)";
+  } else if (stage >= 13) {
+    boxShadow = "0 0 36px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)";
+  } else if (stage >= 9) {
+    boxShadow = "0 0 28px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)";
+  } else if (stage >= 5) {
+    boxShadow = "0 0 22px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)";
+  } else {
+    boxShadow = "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)";
+  }
+
+  return {
+    ...base,
+    transform: `scale(${scale.toFixed(2)}) rotate(${rotate}deg)`,
+    boxShadow,
+  };
 };
 
 interface ParticleData {
@@ -210,24 +202,20 @@ const HeroHeader = ({
         0% {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
-          filter: blur(0px);
         }
         100% {
           opacity: 0;
           transform: translate3d(0, -42px, 0) scale(0.2);
-          filter: blur(8px);
         }
       }
       @keyframes cyberGlowParticleRight {
         0% {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
-          filter: blur(0px);
         }
         100% {
           opacity: 0;
           transform: translate3d(0, -42px, 0) scale(0.2);
-          filter: blur(8px);
         }
       }
     `}</style>
@@ -747,7 +735,7 @@ const HomePage = () => {
 
       setParticle({
         stage: next,
-        text: STAGE_HINTS[next] || "",
+        text: getStageHint(next),
         side,
         sideOffset,
         offsetY,
@@ -756,13 +744,13 @@ const HomePage = () => {
         key: Date.now(),
       });
 
-      if (next >= 5) {
+      if (next >= 20) {
         setTimeout(() => {
           triggerEasterEgg();
           setEasterEggStage(0);
           setParticle(null);
         }, 400);
-        return 5;
+        return 20;
       }
       return next;
     });
