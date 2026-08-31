@@ -103,7 +103,7 @@ describe("cis-login service", () => {
       expect(code).toContain("cis.ncu.edu.tw");
       expect(code).toContain("/Course/main/personal/perCrsstatus");
       expect(code).toContain(targetUrl);
-      expect(code).toContain("String.fromCharCode(35)");
+      expect(code).toContain("String.fromCodePoint(35)");
     });
   });
 });
