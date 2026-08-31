@@ -704,6 +704,49 @@ const HomePage = () => {
     );
   }, []);
 
+  // Ambient floating particles after unlocking
+  useEffect(() => {
+    if (!isUnlocked) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+
+    const spawnAmbientParticle = () => {
+      const icons = isCtfEnded()
+        ? ["🏆", "✨", "👑", "🔥", "⚡", "🌟"]
+        : ["🚩", "⚡", "🔓", "🔥", "💥", "✨", "💎"];
+      const icon = icons[Math.floor(Math.random() * icons.length)];
+      const side = Math.random() < 0.5 ? "left" : "right";
+      const sideOffset = 8 + Math.random() * 20;
+      const offsetY = -28 + Math.random() * 56;
+      const flyY = -35 - Math.random() * 25;
+      const driftX = (Math.random() - 0.5) * 18;
+      const scale = 0.85 + Math.random() * 0.35;
+      const rotate = (Math.random() - 0.5) * 14;
+
+      setParticle({
+        stage: 20,
+        text: icon,
+        side,
+        sideOffset,
+        offsetY,
+        flyY,
+        driftX,
+        scale,
+        rotate,
+        key: Date.now(),
+      });
+
+      const nextDelay = 2200 + Math.random() * 2600;
+      timer = setTimeout(spawnAmbientParticle, nextDelay);
+    };
+
+    timer = setTimeout(spawnAmbientParticle, 1800);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [isUnlocked]);
+
   const triggerEasterEgg = useCallback(() => {
     const ended = isCtfEnded();
     if (ended) {
