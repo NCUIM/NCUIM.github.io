@@ -19,7 +19,6 @@ import {
   restaurant,
   calculator,
   sparkles,
-  trophy,
 } from "ionicons/icons";
 
 interface ModuleCard {

@@ -37,6 +37,7 @@ export interface EntryCodeInfo {
 
 export interface SavedParticipantInfo {
   readonly entryCode: string;
+  readonly eventId: string;
   readonly role: string;
   readonly label: string;
   readonly eventName: string;
@@ -73,31 +74,52 @@ export async function verifyEntryCode(code: string): Promise<EntryCodeInfo> {
   }
 
   const url = `${CARD_EVENT_CONFIG.baseUrl}/api/entry/${encodeURIComponent(trimmed)}`;
+  let res: Response;
   try {
-    const res = await fetch(url, {
+    res = await fetch(url, {
       headers: {
         Accept: "application/json",
       },
     });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error ?? `驗證失敗 (HTTP ${res.status})`);
-    }
-
-    return data as EntryCodeInfo;
-  } catch (err) {
-    if (err instanceof Error && (err.message.includes("Failed to fetch") || err.name === "TypeError")) {
-      throw new Error("伺服器跨域限制，請直接點擊「前往報到」");
-    }
-    throw err;
+  } catch {
+    throw new Error("伺服器跨域限制，請直接點擊「前往報到」");
   }
+
+  let data: Record<string, unknown> | null = null;
+  try {
+    data = (await res.json()) as Record<string, unknown>;
+  } catch {
+    // Non-JSON response body
+  }
+
+  if (!res.ok) {
+    const errorMsg =
+      data && typeof data.error === "string" ? data.error : null;
+    throw new Error(errorMsg ?? `驗證失敗 (HTTP ${res.status})`);
+  }
+
+  if (!data || typeof data !== "object") {
+    throw new Error("伺服器回應格式錯誤");
+  }
+
+  return data as unknown as EntryCodeInfo;
 }
 
-export function getSavedParticipantInfo(): SavedParticipantInfo | null {
+/**
+ * Retrieve saved participant information, validating against current eventId.
+ */
+export function getSavedParticipantInfo(
+  expectedEventId: string = CARD_EVENT_CONFIG.defaultEventId,
+): SavedParticipantInfo | null {
   try {
     const raw = localStorage.getItem(CARD_EVENT_CONFIG.storageKey);
-    return raw ? (JSON.parse(raw) as SavedParticipantInfo) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SavedParticipantInfo;
+    if (parsed.eventId && parsed.eventId !== expectedEventId) {
+      clearSavedParticipantInfo();
+      return null;
+    }
+    return parsed;
   } catch {
     return null;
   }
@@ -107,6 +129,7 @@ export function saveParticipantInfo(info: EntryCodeInfo): void {
   try {
     const saved: SavedParticipantInfo = {
       entryCode: info.entryCode,
+      eventId: info.event.id,
       role: info.role,
       label: info.label,
       eventName: info.event.name,
