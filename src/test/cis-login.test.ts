@@ -104,6 +104,14 @@ describe("cis-login service", () => {
       expect(code).toContain("/Course/main/personal/perCrsstatus");
       expect(code).toContain(targetUrl);
       expect(code).toContain("String.fromCodePoint(35)");
+      expect(code).not.toContain("xmlText");
+    });
+
+    it("can be parsed as valid JavaScript syntax without syntax errors", async () => {
+      const { generateBookmarkletCode } = await import("../components/CisLoginModal");
+      const code = generateBookmarkletCode("https://ncuim.github.io/tools/credit");
+      const rawJs = code.replace(/^javascript:/, "");
+      expect(() => new Function(rawJs)).not.toThrow();
     });
   });
 });
