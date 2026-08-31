@@ -177,6 +177,7 @@ const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties =
 };
 
 interface ParticleData {
+  id: number;
   stage: number;
   text: string;
   side: "left" | "right";
@@ -186,18 +187,18 @@ interface ParticleData {
   driftX: number;
   scale: number;
   rotate: number;
-  key: number;
+  duration: number;
 }
 
 const HeroHeader = ({
   stage,
   isUnlocked,
-  particle,
+  particles,
   onLogoClick,
 }: Readonly<{
   stage: number;
   isUnlocked: boolean;
-  particle: ParticleData | null;
+  particles: ParticleData[];
   onLogoClick: () => void;
 }>) => (
   <div
@@ -222,12 +223,20 @@ const HeroHeader = ({
       }
       @keyframes cyberGlowParticle {
         0% {
+          opacity: 0;
+          transform: translate3d(0, 8px, 0) scale(0.85);
+        }
+        15% {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
         }
+        60% {
+          opacity: 0.85;
+          transform: translate3d(calc(var(--drift-x, 0px) * 0.5), calc(var(--fly-y, -50px) * 0.5), 0) scale(0.8);
+        }
         100% {
           opacity: 0;
-          transform: translate3d(var(--drift-x, 0px), var(--fly-y, -45px), 0) scale(0.2);
+          transform: translate3d(var(--drift-x, 0px), var(--fly-y, -50px), 0) scale(0.25);
         }
       }
     `}</style>
@@ -242,16 +251,16 @@ const HeroHeader = ({
         <NcuimLogoIcon />
       </button>
 
-      {particle && particle.stage > 0 && (
+      {particles.map((p) => (
         <div
-          key={particle.key}
+          key={p.id}
           style={{
             position: "absolute",
-            top: `calc(50% + ${particle.offsetY}px)`,
-            left: particle.side === "right" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
-            right: particle.side === "left" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
-            ["--fly-y" as string]: `${particle.flyY}px`,
-            ["--drift-x" as string]: `${particle.driftX}px`,
+            top: `calc(50% + ${p.offsetY}px)`,
+            left: p.side === "right" ? `calc(100% + ${p.sideOffset}px)` : "auto",
+            right: p.side === "left" ? `calc(100% + ${p.sideOffset}px)` : "auto",
+            ["--fly-y" as string]: `${p.flyY}px`,
+            ["--drift-x" as string]: `${p.driftX}px`,
             fontSize: 20,
             lineHeight: 1,
             display: "flex",
@@ -260,12 +269,12 @@ const HeroHeader = ({
             width: 32,
             height: 32,
             borderRadius: "50%",
-            background: particle.stage >= 13 ? "rgba(15, 23, 42, 0.94)" : "rgba(15, 23, 42, 0.88)",
-            border: `1.5px solid ${particle.stage >= 13 ? "#ef4444" : "#38bdf8"}`,
-            boxShadow: particle.stage >= 13
+            background: p.stage >= 13 ? "rgba(15, 23, 42, 0.94)" : "rgba(15, 23, 42, 0.88)",
+            border: `1.5px solid ${p.stage >= 13 ? "#ef4444" : "#38bdf8"}`,
+            boxShadow: p.stage >= 13
               ? "0 0 16px rgba(239, 68, 68, 0.6)"
               : "0 0 14px rgba(56, 189, 248, 0.6)",
-            animation: "cyberGlowParticle 1.2s ease-out forwards",
+            animation: `cyberGlowParticle ${p.duration}s ease-out forwards`,
             willChange: "transform, opacity",
             transformOrigin: "center center",
             backfaceVisibility: "hidden",
@@ -274,9 +283,9 @@ const HeroHeader = ({
             userSelect: "none",
           }}
         >
-          {particle.text}
+          {p.text}
         </div>
-      )}
+      ))}
     </div>
 
     <h1
@@ -640,7 +649,7 @@ const AnnouncementModal = ({
 const HomeBody = ({
   stage,
   isUnlocked,
-  particle,
+  particles,
   hovered,
   onHover,
   onLeave,
@@ -649,7 +658,7 @@ const HomeBody = ({
 }: Readonly<{
   stage: number;
   isUnlocked: boolean;
-  particle: ParticleData | null;
+  particles: ParticleData[];
   hovered: string | null;
   onHover: (route: string) => void;
   onLeave: () => void;
@@ -661,7 +670,7 @@ const HomeBody = ({
       <HeroHeader
         stage={stage}
         isUnlocked={isUnlocked}
-        particle={particle}
+        particles={particles}
         onLogoClick={onLogoClick}
       />
       <AnnouncementBar onOpen={onOpenAnnouncements} />
@@ -689,10 +698,42 @@ const HomePage = () => {
   const [showAnnouncements, setShowAnnouncements] = useState(false);
   const [easterEggStage, setEasterEggStage] = useState(0);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [particle, setParticle] = useState<ParticleData | null>(null);
+  const [particles, setParticles] = useState<ParticleData[]>([]);
   const [presentAlert] = useIonAlert();
 
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const addParticle = useCallback((stage: number, text: string) => {
+    const side = Math.random() < 0.5 ? "left" : "right";
+    const sideOffset = 8 + Math.random() * 20;
+    const offsetY = -28 + Math.random() * 56;
+    const flyY = -35 - Math.random() * 25;
+    const driftX = (Math.random() - 0.5) * 18;
+    const scale = 0.85 + Math.random() * 0.35;
+    const rotate = (Math.random() - 0.5) * 14;
+    const duration = 2.2 + Math.random() * 0.6; // 2.2s ~ 2.8s
+    const id = Date.now() + Math.random();
+
+    const newParticle: ParticleData = {
+      id,
+      stage,
+      text,
+      side,
+      sideOffset,
+      offsetY,
+      flyY,
+      driftX,
+      scale,
+      rotate,
+      duration,
+    };
+
+    setParticles((prev) => [...prev.slice(-7), newParticle]);
+
+    setTimeout(() => {
+      setParticles((prev) => prev.filter((p) => p.id !== id));
+    }, duration * 1000 + 100);
+  }, []);
 
   // DevTools console easter egg
   useEffect(() => {
@@ -715,37 +756,18 @@ const HomePage = () => {
         ? ["🏆", "✨", "👑", "🔥", "⚡", "🌟"]
         : ["🚩", "⚡", "🔓", "🔥", "💥", "✨", "💎"];
       const icon = icons[Math.floor(Math.random() * icons.length)];
-      const side = Math.random() < 0.5 ? "left" : "right";
-      const sideOffset = 8 + Math.random() * 20;
-      const offsetY = -28 + Math.random() * 56;
-      const flyY = -35 - Math.random() * 25;
-      const driftX = (Math.random() - 0.5) * 18;
-      const scale = 0.85 + Math.random() * 0.35;
-      const rotate = (Math.random() - 0.5) * 14;
+      addParticle(20, icon);
 
-      setParticle({
-        stage: 20,
-        text: icon,
-        side,
-        sideOffset,
-        offsetY,
-        flyY,
-        driftX,
-        scale,
-        rotate,
-        key: Date.now(),
-      });
-
-      const nextDelay = 2200 + Math.random() * 2600;
+      const nextDelay = 700 + Math.random() * 900; // 0.7s ~ 1.6s
       timer = setTimeout(spawnAmbientParticle, nextDelay);
     };
 
-    timer = setTimeout(spawnAmbientParticle, 1800);
+    timer = setTimeout(spawnAmbientParticle, 600);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [isUnlocked]);
+  }, [isUnlocked, addParticle]);
 
   const triggerEasterEgg = useCallback(() => {
     const ended = isCtfEnded();
@@ -786,26 +808,7 @@ const HomePage = () => {
 
   const handleSecretTap = useCallback(() => {
     if (isUnlocked) {
-      const side = Math.random() < 0.5 ? "left" : "right";
-      const sideOffset = 8 + Math.random() * 20;
-      const offsetY = -28 + Math.random() * 56;
-      const flyY = -35 - Math.random() * 25;
-      const driftX = (Math.random() - 0.5) * 18;
-      const scale = 0.9 + Math.random() * 0.3;
-      const rotate = (Math.random() - 0.5) * 14;
-
-      setParticle({
-        stage: 20,
-        text: getStageIcon(20),
-        side,
-        sideOffset,
-        offsetY,
-        flyY,
-        driftX,
-        scale,
-        rotate,
-        key: Date.now(),
-      });
+      addParticle(20, getStageIcon(20));
       triggerEasterEgg();
       return;
     }
@@ -816,33 +819,12 @@ const HomePage = () => {
 
     setEasterEggStage((prev) => {
       const next = prev + 1;
-      // 隨機在 Logo 左側或右側外圍，絕不遮擋中央 Logo 圖標
-      const side = Math.random() < 0.5 ? "left" : "right";
-      const sideOffset = 8 + Math.random() * 20; // 距離 Logo 邊界 8px ~ 28px
-      const offsetY = -28 + Math.random() * 56; // 垂直全幅隨機 (-28px ~ +28px)
-      const flyY = -35 - Math.random() * 25; // 隨機上浮距離 (-35px ~ -60px)
-      const driftX = (Math.random() - 0.5) * 18; // 隨機左右漂移 (-9px ~ +9px)
-      const scale = 0.85 + Math.random() * 0.35; // 隨機大小 (0.85x ~ 1.2x)
-      const rotate = (Math.random() - 0.5) * 14;
-
-      setParticle({
-        stage: next,
-        text: getStageIcon(next),
-        side,
-        sideOffset,
-        offsetY,
-        flyY,
-        driftX,
-        scale,
-        rotate,
-        key: Date.now(),
-      });
+      addParticle(next, getStageIcon(next));
 
       if (next >= 20) {
         setIsUnlocked(true);
         setTimeout(() => {
           triggerEasterEgg();
-          setParticle(null);
         }, 400);
         return 20;
       }
@@ -851,9 +833,8 @@ const HomePage = () => {
 
     resetTimerRef.current = setTimeout(() => {
       setEasterEggStage(0);
-      setParticle(null);
     }, 2800);
-  }, [isUnlocked, triggerEasterEgg]);
+  }, [isUnlocked, addParticle, triggerEasterEgg]);
 
   return (
     <IonPage>
@@ -861,7 +842,7 @@ const HomePage = () => {
       <HomeBody
         stage={easterEggStage}
         isUnlocked={isUnlocked}
-        particle={particle}
+        particles={particles}
         hovered={hovered}
         onHover={setHovered}
         onLeave={() => setHovered(null)}
