@@ -7,6 +7,7 @@ import {
   IonContent,
   IonCard,
   IonCardHeader,
+  IonCardContent,
   IonCardTitle,
   IonCardSubtitle,
   IonIcon,
@@ -19,6 +20,7 @@ import {
   restaurant,
   calculator,
   sparkles,
+  megaphoneOutline,
 } from "ionicons/icons";
 
 interface ModuleCard {
@@ -316,6 +318,83 @@ const HomeModuleList = ({
   );
 };
 
+interface AnnouncementItem {
+  readonly id: string;
+  readonly title: string;
+  readonly author: string;
+  readonly role: string;
+  readonly date: string;
+  readonly content: string;
+  readonly badge?: string;
+}
+
+const announcements: readonly AnnouncementItem[] = [
+  {
+    id: "rep-welcome-2026",
+    title: "所代阿駿對新生們的期盼",
+    author: "阿駿",
+    role: "資管所所代",
+    date: "2026/09",
+    badge: "所代的話",
+    content:
+      "歡迎各位加入中央資管大家庭！研究所這兩年不僅是專業知識與研究能力的深化，更是探索熱情、結識一生摯友與夥伴的寶貴旅程。期許大家勇於發問、主動跨出舒適圈，在遇到學業與研究挑戰時彼此扶持、共同成長。願大家在中央資管發光發熱，收穫最充實而難忘的碩士生涯！",
+  },
+];
+
+const AnnouncementSection = () => (
+  <div style={{ marginBottom: "var(--ncu-space-3)" }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginBottom: "var(--ncu-space-2)",
+        padding: "0 4px",
+      }}
+    >
+      <IonIcon icon={megaphoneOutline} style={{ fontSize: 18, color: "var(--ncu-primary)" }} />
+      <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--ncu-ink)" }}>
+        最新公告
+      </h2>
+    </div>
+
+    {announcements.map((item) => (
+      <IonCard
+        key={item.id}
+        style={{
+          margin: "0 0 12px",
+          border: "2px solid var(--ncu-ink)",
+          borderRadius: "var(--ncu-radius-md)",
+          boxShadow: "var(--ncu-shadow-hard)",
+          background: "var(--ncu-surface)",
+        }}
+      >
+        <IonCardHeader style={{ padding: "14px 16px 8px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {item.badge && (
+                <IonBadge color="primary" style={{ fontSize: 11, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}>
+                  {item.badge}
+                </IonBadge>
+              )}
+              <IonCardTitle style={{ fontSize: 15.5, fontWeight: 800, color: "var(--ncu-ink)" }}>
+                {item.title}
+              </IonCardTitle>
+            </div>
+            <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>{item.date}</span>
+          </div>
+        </IonCardHeader>
+        <IonCardContent style={{ padding: "0 16px 14px", fontSize: 13.5, color: "var(--ncu-ink)", lineHeight: 1.65 }}>
+          <p style={{ margin: "0 0 8px" }}>{item.content}</p>
+          <div style={{ textAlign: "right", fontSize: 12.5, color: "var(--ncu-muted)", fontWeight: 700 }}>
+            —— {item.role} · {item.author}
+          </div>
+        </IonCardContent>
+      </IonCard>
+    ))}
+  </div>
+);
+
 const HomeBody = ({
   hovered,
   onHover,
@@ -329,6 +408,7 @@ const HomeBody = ({
 }>) => (
   <IonContent className="ion-padding">
     <HeroHeader onLogoClick={onLogoClick} />
+    <AnnouncementSection />
     <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
   </IonContent>
 );
