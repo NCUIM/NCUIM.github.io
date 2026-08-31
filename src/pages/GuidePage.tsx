@@ -87,15 +87,28 @@ const ResourceItem = ({
             style={{
               fontSize: 13.5,
               fontWeight: 800,
-              padding: "4px 8px",
+              padding: "3.5px 8px",
               borderRadius: 6,
               letterSpacing: 0.3,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              lineHeight: 1,
             }}
           >
             {item.tag}
           </IonBadge>
         )}
-        <strong style={{ fontSize: 16, fontWeight: 800, color: "var(--ncu-ink)" }}>
+        <strong
+          style={{
+            fontSize: 16,
+            fontWeight: 800,
+            color: "var(--ncu-ink)",
+            display: "inline-flex",
+            alignItems: "center",
+            lineHeight: 1.2,
+          }}
+        >
           {item.title}
         </strong>
       </div>
