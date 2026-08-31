@@ -24,6 +24,8 @@ import { fetchCisSelectedCourses, type CisCourse } from "../services/cis-course-
 import {
   fetchImMasterCourses,
   buildTimetableMapFromMasterCourses,
+  getRequiredTag,
+  cleanCourseTitle,
   type MasterCourseItem,
 } from "../services/all-courses-api";
 import { star, swapHorizontalOutline, linkOutline } from "ionicons/icons";
@@ -42,6 +44,7 @@ export interface Course {
   readonly teacher: string;
   readonly room?: string;
   readonly courseType?: "REQUIRED" | "ELECTIVE";
+  readonly requiredTag?: "碩一必修" | "碩二必修" | "必修" | null;
   readonly credit?: number;
   readonly isMyCourse?: boolean;
 }
@@ -180,13 +183,15 @@ const mapMasterCourseToCourse = (
   myCourses: readonly CisCourse[],
 ): Course => {
   const { isMine, room } = matchCisCourse(c, myCourses);
+  const reqTag = c.requiredTag ?? getRequiredTag(c.classNo, c.title);
   return {
     id: String(c.serialNo),
     classNo: c.classNo,
     name: c.title,
     teacher: c.teachers.join(", "),
     room: room || c.room,
-    courseType: c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE",
+    courseType: (reqTag || c.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
+    requiredTag: reqTag,
     credit: c.credit,
     isMyCourse: isMine,
   };
@@ -194,7 +199,7 @@ const mapMasterCourseToCourse = (
 
 const areSameCourse = (a: Course, b: Course): boolean =>
   (Boolean(a.id) && Boolean(b.id) && a.id === b.id) ||
-  (a.name.trim() === b.name.trim() && a.teacher.trim() === b.teacher.trim());
+  a.name.trim() === b.name.trim();
 
 const parseHyphenTime = (ct: string): { dayIdx: number; periodChars: string } | null => {
   if (!ct.includes("-")) return null;
@@ -243,8 +248,22 @@ const addCisCourseToMap = (
     if (!result[key]) {
       result[key] = [];
     }
-    const exists = result[key].some((x) => x.name === c.name && x.teacher === c.teacher);
-    if (!exists) {
+    const existing = result[key].find((x) => x.name.trim() === c.name.trim());
+    if (existing) {
+      const currentTeachers = existing.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
+      const newTeachers = c.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
+      const allTeachers = Array.from(new Set([...currentTeachers, ...newTeachers])).join(" / ");
+
+      const idx = result[key].indexOf(existing);
+      result[key][idx] = {
+        ...existing,
+        teacher: allTeachers,
+        room: (c.room && existing.room && c.room !== existing.room && !existing.room.includes(c.room))
+          ? `${existing.room} / ${c.room}`
+          : (existing.room || c.room),
+        isMyCourse: existing.isMyCourse || c.isMyCourse,
+      };
+    } else {
       result[key].push(c);
     }
   }
@@ -268,13 +287,16 @@ const buildTimetableFromCisCourses = (
 
     const effectiveRoom = c.room || matchedMaster?.room;
     const effectiveTeacher = c.teacher || matchedMaster?.teachers.join(", ") || "";
+    const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(c.classNo, c.name);
 
     const enrichedCourse: Course = {
       id: c.serialNo || (matchedMaster ? String(matchedMaster.serialNo) : undefined),
       classNo: c.classNo || matchedMaster?.classNo,
-      name: c.name || matchedMaster?.title || "",
+      name: cleanCourseTitle(c.name || matchedMaster?.title || ""),
       teacher: effectiveTeacher,
       room: effectiveRoom,
+      courseType: (reqTag || matchedMaster?.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
+      requiredTag: reqTag,
       credit: c.credit ?? matchedMaster?.credit,
       isMyCourse: true,
     };
@@ -522,7 +544,11 @@ const MobileTrackCard = ({
           />
         )}
         {course.name}
-        {isRequired && (
+        {course.requiredTag ? (
+          <span style={{ fontSize: 11, color: "var(--ncu-primary)", marginLeft: 4, fontWeight: 700 }}>
+            [{course.requiredTag}]
+          </span>
+        ) : isRequired && (
           <span style={{ fontSize: 11, color: "var(--ncu-primary)", marginLeft: 4, fontWeight: 700 }}>
             [必修]
           </span>
@@ -847,7 +873,11 @@ const DesktopCourseCard = ({
         <strong style={{ fontSize: titleFontSize, fontWeight: 800, lineHeight: 1.3, color: "var(--ncu-ink)" }}>
           {span.course.name}
         </strong>
-        {isRequired && (
+        {span.course.requiredTag ? (
+          <span style={{ fontSize: 11, color: "var(--ncu-primary)", fontWeight: 700 }}>
+            [{span.course.requiredTag}]
+          </span>
+        ) : isRequired && (
           <span style={{ fontSize: 11, color: "var(--ncu-primary)", fontWeight: 700 }}>
             [必修]
           </span>
