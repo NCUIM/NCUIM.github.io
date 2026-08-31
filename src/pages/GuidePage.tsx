@@ -57,14 +57,14 @@ const ResourceItem = ({ item }: Readonly<{ item: ResourceLink }>) => (
   >
     <IonLabel style={{ margin: "12px 0" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
-        <strong style={{ fontSize: 15.5, fontWeight: 700, color: "var(--ncu-ink)" }}>
-          {item.title}
-        </strong>
         {item.tag && (
           <IonBadge color="primary" style={{ fontSize: 11, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}>
             {item.tag}
           </IonBadge>
         )}
+        <strong style={{ fontSize: 15.5, fontWeight: 700, color: "var(--ncu-ink)" }}>
+          {item.title}
+        </strong>
       </div>
       <p style={{ fontSize: 13, color: "var(--ncu-muted)", lineHeight: 1.4, margin: 0 }}>
         {item.description}
