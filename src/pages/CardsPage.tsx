@@ -201,22 +201,9 @@ const CheckInFormCard = ({
       </IonItem>
 
       {error && (
-        <div style={{ margin: "10px 0 0" }}>
-          <p style={{ color: "var(--ncu-danger)", fontSize: "13px", margin: 0 }}>
-            {error}
-          </p>
-          <IonButton
-            expand="block"
-            fill="outline"
-            color="primary"
-            style={{ marginTop: 8 }}
-            href={`${CARD_EVENT_CONFIG.baseUrl}/join/${encodeURIComponent(entryCode.trim().toUpperCase())}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            直接前往報到建立名片 ↗
-          </IonButton>
-        </div>
+        <p style={{ color: "var(--ncu-danger)", fontSize: "13px", margin: "8px 0 0" }}>
+          {error}
+        </p>
       )}
 
       <div style={{ display: "flex", gap: "8px", marginTop: 12 }}>
@@ -365,11 +352,11 @@ const LeaderboardCard = ({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <IonCardTitle style={{ fontSize: "17px", fontWeight: 800 }}>
-              迎新即時排行榜
+              即時排行榜 (Top 10)
             </IonCardTitle>
             {data && (
               <span style={{ fontSize: "11px", color: "var(--ncu-muted)" }}>
-                {data.totalRanked} 人在榜 · 更新於 {new Date(data.updatedAt).toLocaleTimeString()}
+                共 {data.totalRanked} 人在榜 · 更新於 {new Date(data.updatedAt).toLocaleTimeString()}
               </span>
             )}
           </div>
@@ -407,15 +394,27 @@ const LeaderboardCard = ({
         )}
 
         {data && (
-          <IonList lines="full">
-            {data.top.map((player) => (
-              <LeaderboardPlayerItem
-                key={`${player.rank}-${player.nickname}`}
-                player={player}
-                isMe={savedUser?.label === player.nickname}
-              />
-            ))}
-          </IonList>
+          <>
+            <IonList lines="full">
+              {data.top.map((player) => (
+                <LeaderboardPlayerItem
+                  key={`${player.rank}-${player.nickname}`}
+                  player={player}
+                  isMe={savedUser?.label === player.nickname}
+                />
+              ))}
+            </IonList>
+            <div
+              style={{
+                padding: "8px 16px 4px",
+                fontSize: "11.5px",
+                color: "var(--ncu-muted)",
+                textAlign: "center",
+              }}
+            >
+              📌 公開榜單僅展示前 10 名；全員分數由主辦方後台記錄
+            </div>
+          </>
         )}
       </IonCardContent>
     </IonCard>
@@ -423,6 +422,9 @@ const LeaderboardCard = ({
 };
 
 // ── Main Page Component ───────────────────────────────────────
+
+// 跨域問題修復前暫時隱藏活動身分報到區塊，保留所有完整元件與邏輯
+const SHOW_CARD_CHECKIN = false;
 
 const CardsPage = () => {
   const [savedUser, setSavedUser] = useState<SavedParticipantInfo | null>(null);
@@ -511,18 +513,20 @@ const CardsPage = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {savedUser ? (
-          <UserProfileCard savedUser={savedUser} onLogout={handleLogout} />
-        ) : (
-          <CheckInFormCard
-            entryCode={entryCode}
-            setEntryCode={setEntryCode}
-            loading={loading}
-            error={error}
-            verifiedInfo={verifiedInfo}
-            onVerify={handleVerify}
-            onSaveAndJoin={handleSaveAndJoin}
-          />
+        {SHOW_CARD_CHECKIN && (
+          savedUser ? (
+            <UserProfileCard savedUser={savedUser} onLogout={handleLogout} />
+          ) : (
+            <CheckInFormCard
+              entryCode={entryCode}
+              setEntryCode={setEntryCode}
+              loading={loading}
+              error={error}
+              verifiedInfo={verifiedInfo}
+              onVerify={handleVerify}
+              onSaveAndJoin={handleSaveAndJoin}
+            />
+          )
         )}
 
         <LeaderboardCard
