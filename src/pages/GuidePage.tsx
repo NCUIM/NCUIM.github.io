@@ -85,9 +85,9 @@ const ResourceItem = ({
           <IonBadge
             color={badgeColor}
             style={{
-              fontSize: 13.5,
+              fontSize: 15,
               fontWeight: 800,
-              padding: "3.5px 8px",
+              padding: "4px 9px",
               borderRadius: 6,
               letterSpacing: 0.3,
               display: "inline-flex",
@@ -101,7 +101,7 @@ const ResourceItem = ({
         )}
         <strong
           style={{
-            fontSize: 16,
+            fontSize: 16.5,
             fontWeight: 800,
             color: "var(--ncu-ink)",
             display: "inline-flex",
