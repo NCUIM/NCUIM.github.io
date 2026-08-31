@@ -143,7 +143,32 @@ const LeaderboardSummaryCard = ({
           </IonBadge>
         </div>
 
-        {savedUser && (
+        {!savedUser ? (
+          <div
+            style={{
+              marginTop: "14px",
+              paddingTop: "12px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.15)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: "13px", color: "#cbd5e1" }}>
+              還沒完成迎新活動報到？
+            </span>
+            <IonButton
+              routerLink="/cards"
+              size="small"
+              color="light"
+              style={{ fontWeight: 800 }}
+            >
+              前往報到頁 📝
+            </IonButton>
+          </div>
+        ) : (
           <div
             style={{
               marginTop: "12px",
@@ -152,17 +177,30 @@ const LeaderboardSummaryCard = ({
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              flexWrap: "wrap",
+              gap: 8,
             }}
           >
             <div>
               <span style={{ fontSize: "12px", color: "#cbd5e1" }}>已報到身分：</span>
               <span style={{ fontWeight: 700, marginLeft: 4 }}>{savedUser.label}</span>
             </div>
-            {myRankEntry && (
-              <IonBadge color="warning" style={{ fontWeight: 800 }}>
-                目前第 {myRankEntry.rank} 名 ({myRankEntry.score} 分)
-              </IonBadge>
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {myRankEntry && (
+                <IonBadge color="warning" style={{ fontWeight: 800 }}>
+                  第 {myRankEntry.rank} 名 ({myRankEntry.score} 分)
+                </IonBadge>
+              )}
+              <IonButton
+                routerLink="/cards"
+                size="small"
+                fill="clear"
+                color="light"
+                style={{ fontSize: "12px", fontWeight: 700 }}
+              >
+                我的名片 ↗
+              </IonButton>
+            </div>
           </div>
         )}
       </IonCardContent>
@@ -280,6 +318,16 @@ const LeaderboardPage = () => {
                   }}
                 >
                   📌 公開榜單依活動規則僅展示前 10 名；全員分數由主辦方後台記錄
+                </div>
+                <div style={{ padding: "8px 16px 14px" }}>
+                  <IonButton
+                    expand="block"
+                    routerLink="/cards"
+                    fill="outline"
+                    style={{ fontWeight: 700 }}
+                  >
+                    📝 前往活動身分報到 / 電子名片 ↗
+                  </IonButton>
                 </div>
               </>
             )}

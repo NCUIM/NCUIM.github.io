@@ -415,6 +415,21 @@ const LeaderboardCard = ({
             >
               📌 公開榜單僅展示前 10 名；全員分數由主辦方後台記錄
             </div>
+
+            {!savedUser && (
+              <div style={{ padding: "6px 16px 12px", textAlign: "center" }}>
+                <IonButton
+                  size="small"
+                  fill="outline"
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  style={{ fontWeight: 700 }}
+                >
+                  📝 前往活動身分報到 / 建立名片 ↗
+                </IonButton>
+              </div>
+            )}
           </>
         )}
       </IonCardContent>
