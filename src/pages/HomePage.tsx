@@ -131,51 +131,47 @@ const getLogoStyle = (stage: number): React.CSSProperties => {
     cursor: "pointer",
     userSelect: "none",
     padding: 0,
-    transition: "all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1)",
+    transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease",
+    willChange: "transform, box-shadow",
+    backfaceVisibility: "hidden",
   };
 
   switch (stage) {
     case 1:
       return {
         ...base,
-        transform: "scale(1.08) translateY(-2px)",
+        transform: "translate3d(0, -2px, 0) scale(1.06)",
         boxShadow: "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)",
-        filter: "brightness(1.15)",
       };
     case 2:
       return {
         ...base,
-        transform: "scale(1.15) rotate(10deg)",
-        boxShadow: "0 0 24px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)",
-        filter: "hue-rotate(60deg) brightness(1.2)",
+        transform: "scale(1.12) rotate(10deg)",
+        boxShadow: "0 0 22px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)",
       };
     case 3:
       return {
         ...base,
-        transform: "scale(1.22) rotate(-12deg)",
-        boxShadow: "0 0 32px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)",
-        filter: "hue-rotate(160deg) contrast(1.2) brightness(1.25)",
+        transform: "scale(1.18) rotate(-12deg)",
+        boxShadow: "0 0 28px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)",
       };
     case 4:
       return {
         ...base,
-        transform: "scale(1.28) rotate(180deg)",
-        boxShadow: "0 0 45px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)",
-        filter: "hue-rotate(270deg) contrast(1.4) brightness(1.3)",
+        transform: "scale(1.24) rotate(180deg)",
+        boxShadow: "0 0 36px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)",
       };
     case 5:
       return {
         ...base,
-        transform: "scale(1.36) rotate(360deg)",
-        boxShadow: "0 0 55px #10b981, 0 0 30px #38bdf8, var(--ncu-shadow-hard)",
-        filter: "hue-rotate(360deg) contrast(1.6) brightness(1.4)",
+        transform: "scale(1.32) rotate(360deg)",
+        boxShadow: "0 0 45px #10b981, 0 0 24px #38bdf8, var(--ncu-shadow-hard)",
       };
     default:
       return {
         ...base,
         boxShadow: "var(--ncu-shadow-hard)",
         transform: "none",
-        filter: "none",
       };
   }
 };
@@ -213,43 +209,37 @@ const HeroHeader = ({
       @keyframes cyberGlowParticleLeft {
         0% {
           opacity: 0;
-          transform: translateY(8px) scale(0.65);
-          filter: blur(4px);
+          transform: translate3d(0, 10px, 0) scale(0.85);
         }
-        20% {
+        18% {
           opacity: 1;
-          transform: translateY(-6px) scale(1.05);
-          filter: blur(0);
+          transform: translate3d(0, 0, 0) scale(1.04);
         }
-        70% {
+        65% {
           opacity: 0.95;
-          transform: translateY(-20px) scale(1);
+          transform: translate3d(0, -12px, 0) scale(1);
         }
         100% {
           opacity: 0;
-          transform: translateY(-38px) scale(0.85);
-          filter: blur(2px);
+          transform: translate3d(0, -32px, 0) scale(0.92);
         }
       }
       @keyframes cyberGlowParticleRight {
         0% {
           opacity: 0;
-          transform: translateY(8px) scale(0.65);
-          filter: blur(4px);
+          transform: translate3d(0, 10px, 0) scale(0.85);
         }
-        20% {
+        18% {
           opacity: 1;
-          transform: translateY(-6px) scale(1.05);
-          filter: blur(0);
+          transform: translate3d(0, 0, 0) scale(1.04);
         }
-        70% {
+        65% {
           opacity: 0.95;
-          transform: translateY(-20px) scale(1);
+          transform: translate3d(0, -12px, 0) scale(1);
         }
         100% {
           opacity: 0;
-          transform: translateY(-38px) scale(0.85);
-          filter: blur(2px);
+          transform: translate3d(0, -32px, 0) scale(0.92);
         }
       }
     `}</style>
@@ -282,11 +272,13 @@ const HeroHeader = ({
             padding: "3px 12px",
             borderRadius: 20,
             boxShadow: particle.stage >= 4
-              ? "0 0 20px rgba(239, 68, 68, 0.6), 0 4px 12px rgba(0,0,0,0.5)"
-              : "0 0 16px rgba(56, 189, 248, 0.6), 0 4px 12px rgba(0,0,0,0.4)",
+              ? "0 0 16px rgba(239, 68, 68, 0.5)"
+              : "0 0 14px rgba(56, 189, 248, 0.5)",
             animation: particle.side === "left"
-              ? "cyberGlowParticleLeft 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards"
-              : "cyberGlowParticleRight 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+              ? "cyberGlowParticleLeft 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards"
+              : "cyberGlowParticleRight 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+            willChange: "transform, opacity",
+            backfaceVisibility: "hidden",
             pointerEvents: "none",
             zIndex: 10,
           }}
