@@ -419,32 +419,17 @@ const LeaderboardCard = ({
             </div>
 
             {!savedUser && (
-              <div
-                style={{
-                  padding: "8px 16px 14px",
-                  display: "flex",
-                  gap: 8,
-                  flexWrap: "wrap",
-                }}
-              >
-                <IonButton
-                  size="small"
-                  expand="block"
-                  style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
-                  onClick={onScrollToCheckin}
-                >
-                  📝 填寫代碼報到
-                </IonButton>
+              <div style={{ padding: "8px 16px 14px" }}>
                 <IonButton
                   size="small"
                   expand="block"
                   fill="outline"
-                  style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
+                  style={{ fontWeight: 700 }}
                   href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  📷 掃碼報到 ↗
+                  📷 前往掃碼報到 ↗
                 </IonButton>
               </div>
             )}

@@ -161,12 +161,14 @@ const LeaderboardSummaryCard = ({
               還沒完成迎新活動報到？
             </span>
             <IonButton
-              routerLink="/cards"
+              href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
+              target="_blank"
+              rel="noopener noreferrer"
               size="small"
               color="light"
               style={{ fontWeight: 800 }}
             >
-              前往報到頁 📝
+              掃碼報到 📷 ↗
             </IonButton>
           </div>
         ) : (
@@ -320,30 +322,16 @@ const LeaderboardPage = () => {
                 >
                   📌 公開榜單依活動規則僅展示前 10 名；全員分數由主辦方後台記錄
                 </div>
-                <div
-                  style={{
-                    padding: "8px 16px 14px",
-                    display: "flex",
-                    gap: 8,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <IonButton
-                    expand="block"
-                    routerLink="/cards"
-                    style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
-                  >
-                    📝 App 內身分報到
-                  </IonButton>
+                <div style={{ padding: "8px 16px 14px" }}>
                   <IonButton
                     expand="block"
                     fill="outline"
                     href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
+                    style={{ fontWeight: 700 }}
                   >
-                    📷 線上掃碼報到 ↗
+                    📷 前往線上掃碼報到 ↗
                   </IonButton>
                 </div>
               </>
