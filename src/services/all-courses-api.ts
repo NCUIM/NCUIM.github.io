@@ -41,8 +41,12 @@ export const IM_CLASSROOM_MAP: Record<string, string> = {
   "IM5001-*": "I1-405-1", // 社會網路分析
   "IM5007-*": "I1-405-1", // 資訊檢索
   "IM5008-*": "I1-404", // 商業智慧
+  "IM5019-A": "I1-404", // 管理溝通 (黃子菱)
+  "IM5019-B": "I1-405-1", // 管理溝通 (何迪亞)
   "IM5019-*": "I1-404", // 管理溝通
   "IM5022-*": "I1-405-1", // 多媒體資料庫
+  "IM5025-A": "I1-405-1", // 研究方法 (劉子源)
+  "IM5025-B": "I1-404", // 研究方法 (許智誠)
   "IM5025-*": "I1-405-1", // 研究方法
   "IM5032-*": "I1-405-1", // 物聯網實務應用
   "IM5038-*": "I1-404", // 進階區塊鏈應用與隱私防護
@@ -59,6 +63,14 @@ export const IM_CLASSROOM_MAP: Record<string, string> = {
   "IM7044-*": "I1-404", // 書報研討Ⅱ
   "IM7071-*": "I1-405-1", // 企業電腦網路
   "IM7082-*": "I1-404", // 智慧型資訊系統
+};
+
+export const getCourseRoom = (classNo?: string): string => {
+  if (!classNo) return "I1-404";
+  if (IM_CLASSROOM_MAP[classNo]) return IM_CLASSROOM_MAP[classNo];
+  const prefix = classNo.split("-")[0];
+  if (IM_CLASSROOM_MAP[`${prefix}-*`]) return IM_CLASSROOM_MAP[`${prefix}-*`];
+  return "I1-404";
 };
 
 interface RawCourse {
@@ -148,7 +160,7 @@ const mapRawCourse = (c: RawCourse): MasterCourseItem => {
     passwordCard: c.passwordCard || undefined,
     limitCnt: c.limitCnt,
     admitCnt: c.admitCnt,
-    room: IM_CLASSROOM_MAP[c.classNo] || "I1-404",
+    room: getCourseRoom(c.classNo),
   };
 };
 

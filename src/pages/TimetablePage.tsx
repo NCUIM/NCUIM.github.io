@@ -26,6 +26,7 @@ import {
   buildTimetableMapFromMasterCourses,
   getRequiredTag,
   cleanCourseTitle,
+  getCourseRoom,
   type MasterCourseItem,
 } from "../services/all-courses-api";
 import { star, swapHorizontalOutline, linkOutline } from "ionicons/icons";
@@ -201,7 +202,7 @@ const mapMasterCourseToCourse = (
     id: String(c.serialNo),
     classNo: c.classNo,
     name: c.title,
-    teacher: c.teachers.join(", "),
+    teacher: c.teachers.join(" / "),
     room: room || c.room,
     courseType: (reqTag || c.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
     requiredTag: reqTag,
@@ -309,8 +310,8 @@ const buildTimetableFromCisCourses = (
       ? c.classTimes
       : (matchedMaster?.classTimes || []);
 
-    const effectiveRoom = c.room || matchedMaster?.room;
-    const effectiveTeacher = c.teacher || matchedMaster?.teachers.join(", ") || "";
+    const effectiveRoom = c.room || matchedMaster?.room || getCourseRoom(c.classNo || matchedMaster?.classNo);
+    const effectiveTeacher = c.teacher || matchedMaster?.teachers.join(" / ") || "";
     const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(c.classNo, c.name);
 
     const enrichedCourse: Course = {
