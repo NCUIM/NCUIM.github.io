@@ -201,22 +201,9 @@ const CheckInFormCard = ({
       </IonItem>
 
       {error && (
-        <div style={{ margin: "10px 0 0" }}>
-          <p style={{ color: "var(--ncu-danger)", fontSize: "13px", margin: 0 }}>
-            {error}
-          </p>
-          <IonButton
-            expand="block"
-            fill="outline"
-            color="primary"
-            style={{ marginTop: 8 }}
-            href={`${CARD_EVENT_CONFIG.baseUrl}/join/${encodeURIComponent(entryCode.trim().toUpperCase())}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            直接前往報到建立名片 ↗
-          </IonButton>
-        </div>
+        <p style={{ color: "var(--ncu-danger)", fontSize: "13px", margin: "8px 0 0" }}>
+          {error}
+        </p>
       )}
 
       <div style={{ display: "flex", gap: "8px", marginTop: 12 }}>
@@ -424,6 +411,9 @@ const LeaderboardCard = ({
 
 // ── Main Page Component ───────────────────────────────────────
 
+// 跨域問題修復前暫時隱藏活動身分報到區塊，保留所有完整元件與邏輯
+const SHOW_CARD_CHECKIN = false;
+
 const CardsPage = () => {
   const [savedUser, setSavedUser] = useState<SavedParticipantInfo | null>(null);
   const [entryCode, setEntryCode] = useState("");
@@ -511,18 +501,20 @@ const CardsPage = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {savedUser ? (
-          <UserProfileCard savedUser={savedUser} onLogout={handleLogout} />
-        ) : (
-          <CheckInFormCard
-            entryCode={entryCode}
-            setEntryCode={setEntryCode}
-            loading={loading}
-            error={error}
-            verifiedInfo={verifiedInfo}
-            onVerify={handleVerify}
-            onSaveAndJoin={handleSaveAndJoin}
-          />
+        {SHOW_CARD_CHECKIN && (
+          savedUser ? (
+            <UserProfileCard savedUser={savedUser} onLogout={handleLogout} />
+          ) : (
+            <CheckInFormCard
+              entryCode={entryCode}
+              setEntryCode={setEntryCode}
+              loading={loading}
+              error={error}
+              verifiedInfo={verifiedInfo}
+              onVerify={handleVerify}
+              onSaveAndJoin={handleSaveAndJoin}
+            />
+          )
         )}
 
         <LeaderboardCard
