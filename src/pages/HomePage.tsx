@@ -182,6 +182,8 @@ interface ParticleData {
   side: "left" | "right";
   sideOffset: number;
   offsetY: number;
+  flyY: number;
+  driftX: number;
   scale: number;
   rotate: number;
   key: number;
@@ -218,24 +220,14 @@ const HeroHeader = ({
           box-shadow: 0 0 42px rgba(16, 185, 129, 0.95), 0 0 24px rgba(56, 189, 248, 0.7), var(--ncu-shadow-hard);
         }
       }
-      @keyframes cyberGlowParticleLeft {
+      @keyframes cyberGlowParticle {
         0% {
           opacity: 1;
           transform: translate3d(0, 0, 0) scale(1);
         }
         100% {
           opacity: 0;
-          transform: translate3d(0, -42px, 0) scale(0.2);
-        }
-      }
-      @keyframes cyberGlowParticleRight {
-        0% {
-          opacity: 1;
-          transform: translate3d(0, 0, 0) scale(1);
-        }
-        100% {
-          opacity: 0;
-          transform: translate3d(0, -42px, 0) scale(0.2);
+          transform: translate3d(var(--drift-x, 0px), var(--fly-y, -45px), 0) scale(0.2);
         }
       }
     `}</style>
@@ -258,6 +250,8 @@ const HeroHeader = ({
             top: `calc(50% + ${particle.offsetY}px)`,
             left: particle.side === "right" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
             right: particle.side === "left" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
+            ["--fly-y" as string]: `${particle.flyY}px`,
+            ["--drift-x" as string]: `${particle.driftX}px`,
             fontSize: 20,
             lineHeight: 1,
             display: "flex",
@@ -271,9 +265,7 @@ const HeroHeader = ({
             boxShadow: particle.stage >= 13
               ? "0 0 16px rgba(239, 68, 68, 0.6)"
               : "0 0 14px rgba(56, 189, 248, 0.6)",
-            animation: particle.side === "left"
-              ? "cyberGlowParticleLeft 1.2s ease-out forwards"
-              : "cyberGlowParticleRight 1.2s ease-out forwards",
+            animation: "cyberGlowParticle 1.2s ease-out forwards",
             willChange: "transform, opacity",
             transformOrigin: "center center",
             backfaceVisibility: "hidden",
@@ -752,8 +744,10 @@ const HomePage = () => {
   const handleSecretTap = useCallback(() => {
     if (isUnlocked) {
       const side = Math.random() < 0.5 ? "left" : "right";
-      const sideOffset = 8 + Math.random() * 16;
-      const offsetY = (Math.random() - 0.5) * 20;
+      const sideOffset = 8 + Math.random() * 20;
+      const offsetY = -28 + Math.random() * 56;
+      const flyY = -35 - Math.random() * 25;
+      const driftX = (Math.random() - 0.5) * 18;
       const scale = 0.9 + Math.random() * 0.3;
       const rotate = (Math.random() - 0.5) * 14;
 
@@ -763,6 +757,8 @@ const HomePage = () => {
         side,
         sideOffset,
         offsetY,
+        flyY,
+        driftX,
         scale,
         rotate,
         key: Date.now(),
@@ -779,8 +775,10 @@ const HomePage = () => {
       const next = prev + 1;
       // 隨機在 Logo 左側或右側外圍，絕不遮擋中央 Logo 圖標
       const side = Math.random() < 0.5 ? "left" : "right";
-      const sideOffset = 8 + Math.random() * 16; // 距離 Logo 邊界 8px ~ 24px
-      const offsetY = (Math.random() - 0.5) * 20; // 垂直微幅隨機
+      const sideOffset = 8 + Math.random() * 20; // 距離 Logo 邊界 8px ~ 28px
+      const offsetY = -28 + Math.random() * 56; // 垂直全幅隨機 (-28px ~ +28px)
+      const flyY = -35 - Math.random() * 25; // 隨機上浮距離 (-35px ~ -60px)
+      const driftX = (Math.random() - 0.5) * 18; // 隨機左右漂移 (-9px ~ +9px)
       const scale = 0.85 + Math.random() * 0.35; // 隨機大小 (0.85x ~ 1.2x)
       const rotate = (Math.random() - 0.5) * 14;
 
@@ -790,6 +788,8 @@ const HomePage = () => {
         side,
         sideOffset,
         offsetY,
+        flyY,
+        driftX,
         scale,
         rotate,
         key: Date.now(),
