@@ -120,7 +120,7 @@ const getLogoStyle = (stage: number): React.CSSProperties => {
   const base: React.CSSProperties = {
     width: 72,
     height: 72,
-    marginBottom: stage > 0 ? 6 : 14,
+    marginBottom: 8,
     borderRadius: "20px",
     border: "2.5px solid var(--ncu-ink)",
     overflow: "hidden",
@@ -180,11 +180,24 @@ const getLogoStyle = (stage: number): React.CSSProperties => {
   }
 };
 
+interface ParticleData {
+  stage: number;
+  text: string;
+  side: "left" | "right";
+  sideOffset: number;
+  offsetY: number;
+  scale: number;
+  rotate: number;
+  key: number;
+}
+
 const HeroHeader = ({
   stage,
+  particle,
   onLogoClick,
 }: Readonly<{
   stage: number;
+  particle: ParticleData | null;
   onLogoClick: () => void;
 }>) => (
   <div
@@ -196,30 +209,93 @@ const HeroHeader = ({
       alignItems: "center",
     }}
   >
-    <button
-      type="button"
-      onClick={onLogoClick}
-      aria-label="NCUIM Logo"
-      style={getLogoStyle(stage)}
-      title="NCUIM"
-    >
-      <NcuimLogoIcon />
-    </button>
-    {stage > 0 && (
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 800,
-          color: stage >= 4 ? "#ef4444" : "var(--ncu-primary)",
-          marginBottom: 8,
-          background: "rgba(27, 42, 74, 0.08)",
-          padding: "2px 10px",
-          borderRadius: 12,
-        }}
+    <style>{`
+      @keyframes cyberGlowParticleLeft {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.65);
+          filter: blur(4px);
+        }
+        20% {
+          opacity: 1;
+          transform: translateY(-6px) scale(1.05);
+          filter: blur(0);
+        }
+        70% {
+          opacity: 0.95;
+          transform: translateY(-20px) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-38px) scale(0.85);
+          filter: blur(2px);
+        }
+      }
+      @keyframes cyberGlowParticleRight {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.65);
+          filter: blur(4px);
+        }
+        20% {
+          opacity: 1;
+          transform: translateY(-6px) scale(1.05);
+          filter: blur(0);
+        }
+        70% {
+          opacity: 0.95;
+          transform: translateY(-20px) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-38px) scale(0.85);
+          filter: blur(2px);
+        }
+      }
+    `}</style>
+    <div style={{ position: "relative", display: "inline-flex", marginBottom: 14 }}>
+      <button
+        type="button"
+        onClick={onLogoClick}
+        aria-label="NCUIM Logo"
+        style={getLogoStyle(stage)}
+        title="NCUIM"
       >
-        {STAGE_HINTS[stage]}
-      </div>
-    )}
+        <NcuimLogoIcon />
+      </button>
+
+      {particle && particle.stage > 0 && (
+        <div
+          key={particle.key}
+          style={{
+            position: "absolute",
+            top: `calc(50% + ${particle.offsetY}px)`,
+            left: particle.side === "right" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
+            right: particle.side === "left" ? `calc(100% + ${particle.sideOffset}px)` : "auto",
+            whiteSpace: "nowrap",
+            fontSize: `${11.5 * particle.scale}px`,
+            fontWeight: 900,
+            letterSpacing: 0.5,
+            color: particle.stage >= 4 ? "#ff4d4f" : "#38bdf8",
+            background: particle.stage >= 4 ? "rgba(15, 23, 42, 0.94)" : "rgba(15, 23, 42, 0.9)",
+            border: `1.5px solid ${particle.stage >= 4 ? "#ef4444" : "#38bdf8"}`,
+            padding: "3px 12px",
+            borderRadius: 20,
+            boxShadow: particle.stage >= 4
+              ? "0 0 20px rgba(239, 68, 68, 0.6), 0 4px 12px rgba(0,0,0,0.5)"
+              : "0 0 16px rgba(56, 189, 248, 0.6), 0 4px 12px rgba(0,0,0,0.4)",
+            animation: particle.side === "left"
+              ? "cyberGlowParticleLeft 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards"
+              : "cyberGlowParticleRight 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        >
+          {particle.text}
+        </div>
+      )}
+    </div>
+
     <h1
       style={{
         fontSize: "var(--ncu-font-size-3xl)",
@@ -580,6 +656,7 @@ const AnnouncementModal = ({
 
 const HomeBody = ({
   stage,
+  particle,
   hovered,
   onHover,
   onLeave,
@@ -587,6 +664,7 @@ const HomeBody = ({
   onOpenAnnouncements,
 }: Readonly<{
   stage: number;
+  particle: ParticleData | null;
   hovered: string | null;
   onHover: (route: string) => void;
   onLeave: () => void;
@@ -595,7 +673,7 @@ const HomeBody = ({
 }>) => (
   <IonContent className="ion-padding">
     <div style={{ maxWidth: 680, margin: "0 auto" }}>
-      <HeroHeader stage={stage} onLogoClick={onLogoClick} />
+      <HeroHeader stage={stage} particle={particle} onLogoClick={onLogoClick} />
       <AnnouncementBar onOpen={onOpenAnnouncements} />
       <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
     </div>
@@ -605,7 +683,7 @@ const HomeBody = ({
 const CTF_CONFIG = {
   activeUrl: "https://im2026ctf.duckdns.org/",
   scoreboardUrl: "https://im2026ctf.duckdns.org/scoreboard",
-  endTime: "2026-09-30T23:59:59+08:00",
+  endTime: "2026-09-07T00:00:00+08:00",
 };
 
 const isCtfEnded = (): boolean => {
@@ -620,6 +698,7 @@ const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
   const [easterEggStage, setEasterEggStage] = useState(0);
+  const [particle, setParticle] = useState<ParticleData | null>(null);
   const [presentAlert] = useIonAlert();
 
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -678,11 +757,30 @@ const HomePage = () => {
 
     setEasterEggStage((prev) => {
       const next = prev + 1;
+      // 隨機在 Logo 左側或右側外圍，絕不遮擋中央 Logo 圖標
+      const side = Math.random() < 0.5 ? "left" : "right";
+      const sideOffset = 8 + Math.random() * 16; // 距離 Logo 邊界 8px ~ 24px
+      const offsetY = (Math.random() - 0.5) * 20; // 垂直微幅隨機
+      const scale = 0.85 + Math.random() * 0.35; // 隨機大小 (0.85x ~ 1.2x)
+      const rotate = (Math.random() - 0.5) * 14;
+
+      setParticle({
+        stage: next,
+        text: STAGE_HINTS[next] || "",
+        side,
+        sideOffset,
+        offsetY,
+        scale,
+        rotate,
+        key: Date.now(),
+      });
+
       if (next >= 5) {
         setTimeout(() => {
           triggerEasterEgg();
           setEasterEggStage(0);
-        }, 350);
+          setParticle(null);
+        }, 400);
         return 5;
       }
       return next;
@@ -690,6 +788,7 @@ const HomePage = () => {
 
     resetTimerRef.current = setTimeout(() => {
       setEasterEggStage(0);
+      setParticle(null);
     }, 2800);
   }, [triggerEasterEgg]);
 
@@ -698,6 +797,7 @@ const HomePage = () => {
       <HomeHeader />
       <HomeBody
         stage={easterEggStage}
+        particle={particle}
         hovered={hovered}
         onHover={setHovered}
         onLeave={() => setHovered(null)}
