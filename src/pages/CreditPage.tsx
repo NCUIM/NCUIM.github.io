@@ -670,25 +670,6 @@ const CreditPageBody = ({
         selectedGateIds={selectedGateIds}
         onToggleGate={onToggleGate}
       />
-
-      <div
-        style={{
-          textAlign: "center",
-          padding: "8px 8px 24px",
-          fontSize: 12.5,
-          color: "var(--ncu-muted)",
-        }}
-      >
-        <span>規定來源依據：</span>
-        <a
-          href={CURRICULUM_PDF_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "var(--ncu-primary)", fontWeight: 700, textDecoration: "underline" }}
-        >
-          115 學年度入學適用 資管系碩士班必修及選修科目表 (PDF) ↗
-        </a>
-      </div>
     </div>
   </IonContent>
 );
