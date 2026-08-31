@@ -474,7 +474,7 @@ const UserPageFooter = () => (
 
     <div style={{ display: "inline-flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
       <img
-        src="https://komarev.com/ghpvc/?username=ncuim-github-io&color=2563eb&style=flat-square&label=VISITORS"
+        src="https://hits.sh/ncuim.github.io.svg?style=flat-square&label=VISITORS&color=2563eb"
         alt="Visitors Counter"
         style={{ height: 18, borderRadius: 3 }}
       />
