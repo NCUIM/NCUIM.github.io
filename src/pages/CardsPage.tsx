@@ -431,32 +431,24 @@ const UserPageFooter = () => (
       padding: "24px 16px 36px",
       fontSize: 12.5,
       color: "var(--ncu-muted)",
-      lineHeight: 1.8,
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
-      <span style={{ fontWeight: 700 }}>CIM-Life 中央資管通</span>
-      <span>·</span>
-      <a
-        href="https://github.com/NCUIM/NCUIM.github.io"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          color: "var(--ncu-muted)",
-          textDecoration: "underline",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 4,
-          fontWeight: 600,
-        }}
-      >
-        <IonIcon icon={logoGithub} style={{ fontSize: 13 }} />
-        <span>GitHub 專案開源貢獻 ↗</span>
-      </a>
-    </div>
-    <div style={{ fontSize: 11.5, opacity: 0.75 }}>
-      Crafted with ❤️ by NCUIM Community · 歡迎共同維護
-    </div>
+    <a
+      href="https://github.com/NCUIM/NCUIM.github.io"
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        color: "var(--ncu-muted)",
+        textDecoration: "underline",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        fontWeight: 600,
+      }}
+    >
+      <IonIcon icon={logoGithub} style={{ fontSize: 14 }} />
+      <span>歡迎參與專案貢獻 (GitHub) ↗</span>
+    </a>
   </div>
 );
 
