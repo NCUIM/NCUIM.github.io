@@ -367,18 +367,23 @@ const AnnouncementBar = ({ onOpen }: Readonly<{ onOpen: () => void }>) => {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
-        <IonBadge
-          color="primary"
+        <div
           style={{
-            fontSize: 11,
-            fontWeight: 700,
-            padding: "3px 6px",
-            borderRadius: 4,
+            width: 24,
+            height: 24,
+            borderRadius: "6px",
+            background: "rgba(27, 42, 74, 0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             flexShrink: 0,
           }}
         >
-          {latest.badge || "公告"}
-        </IonBadge>
+          <IonIcon
+            icon={megaphoneOutline}
+            style={{ fontSize: 14, color: "var(--ncu-primary)" }}
+          />
+        </div>
         <span
           style={{
             fontSize: 13.5,
@@ -455,14 +460,10 @@ const AnnouncementModal = ({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {item.badge && (
-                    <IonBadge
-                      color="primary"
-                      style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}
-                    >
-                      {item.badge}
-                    </IonBadge>
-                  )}
+                  <IonIcon
+                    icon={megaphoneOutline}
+                    style={{ fontSize: 17, color: "var(--ncu-primary)", flexShrink: 0 }}
+                  />
                   <IonCardTitle style={{ fontSize: 16, fontWeight: 800, color: "var(--ncu-ink)" }}>
                     {item.title}
                   </IonCardTitle>
