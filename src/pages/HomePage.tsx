@@ -493,20 +493,16 @@ const AnnouncementBar = ({
   const priorityConfig = PRIORITY_CONFIG[latest.priority];
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
       aria-label="查看最新公告"
       style={{
         margin: "0 0 16px",
         padding: "10px 14px",
+        width: "100%",
+        textAlign: "inherit",
+        font: "inherit",
         background: isUrgent ? "rgba(239, 68, 68, 0.08)" : "var(--ncu-surface)",
         border: isUrgent ? "2px solid #ef4444" : "1.5px solid var(--ncu-ink)",
         borderRadius: "var(--ncu-radius-md)",
@@ -565,7 +561,7 @@ const AnnouncementBar = ({
         <span>{announcements.length > 1 ? `共 ${announcements.length} 則` : "詳情"}</span>
         <IonIcon icon={chevronForwardOutline} style={{ fontSize: 14 }} />
       </div>
-    </div>
+    </button>
   );
 };
 

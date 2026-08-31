@@ -92,7 +92,7 @@ const KNOWN_SECTION_PATTERN =
  */
 export const extractFormField = (body: string, headerRegex: RegExp): string => {
   const match = headerRegex.exec(body);
-  if (!match || match.index === undefined) return "";
+  if (match?.index === undefined) return "";
   const afterHeader = body.slice(match.index + match[0].length);
   const nextSectionIndex = afterHeader.search(KNOWN_SECTION_PATTERN);
   const sectionContent =
@@ -130,7 +130,13 @@ const resolveAuthorRole = (
   let role = "系所公告";
 
   if (parsed) {
-    const separator = parsed.includes("·") ? "·" : parsed.includes("/") ? "/" : null;
+    let separator: string | null = null;
+    if (parsed.includes("·")) {
+      separator = "·";
+    } else if (parsed.includes("/")) {
+      separator = "/";
+    }
+
     if (separator) {
       const parts = parsed.split(separator);
       role = parts[0]?.trim() || role;

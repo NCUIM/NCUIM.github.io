@@ -1181,12 +1181,6 @@ const TimetablePage = () => {
     setViewScope((v) => (v === "mine" ? "all" : "mine"));
   }, []);
 
-  const handleCisLoginSuccess = useCallback(() => {
-    setApiError(null);
-    setCisAuthenticated(true);
-    setViewScope("mine");
-  }, []);
-
   const handleOpenCisModal = useCallback(() => {
     setShowCisLogin(true);
   }, []);
