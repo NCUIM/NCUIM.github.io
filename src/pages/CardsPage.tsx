@@ -31,6 +31,9 @@ import {
   ribbon,
   refreshOutline,
   peopleOutline,
+  logoGithub,
+  heartOutline,
+  eyeOutline,
 } from "ionicons/icons";
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -423,6 +426,100 @@ const LeaderboardCard = ({
 
 // ── Main Page Component ───────────────────────────────────────
 
+const ProjectContributionCard = () => (
+  <IonCard
+    style={{
+      marginTop: 20,
+      borderRadius: "var(--ncu-radius-md)",
+      border: "1.5px solid var(--ncu-border)",
+      background: "var(--ncu-surface)",
+      boxShadow: "var(--ncu-shadow-sm)",
+    }}
+  >
+    <IonCardHeader style={{ padding: "14px 16px 8px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <IonIcon icon={heartOutline} style={{ color: "var(--ncu-accent)", fontSize: 18 }} />
+          <IonCardTitle style={{ fontSize: 15.5, color: "var(--ncu-ink)", fontWeight: 800 }}>
+            專案開源與貢獻
+          </IonCardTitle>
+        </div>
+        <IonBadge color="primary" style={{ fontSize: 11, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}>
+          Open Source
+        </IonBadge>
+      </div>
+    </IonCardHeader>
+    <IonCardContent style={{ padding: "0 16px 16px", fontSize: 13.5, color: "var(--ncu-ink)", lineHeight: 1.6 }}>
+      <p style={{ margin: "0 0 12px", color: "var(--ncu-muted)" }}>
+        CIM-Life 由中央資管學生社群共同維護，歡迎一起提交 Issue、Pull Request 或提出新功能建議！
+      </p>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+        <a
+          href="https://github.com/NCUIM/NCUIM.github.io"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 12.5,
+            fontWeight: 700,
+            color: "var(--ncu-primary)",
+            textDecoration: "none",
+            background: "rgba(27, 42, 74, 0.08)",
+            padding: "8px 14px",
+            borderRadius: "6px",
+          }}
+        >
+          <IonIcon icon={logoGithub} style={{ fontSize: 16 }} />
+          <span>前往 GitHub 參與專案貢獻 ↗</span>
+        </a>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 12,
+          color: "var(--ncu-muted)",
+          borderTop: "1px dashed var(--ncu-border)",
+          paddingTop: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <IonIcon icon={eyeOutline} style={{ fontSize: 14 }} />
+          <span>累計造訪人次：</span>
+        </div>
+        <img
+          src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fncuim.github.io&label=%E7%B4%AF%E8%A8%88%E8%A8%AA%E5%95%8F&labelColor=%231b2a4a&countColor=%232563eb"
+          alt="訪問計數器"
+          style={{ verticalAlign: "middle", height: 20, borderRadius: 3 }}
+        />
+      </div>
+    </IonCardContent>
+  </IonCard>
+);
+
+const UserPageFooter = () => (
+  <div
+    style={{
+      textAlign: "center",
+      padding: "16px 8px 32px",
+      fontSize: 12,
+      color: "var(--ncu-muted)",
+      lineHeight: 1.6,
+    }}
+  >
+    <div>CIM-Life · 中央資管通</div>
+    <div style={{ fontSize: 11, opacity: 0.8 }}>
+      Crafted with ❤️ by NCUIM Community · 歡迎共同維護
+    </div>
+  </div>
+);
+
 // 跨域問題修復前暫時隱藏活動身分報到區塊，保留所有完整元件與邏輯
 const SHOW_CARD_CHECKIN = false;
 
@@ -536,6 +633,9 @@ const CardsPage = () => {
           savedUser={savedUser}
           onRefresh={loadLeaderboardData}
         />
+
+        <ProjectContributionCard />
+        <UserPageFooter />
       </IonContent>
     </IonPage>
   );
