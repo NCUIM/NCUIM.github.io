@@ -36,22 +36,16 @@
     "subtitle": "活動報名、校外租屋、二手交流與學生社群討論區",
     "items": [
       {
-        "title": "iNCU 學校活動報名系統",
-        "description": "全校講座、就業博覽會、企業參訪與學術工作坊線上報名",
-        "url": "https://cis.ncu.edu.tw/iNCU/messageNotice/activityManagement/activity",
-        "tag": "活動報名"
-      },
-      {
         "title": "iNCU 整合服務首頁",
         "description": "學校各項行政服務、校園公佈欄公告與即時重要通知整合",
         "url": "https://cis.ncu.edu.tw/iNCU/home",
         "tag": "校園行政"
       },
       {
-        "title": "雲端租屋生活網",
-        "description": "中大周邊校外租屋資訊、通過學校安全評鑑合格房東房源查詢",
-        "url": "https://house.nfu.edu.tw/NCU",
-        "tag": "校外租屋"
+        "title": "iNCU 學校活動報名系統",
+        "description": "全校講座、就業博覽會、企業參訪與學術工作坊線上報名",
+        "url": "https://cis.ncu.edu.tw/iNCU/messageNotice/activityManagement/activity",
+        "tag": "活動報名"
       },
       {
         "title": "NCU TALK 臉書社團",
@@ -64,6 +58,12 @@
         "description": "校內二手教科書、家具家電、生活用品二手出清與轉讓",
         "url": "https://www.facebook.com/groups/209055389218793/",
         "tag": "二手交易"
+      },
+      {
+        "title": "雲端租屋生活網",
+        "description": "中大周邊校外租屋資訊、通過學校安全評鑑合格房東房源查詢",
+        "url": "https://house.nfu.edu.tw/NCU",
+        "tag": "校外租屋"
       }
     ]
   },
