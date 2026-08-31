@@ -28,6 +28,8 @@ import {
 } from "../services/all-courses-api";
 import { star, swapHorizontalOutline, linkOutline } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
+import { TRACK_CONFIGS, type TrackType } from "../data/im-curriculum";
+import { matchCisToCurriculum } from "./CreditPage";
 
 const STORAGE_KEY_CIS_COURSES = "ncu_my_cis_courses";
 
@@ -230,7 +232,7 @@ const parseClassTimeDayAndPeriods = (
 
 const addCisCourseToMap = (
   result: Record<string, Course[]>,
-  c: CisCourse,
+  c: Course,
   dayIdx: number,
   periodChars: string,
 ): void => {
@@ -243,20 +245,15 @@ const addCisCourseToMap = (
     }
     const exists = result[key].some((x) => x.name === c.name && x.teacher === c.teacher);
     if (!exists) {
-      result[key].push({
-        id: c.serialNo,
-        classNo: c.classNo,
-        name: c.name,
-        teacher: c.teacher,
-        room: c.room,
-        credit: c.credit,
-        isMyCourse: true,
-      });
+      result[key].push(c);
     }
   }
 };
 
-const buildTimetableFromCisCourses = (courses: readonly CisCourse[]): Record<string, Course[]> => {
+const buildTimetableFromCisCourses = (
+  courses: readonly CisCourse[],
+  masterCourses: readonly MasterCourseItem[] = [],
+): Record<string, Course[]> => {
   const DAY_MAP: Record<string, number> = {
     "一": 0, "二": 1, "三": 2, "四": 3, "五": 4,
     "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4,
@@ -264,10 +261,28 @@ const buildTimetableFromCisCourses = (courses: readonly CisCourse[]): Record<str
   const result: Record<string, Course[]> = {};
 
   for (const c of courses) {
-    for (const ct of c.classTimes) {
+    const matchedMaster = masterCourses.find((m) => isCourseMatch(m, c));
+    const effectiveTimes: readonly string[] = (c.classTimes && c.classTimes.length > 0)
+      ? c.classTimes
+      : (matchedMaster?.classTimes || []);
+
+    const effectiveRoom = c.room || matchedMaster?.room;
+    const effectiveTeacher = c.teacher || matchedMaster?.teachers.join(", ") || "";
+
+    const enrichedCourse: Course = {
+      id: c.serialNo || (matchedMaster ? String(matchedMaster.serialNo) : undefined),
+      classNo: c.classNo || matchedMaster?.classNo,
+      name: c.name || matchedMaster?.title || "",
+      teacher: effectiveTeacher,
+      room: effectiveRoom,
+      credit: c.credit ?? matchedMaster?.credit,
+      isMyCourse: true,
+    };
+
+    for (const ct of effectiveTimes) {
       const { dayIdx, periodChars } = parseClassTimeDayAndPeriods(ct, DAY_MAP);
       if (dayIdx >= 0) {
-        addCisCourseToMap(result, c, dayIdx, periodChars);
+        addCisCourseToMap(result, enrichedCourse, dayIdx, periodChars);
       }
     }
   }
@@ -1041,8 +1056,9 @@ const TimetableHeader = ({
 const mergeCisCoursesIntoResult = (
   result: Record<string, Course[]>,
   myCisCourses: CisCourse[],
+  masterCourses: readonly MasterCourseItem[] = [],
 ): void => {
-  const cisMap = buildTimetableFromCisCourses(myCisCourses);
+  const cisMap = buildTimetableFromCisCourses(myCisCourses, masterCourses);
   for (const [key, cisList] of Object.entries(cisMap)) {
     if (!result[key]) {
       result[key] = [];
@@ -1062,7 +1078,7 @@ const computeMergedTimetableData = (
   viewScope: "all" | "mine",
 ): Record<string, Course[]> => {
   if (viewScope === "mine" && myCisCourses.length > 0) {
-    return buildTimetableFromCisCourses(myCisCourses);
+    return buildTimetableFromCisCourses(myCisCourses, masterCourses);
   }
 
   const map = buildTimetableMapFromMasterCourses(masterCourses);
@@ -1072,7 +1088,7 @@ const computeMergedTimetableData = (
   }
 
   if (myCisCourses.length > 0) {
-    mergeCisCoursesIntoResult(result, myCisCourses);
+    mergeCisCoursesIntoResult(result, myCisCourses, masterCourses);
   }
 
   return result;
@@ -1128,20 +1144,42 @@ const TimetablePage = () => {
       try {
         const rawParam = hash.replace(/^#.*?cis_data=/, "");
         const decoded = decodeURIComponent(rawParam);
-        const cisCourses: CisCourse[] = JSON.parse(decoded);
-        if (Array.isArray(cisCourses) && cisCourses.length > 0) {
-          setMyCisCourses(cisCourses);
-          localStorage.setItem(STORAGE_KEY_CIS_COURSES, JSON.stringify(cisCourses));
+        const parsed = JSON.parse(decoded);
+        const currentCourses: CisCourse[] = Array.isArray(parsed)
+          ? parsed
+          : (parsed?.current || []);
+        const historyCourses: CisCourse[] = Array.isArray(parsed)
+          ? parsed
+          : (parsed?.history || parsed?.current || []);
+
+        if (currentCourses.length > 0) {
+          setMyCisCourses(currentCourses);
+          localStorage.setItem(STORAGE_KEY_CIS_COURSES, JSON.stringify(currentCourses));
           setCisAuthenticated(true);
           setViewScope("mine");
-          presentToast({
-            message: `🎉 成功從課務系統同步 ${cisCourses.length} 門修課紀錄至課表！`,
-            duration: 4000,
-            color: "success",
-            position: "top",
-          });
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
         }
+
+        if (historyCourses.length > 0) {
+          const track = (localStorage.getItem("ncu_credit_track") as TrackType) || "mgmt";
+          const config = TRACK_CONFIGS[track] || TRACK_CONFIGS.mgmt;
+          const matchedIds = matchCisToCurriculum(historyCourses, config, track);
+          let prevSelected: string[] = [];
+          try {
+            const saved = localStorage.getItem("ncu_selected_credit_courses");
+            if (saved) prevSelected = JSON.parse(saved);
+          } catch {
+            // ignore
+          }
+          const merged = Array.from(new Set([...prevSelected, ...matchedIds]));
+          localStorage.setItem("ncu_selected_credit_courses", JSON.stringify(merged));
+        }
+
+        presentToast({
+          message: `🎉 成功同步！已匯入 ${currentCourses.length} 門本學期課表與 ${historyCourses.length} 門歷年學分紀錄！`,
+          duration: 4000,
+          color: "success",
+          position: "top",
+        });
       } catch {
         presentToast({
           message: "課務資料解析失敗，請重新嘗試同步",
@@ -1149,6 +1187,8 @@ const TimetablePage = () => {
           color: "danger",
           position: "top",
         });
+      } finally {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
       }
     };
 

@@ -95,13 +95,21 @@ const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
     (c) => isImCourse(c) && !isExcludedMasterCourse(c) && isMasterLevelCourse(c),
   );
 
+export const cleanCourseTitle = (rawTitle: string): string => {
+  const match = /^([\u4e00-\u9fa5\dⅠⅡⅢⅣ·、\s\-]+?)([A-Z][a-zA-Z\s\d\-]+.*)$/.exec(rawTitle);
+  if (match && /[\u4e00-\u9fa5]/.test(match[1])) {
+    return match[1].trim();
+  }
+  return rawTitle.trim();
+};
+
 const getCourseType = (t?: string): "REQUIRED" | "ELECTIVE" =>
   t === "REQUIRED" ? "REQUIRED" : "ELECTIVE";
 
 const mapRawCourse = (c: RawCourse): MasterCourseItem => ({
   serialNo: c.serialNo,
   classNo: c.classNo,
-  title: c.title,
+  title: cleanCourseTitle(c.title),
   credit: c.credit,
   teachers: c.teachers || [],
   classTimes: c.classTimes || [],
