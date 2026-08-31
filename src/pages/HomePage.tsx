@@ -921,9 +921,7 @@ const HomePage = () => {
   // Fetch latest announcements from GitHub (SWR)
   useEffect(() => {
     fetchAnnouncements().then((data) => {
-      if (data && data.length > 0) {
-        setAnnouncements(data);
-      }
+      setAnnouncements(data || []);
     });
   }, []);
 

@@ -53,24 +53,10 @@ export const PRIORITY_CONFIG: Record<
   low: { label: "參考資訊", badgeColor: "#64748b", icon: "🟢", order: 1 },
 };
 
-export const BUILTIN_ANNOUNCEMENTS: readonly AnnouncementItem[] = [
-  {
-    id: "rep-welcome-2026",
-    title: "所代阿駿對新生們的期盼",
-    author: "阿駿",
-    role: "資管所所代",
-    date: "2026/09/01",
-    category: "general",
-    priority: "normal",
-    badge: "所代的話",
-    content:
-      "歡迎各位加入中央資管大家庭！研究所這兩年不僅是專業知識與研究能力的深化，更是探索熱情、結識一生摯友與夥伴的寶貴旅程。期許大家勇於發問、主動跨出舒適圈，在遇到學業與研究挑戰時彼此扶持、共同成長。願大家在中央資管發光發熱，收穫最充實而難忘的碩士生涯！",
-    isStatic: true,
-  },
-];
+export const BUILTIN_ANNOUNCEMENTS: readonly AnnouncementItem[] = [];
 
 const GITHUB_REPO_API =
-  "https://api.github.com/repos/ncuim-github-io/NCUIM2026-Fresher/issues?labels=announcement&state=open&sort=created&direction=desc";
+  "https://api.github.com/repos/NCUIM/NCUIM.github.io/issues?labels=announcement&state=open&sort=created&direction=desc";
 const CACHE_STORAGE_KEY = "ncuim_announcements_cache_v1";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 

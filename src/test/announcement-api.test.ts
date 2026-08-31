@@ -122,11 +122,33 @@ https://cis.ncu.edu.tw/`,
     expect(sorted[2].id).toBe("1"); // normal third
   });
 
-  it("falls back to builtin announcements when network fails", async () => {
+  it("falls back to empty array when network fails and no cache exists", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network error")));
 
     const res = await fetchAnnouncements({ forceRefresh: true });
-    expect(res.length).toBeGreaterThanOrEqual(1);
-    expect(res.some((item) => item.id === BUILTIN_ANNOUNCEMENTS[0].id)).toBe(true);
+    expect(res).toEqual([]);
+  });
+
+  it("returns cached announcements when available", async () => {
+    const mockCached = [
+      {
+        id: "cached-1",
+        title: "快取公告",
+        content: "內容",
+        author: "作者",
+        role: "身分",
+        date: "2026/09/01",
+        category: "general" as const,
+        priority: "normal" as const,
+      },
+    ];
+    window.localStorage.setItem(
+      "ncuim_announcements_cache_v1",
+      JSON.stringify({ timestamp: Date.now(), data: mockCached }),
+    );
+
+    const res = await fetchAnnouncements();
+    expect(res.length).toBe(1);
+    expect(res[0].id).toBe("cached-1");
   });
 });
