@@ -33,7 +33,7 @@ import {
   peopleOutline,
   logoGithub,
 } from "ionicons/icons";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   verifyEntryCode,
   getSavedParticipantInfo,
@@ -336,12 +336,14 @@ const LeaderboardCard = ({
   error,
   savedUser,
   onRefresh,
+  onScrollToCheckin,
 }: Readonly<{
   data: LeaderboardResponse | null;
   loading: boolean;
   error: string | null;
   savedUser: SavedParticipantInfo | null;
   onRefresh: () => void;
+  onScrollToCheckin?: () => void;
 }>) => {
   const myRankEntry = data?.top.find(
     (p) => savedUser && p.nickname === savedUser.label,
@@ -417,16 +419,32 @@ const LeaderboardCard = ({
             </div>
 
             {!savedUser && (
-              <div style={{ padding: "6px 16px 12px", textAlign: "center" }}>
+              <div
+                style={{
+                  padding: "8px 16px 14px",
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
                 <IonButton
                   size="small"
-                  fill="outline"
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                  style={{ fontWeight: 700 }}
+                  expand="block"
+                  style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
+                  onClick={onScrollToCheckin}
                 >
-                  📝 前往活動身分報到 / 建立名片 ↗
+                  📝 填寫代碼報到
+                </IonButton>
+                <IonButton
+                  size="small"
+                  expand="block"
+                  fill="outline"
+                  style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
+                  href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  📷 掃碼報到 ↗
                 </IonButton>
               </div>
             )}
@@ -556,6 +574,12 @@ const CardsPage = () => {
     }
   };
 
+  const contentRef = useRef<HTMLIonContentElement | null>(null);
+
+  const scrollToTop = useCallback(() => {
+    contentRef.current?.scrollToTop(350);
+  }, []);
+
   return (
     <IonPage>
       <IonHeader>
@@ -564,7 +588,11 @@ const CardsPage = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
+      <IonContent
+        ref={contentRef}
+        className="ion-padding"
+        style={{ "--background": "var(--ncu-canvas)" }}
+      >
         <IonRefresher slot="fixed" onIonRefresh={handlePullRefresh}>
           <IonRefresherContent />
         </IonRefresher>
@@ -591,6 +619,7 @@ const CardsPage = () => {
           error={lbError}
           savedUser={savedUser}
           onRefresh={loadLeaderboardData}
+          onScrollToCheckin={scrollToTop}
         />
 
         <UserPageFooter />

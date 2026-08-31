@@ -32,6 +32,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   fetchLiveLeaderboard,
   getSavedParticipantInfo,
+  CARD_EVENT_CONFIG,
   type LeaderboardEntry,
   type LeaderboardResponse,
   type SavedParticipantInfo,
@@ -319,14 +320,30 @@ const LeaderboardPage = () => {
                 >
                   📌 公開榜單依活動規則僅展示前 10 名；全員分數由主辦方後台記錄
                 </div>
-                <div style={{ padding: "8px 16px 14px" }}>
+                <div
+                  style={{
+                    padding: "8px 16px 14px",
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap",
+                  }}
+                >
                   <IonButton
                     expand="block"
                     routerLink="/cards"
-                    fill="outline"
-                    style={{ fontWeight: 700 }}
+                    style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
                   >
-                    📝 前往活動身分報到 / 電子名片 ↗
+                    📝 App 內身分報到
+                  </IonButton>
+                  <IonButton
+                    expand="block"
+                    fill="outline"
+                    href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ flex: 1, minWidth: 140, fontWeight: 700 }}
+                  >
+                    📷 線上掃碼報到 ↗
                   </IonButton>
                 </div>
               </>
