@@ -31,8 +31,9 @@ import {
   ribbon,
   refreshOutline,
   peopleOutline,
+  logoGithub,
 } from "ionicons/icons";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   verifyEntryCode,
   getSavedParticipantInfo,
@@ -335,12 +336,14 @@ const LeaderboardCard = ({
   error,
   savedUser,
   onRefresh,
+  onScrollToCheckin,
 }: Readonly<{
   data: LeaderboardResponse | null;
   loading: boolean;
   error: string | null;
   savedUser: SavedParticipantInfo | null;
   onRefresh: () => void;
+  onScrollToCheckin?: () => void;
 }>) => {
   const myRankEntry = data?.top.find(
     (p) => savedUser && p.nickname === savedUser.label,
@@ -414,6 +417,22 @@ const LeaderboardCard = ({
             >
               📌 公開榜單僅展示前 10 名；全員分數由主辦方後台記錄
             </div>
+
+            {!savedUser && (
+              <div style={{ padding: "8px 16px 14px" }}>
+                <IonButton
+                  size="small"
+                  expand="block"
+                  fill="outline"
+                  style={{ fontWeight: 700 }}
+                  href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  📷 前往掃碼報到 ↗
+                </IonButton>
+              </div>
+            )}
           </>
         )}
       </IonCardContent>
@@ -422,6 +441,46 @@ const LeaderboardCard = ({
 };
 
 // ── Main Page Component ───────────────────────────────────────
+
+const UserPageFooter = () => (
+  <div
+    style={{
+      textAlign: "center",
+      padding: "24px 16px 36px",
+      fontSize: 12,
+      color: "var(--ncu-muted)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: 8,
+    }}
+  >
+    <a
+      href="https://github.com/NCUIM/NCUIM.github.io"
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        color: "var(--ncu-muted)",
+        textDecoration: "underline",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        fontWeight: 600,
+      }}
+    >
+      <IonIcon icon={logoGithub} style={{ fontSize: 14 }} />
+      <span>歡迎參與專案貢獻 (GitHub) ↗</span>
+    </a>
+
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
+      <img
+        src="https://hits.sh/ncuim.github.io.svg?style=flat-square&label=VISITORS&color=2563eb"
+        alt="Visitors Counter"
+        style={{ height: 18, borderRadius: 3 }}
+      />
+    </div>
+  </div>
+);
 
 // 跨域問題修復前暫時隱藏活動身分報到區塊，保留所有完整元件與邏輯
 const SHOW_CARD_CHECKIN = false;
@@ -500,6 +559,12 @@ const CardsPage = () => {
     }
   };
 
+  const contentRef = useRef<HTMLIonContentElement | null>(null);
+
+  const scrollToTop = useCallback(() => {
+    contentRef.current?.scrollToTop(350);
+  }, []);
+
   return (
     <IonPage>
       <IonHeader>
@@ -508,7 +573,11 @@ const CardsPage = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
+      <IonContent
+        ref={contentRef}
+        className="ion-padding"
+        style={{ "--background": "var(--ncu-canvas)" }}
+      >
         <IonRefresher slot="fixed" onIonRefresh={handlePullRefresh}>
           <IonRefresherContent />
         </IonRefresher>
@@ -535,7 +604,10 @@ const CardsPage = () => {
           error={lbError}
           savedUser={savedUser}
           onRefresh={loadLeaderboardData}
+          onScrollToCheckin={scrollToTop}
         />
+
+        <UserPageFooter />
       </IonContent>
     </IonPage>
   );

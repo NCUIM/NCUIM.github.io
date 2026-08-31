@@ -1181,12 +1181,6 @@ const TimetablePage = () => {
     setViewScope((v) => (v === "mine" ? "all" : "mine"));
   }, []);
 
-  const handleCisLoginSuccess = useCallback(() => {
-    setApiError(null);
-    setCisAuthenticated(true);
-    setViewScope("mine");
-  }, []);
-
   const handleOpenCisModal = useCallback(() => {
     setShowCisLogin(true);
   }, []);
@@ -1250,7 +1244,6 @@ const TimetablePage = () => {
       <CisLoginModal
         isOpen={showCisLogin}
         onDismiss={() => setShowCisLogin(false)}
-        onSuccess={handleCisLoginSuccess}
       />
     </IonPage>
   );

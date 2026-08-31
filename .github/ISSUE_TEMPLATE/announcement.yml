@@ -1,0 +1,71 @@
+name: 📢 發布資管通公告 (Announcement)
+description: 發布最新公告、選課消息、迎新活動或系統通知至資管通 App
+title: "📢 [公告] "
+labels: ["announcement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 📢 資管通 App 公告發布系統
+        送出此 Issue 後，資管通 App 將會自動讀取並同步顯示於首頁與最新消息列表。
+        當公告過期或欲下架時，只需將此 Issue 點擊 **Close Issue** 即可。
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 公告類別 (Category)
+      description: 選擇此公告的主要分類
+      options:
+        - 📚 選課與學分 (category:course)
+        - 🎪 迎新與活動 (category:event)
+        - 🏛️ 系所與行政 (category:department)
+        - 💼 獎助與職涯 (category:career)
+        - 🛠️ 系統與維護 (category:system)
+        - 📢 一般公告 (category:general)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 重要程度 (Priority)
+      description: 優先級將決定排序與首頁跑馬燈警示色彩
+      options:
+        - 🚨 緊急置頂 (priority:urgent)
+        - 🔴 重要提醒 (priority:high)
+        - 🟡 一般通知 (priority:normal)
+        - 🟢 參考資訊 (priority:low)
+    validations:
+      required: true
+
+  - type: input
+    id: author_role
+    attributes:
+      label: 發布單位與署名 (Author & Role)
+      description: 例如：資管所所代 阿駿 / 系辦公室 / 迎新總召
+      placeholder: 資管所所代 阿駿
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: 公告內文 (Content)
+      description: 支援完整 GitHub Markdown 語法（粗體、列表、連結、圖片等）
+      placeholder: |
+        各位同學好：
+
+        115學年度第1學期新生選課注意事項如下：
+        1. 初選登記時間：09/01 09:00 ~ 09/06 24:00
+        2. 請務必確認學分上限與必修課程...
+    validations:
+      required: true
+
+  - type: input
+    id: action_url
+    attributes:
+      label: 相關連結 (Action URL)
+      description: 外部網址或報名連結（選填）
+      placeholder: https://portal.ncu.edu.tw/
+    validations:
+      required: false
