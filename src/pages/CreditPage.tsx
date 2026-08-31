@@ -34,6 +34,7 @@ import {
   schoolOutline,
   bookOutline,
   ribbonOutline,
+  flashOutline,
 } from "ionicons/icons";
 import { cisLogout, isCisLoggedIn } from "../services/cis-login";
 import { fetchCisCourseHistory, type CisCourse } from "../services/cis-course-api";
@@ -104,18 +105,10 @@ const matchCisToCurriculum = (
 // ---------------------------------------------------------------------------
 
 const CreditPageHeader = ({
-  cisAuthenticated,
-  isSyncing,
-  onSyncCis,
   onOpenCisModal,
-  onCisLogout,
   onResetAll,
 }: Readonly<{
-  cisAuthenticated: boolean;
-  isSyncing: boolean;
-  onSyncCis: () => void;
   onOpenCisModal: () => void;
-  onCisLogout: () => void;
   onResetAll: () => void;
 }>) => (
   <IonHeader>
@@ -125,31 +118,11 @@ const CreditPageHeader = ({
       </IonButtons>
       <IonTitle>115 碩士班學分試算</IonTitle>
       <IonButtons slot="end">
-        {cisAuthenticated ? (
-          <>
-            <IonButton
-              fill="outline"
-              size="small"
-              onClick={onSyncCis}
-              disabled={isSyncing}
-              style={{ fontSize: 12 }}
-            >
-              <IonIcon slot="start" icon={syncOutline} />
-              {isSyncing ? "同步中…" : "同步 CIS"}
-            </IonButton>
-            <IonButton size="small" fill="clear" onClick={onOpenCisModal}>
-              重新連結
-            </IonButton>
-            <IonButton size="small" fill="clear" color="medium" onClick={onCisLogout}>
-              登出
-            </IonButton>
-          </>
-        ) : (
-          <IonButton size="small" fill="outline" onClick={onOpenCisModal}>
-            連結 CIS
-          </IonButton>
-        )}
-        <IonButton fill="clear" size="small" color="medium" onClick={onResetAll}>
+        <IonButton size="small" fill="outline" onClick={onOpenCisModal} style={{ fontWeight: 700, fontSize: 12 }}>
+          <IonIcon slot="start" icon={flashOutline} />
+          同步課務
+        </IonButton>
+        <IonButton fill="clear" size="small" color="medium" onClick={onResetAll} aria-label="重設全部">
           <IonIcon icon={refreshOutline} />
         </IonButton>
       </IonButtons>
@@ -781,6 +754,44 @@ const CreditPage: React.FC = () => {
   }, [selectedGateIds]);
 
   const currentConfig = useMemo(() => TRACK_CONFIGS[track], [track]);
+
+  useEffect(() => {
+    const handleHashSync = () => {
+      const hash = window.location.hash;
+      if (!hash || !hash.includes("cis_data=")) return;
+      try {
+        const rawParam = hash.replace(/^#.*?cis_data=/, "");
+        const decoded = decodeURIComponent(rawParam);
+        const cisCourses: CisCourse[] = JSON.parse(decoded);
+        if (Array.isArray(cisCourses) && cisCourses.length > 0) {
+          const matchedIds = matchCisToCurriculum(cisCourses, currentConfig, track);
+          setSelectedCourseIds((prev) => {
+            const merged = Array.from(new Set([...prev, ...matchedIds]));
+            return merged;
+          });
+          presentToast({
+            message: `🎉 成功從課務系統同步 ${cisCourses.length} 門課程（自動配對 ${matchedIds.length} 門必選修）！`,
+            duration: 4000,
+            color: "success",
+            position: "top",
+          });
+        }
+      } catch {
+        presentToast({
+          message: "課務資料解析失敗，請重新嘗試同步",
+          duration: 3000,
+          color: "danger",
+          position: "top",
+        });
+      } finally {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+    };
+
+    handleHashSync();
+    window.addEventListener("hashchange", handleHashSync);
+    return () => window.removeEventListener("hashchange", handleHashSync);
+  }, [currentConfig, track, presentToast]);
   const creditStats = useMemo(() => calculateTrackCredits(track, selectedCourseIds), [track, selectedCourseIds]);
 
   const toggleCourse = useCallback((courseId: string, checked: boolean) => {
@@ -887,11 +898,7 @@ const CreditPage: React.FC = () => {
   return (
     <IonPage>
       <CreditPageHeader
-        cisAuthenticated={cisAuthenticated}
-        isSyncing={isSyncing}
-        onSyncCis={handleSyncCis}
         onOpenCisModal={handleOpenCisModal}
-        onCisLogout={handleCisLogout}
         onResetAll={handleResetAll}
       />
       <CreditPageBody
