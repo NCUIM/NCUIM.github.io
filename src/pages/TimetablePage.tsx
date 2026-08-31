@@ -533,6 +533,17 @@ const getDesktopCourseSpans = (
 
 // ── Mobile View Components ─────────────────────────────────────
 
+const parseTeacherAndRoom = (
+  rawTeacherItem: string,
+  fallbackRoom?: string,
+): { name: string; room?: string } => {
+  const match = /^(.*?)\s*\((.*?)\)$/.exec(rawTeacherItem.trim());
+  if (match) {
+    return { name: match[1].trim(), room: match[2].trim() };
+  }
+  return { name: rawTeacherItem.trim(), room: fallbackRoom };
+};
+
 // skipcq: JS-R1005
 const MobileTrackCard = ({
   course,
@@ -584,7 +595,7 @@ const MobileTrackCard = ({
           margin: "3px 0 0",
           fontSize: descSize,
           color: "var(--ncu-muted)",
-          lineHeight: 1.3,
+          lineHeight: 1.35,
           wordBreak: "break-word",
         }}
       >
@@ -908,26 +919,53 @@ const DesktopCourseCard = ({
           </span>
         )}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-        {span.course.teacher.split(" / ").map((t) => (
-          <span key={t} style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.25, fontWeight: 500 }}>
-            {t}
+      {span.course.teacher.includes(" / ") ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
+          {span.course.teacher.split(" / ").map((t) => {
+            const { name, room } = parseTeacherAndRoom(t);
+            return (
+              <div key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, flexWrap: "wrap", justifyContent: "center" }}>
+                <span style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.25, fontWeight: 500 }}>
+                  {name}
+                </span>
+                {room && (
+                  <span
+                    style={{
+                      fontSize: span.totalCols <= 2 ? 11 : 10,
+                      color: "var(--ncu-primary)",
+                      fontWeight: 700,
+                      background: "rgba(49, 87, 200, 0.08)",
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    {room}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          <span style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.25, fontWeight: 500 }}>
+            {parseTeacherAndRoom(span.course.teacher).name}
           </span>
-        ))}
-      </div>
-      {span.course.room && !span.course.teacher.includes("(") && (
-        <span
-          style={{
-            fontSize: span.totalCols <= 2 ? 12 : 11,
-            color: "var(--ncu-primary)",
-            fontWeight: 700,
-            background: "rgba(49, 87, 200, 0.08)",
-            padding: "2px 8px",
-            borderRadius: 4,
-          }}
-        >
-          {span.course.room}
-        </span>
+          {(span.course.room || parseTeacherAndRoom(span.course.teacher).room) && (
+            <span
+              style={{
+                fontSize: span.totalCols <= 2 ? 12 : 11,
+                color: "var(--ncu-primary)",
+                fontWeight: 700,
+                background: "rgba(49, 87, 200, 0.08)",
+                padding: "2px 8px",
+                borderRadius: 4,
+              }}
+            >
+              {span.course.room || parseTeacherAndRoom(span.course.teacher).room}
+            </span>
+          )}
+        </>
       )}
     </div>
   );
