@@ -1007,7 +1007,7 @@ const getCryptoRandom = (): number => {
         header: "🚩 秘密任務已解鎖！",
         subHeader: "NCUIM 2026 CTF 競技場",
         message:
-          "恭喜發現隱藏彩蛋傳送門！自架 CTFd 靶場已上線，具體玩法與競賽規則即將公布，準備好挑戰了嗎？",
+          "恭喜發現隱藏彩蛋傳送門！自架 CTFd 靶場已上線，具體玩法與競賽規則已公布在網站上，準備好挑戰了嗎？",
         buttons: [
           { text: "稍後再來", role: "cancel" },
           {
