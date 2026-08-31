@@ -352,11 +352,11 @@ const LeaderboardCard = ({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <IonCardTitle style={{ fontSize: "17px", fontWeight: 800 }}>
-              迎新即時排行榜
+              即時排行榜 (Top 10)
             </IonCardTitle>
             {data && (
               <span style={{ fontSize: "11px", color: "var(--ncu-muted)" }}>
-                {data.totalRanked} 人在榜 · 更新於 {new Date(data.updatedAt).toLocaleTimeString()}
+                共 {data.totalRanked} 人在榜 · 更新於 {new Date(data.updatedAt).toLocaleTimeString()}
               </span>
             )}
           </div>
@@ -394,15 +394,27 @@ const LeaderboardCard = ({
         )}
 
         {data && (
-          <IonList lines="full">
-            {data.top.map((player) => (
-              <LeaderboardPlayerItem
-                key={`${player.rank}-${player.nickname}`}
-                player={player}
-                isMe={savedUser?.label === player.nickname}
-              />
-            ))}
-          </IonList>
+          <>
+            <IonList lines="full">
+              {data.top.map((player) => (
+                <LeaderboardPlayerItem
+                  key={`${player.rank}-${player.nickname}`}
+                  player={player}
+                  isMe={savedUser?.label === player.nickname}
+                />
+              ))}
+            </IonList>
+            <div
+              style={{
+                padding: "8px 16px 4px",
+                fontSize: "11.5px",
+                color: "var(--ncu-muted)",
+                textAlign: "center",
+              }}
+            >
+              📌 公開榜單僅展示前 10 名；全員分數由主辦方後台記錄
+            </div>
+          </>
         )}
       </IonCardContent>
     </IonCard>

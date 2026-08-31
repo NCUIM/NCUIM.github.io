@@ -134,7 +134,7 @@ const LeaderboardSummaryCard = ({
               {data?.event.name ?? "NCUIM2026-Fresher"}
             </div>
             <h2 style={{ fontSize: "20px", fontWeight: 800, margin: "4px 0 0", color: "#fff" }}>
-              迎新即時排行榜
+              即時排行榜 (Top 10)
             </h2>
           </div>
           <IonBadge color="light" style={{ padding: "6px 10px", fontSize: "13px", fontWeight: 700 }}>
@@ -261,15 +261,27 @@ const LeaderboardPage = () => {
             )}
 
             {data && (
-              <IonList lines="full">
-                {data.top.map((player) => (
-                  <LeaderboardPlayerItem
-                    key={`${player.rank}-${player.nickname}`}
-                    player={player}
-                    isMe={savedUser?.label === player.nickname}
-                  />
-                ))}
-              </IonList>
+              <>
+                <IonList lines="full">
+                  {data.top.map((player) => (
+                    <LeaderboardPlayerItem
+                      key={`${player.rank}-${player.nickname}`}
+                      player={player}
+                      isMe={savedUser?.label === player.nickname}
+                    />
+                  ))}
+                </IonList>
+                <div
+                  style={{
+                    padding: "10px 16px 6px",
+                    fontSize: "12px",
+                    color: "var(--ncu-muted)",
+                    textAlign: "center",
+                  }}
+                >
+                  📌 公開榜單依活動規則僅展示前 10 名；全員分數由主辦方後台記錄
+                </div>
+              </>
             )}
           </IonCard>
         </div>
