@@ -602,6 +602,20 @@ const HomeBody = ({
   </IonContent>
 );
 
+const CTF_CONFIG = {
+  activeUrl: "https://im2026ctf.duckdns.org/",
+  scoreboardUrl: "https://im2026ctf.duckdns.org/scoreboard",
+  endTime: "2026-09-30T23:59:59+08:00",
+};
+
+const isCtfEnded = (): boolean => {
+  try {
+    return Date.now() > new Date(CTF_CONFIG.endTime).getTime();
+  } catch {
+    return false;
+  }
+};
+
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
@@ -614,28 +628,47 @@ const HomePage = () => {
   useEffect(() => {
     // skipcq: JS-0002
     console.log(
-      "%c🚩 NCUIM 2026 CTF Challenge%c\nLooking for flags? Join the secret battlefield:\n👉 https://im2026ctf.duckdns.org/",
+      "%c🚩 NCUIM 2026 CTF Challenge%c\nLooking for flags? Join the secret battlefield:\n👉 https://im2026ctf.duckdns.org/\nScoreboard: https://im2026ctf.duckdns.org/scoreboard",
       "color: #38bdf8; font-size: 16px; font-weight: bold; background: #0f172a; padding: 6px 12px; border-radius: 6px;",
       "color: #a855f7; font-size: 13px; font-family: monospace; font-weight: bold; margin-top: 4px;",
     );
   }, []);
 
   const triggerEasterEgg = useCallback(() => {
-    presentAlert({
-      header: "🚩 秘密任務已解鎖！",
-      subHeader: "NCUIM 2026 CTF 競技場",
-      message:
-        "恭喜發現隱藏彩蛋傳送門！自架 CTFd 靶場已上線，具體玩法與競賽規則即將公布，準備好挑戰了嗎？",
-      buttons: [
-        { text: "稍後再來", role: "cancel" },
-        {
-          text: "前往 CTFd 戰場 🚀",
-          handler: () => {
-            window.open("https://im2026ctf.duckdns.org/", "_blank", "noopener,noreferrer");
+    const ended = isCtfEnded();
+    if (ended) {
+      presentAlert({
+        header: "🏁 2026 CTF 挑戰賽已圓滿結束！",
+        subHeader: "NCUIM 2026 CTF 榮譽榜",
+        message:
+          "恭喜發現隱藏彩蛋！本次新生 CTF 挑戰賽已順利落幕，感謝所有熱情報名與解題的資管所夥伴！",
+        buttons: [
+          { text: "關閉", role: "cancel" },
+          {
+            text: "查看最終積分榜 🏆",
+            handler: () => {
+              window.open(CTF_CONFIG.scoreboardUrl, "_blank", "noopener,noreferrer");
+            },
           },
-        },
-      ],
-    });
+        ],
+      });
+    } else {
+      presentAlert({
+        header: "🚩 秘密任務已解鎖！",
+        subHeader: "NCUIM 2026 CTF 競技場",
+        message:
+          "恭喜發現隱藏彩蛋傳送門！自架 CTFd 靶場已上線，具體玩法與競賽規則即將公布，準備好挑戰了嗎？",
+        buttons: [
+          { text: "稍後再來", role: "cancel" },
+          {
+            text: "前往 CTFd 戰場 🚀",
+            handler: () => {
+              window.open(CTF_CONFIG.activeUrl, "_blank", "noopener,noreferrer");
+            },
+          },
+        ],
+      });
+    }
   }, [presentAlert]);
 
   const handleSecretTap = useCallback(() => {
