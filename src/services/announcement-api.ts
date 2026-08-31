@@ -84,17 +84,71 @@ export interface GitHubIssue {
   } | null;
 }
 
+const KNOWN_SECTION_PATTERN =
+  /\n###\s+(?:公告類別|Category|重要程度|Priority|發布單位與署名|Author|公告內文|Content|相關連結|Action\s*URL)/i;
+
 /**
  * Extracts form field section value from GitHub Issue Form markdown body.
  */
 export const extractFormField = (body: string, headerRegex: RegExp): string => {
-  const match = body.match(headerRegex);
+  const match = headerRegex.exec(body);
   if (!match || match.index === undefined) return "";
   const afterHeader = body.slice(match.index + match[0].length);
-  const nextSectionIndex = afterHeader.search(/\n###\s+/);
+  const nextSectionIndex = afterHeader.search(KNOWN_SECTION_PATTERN);
   const sectionContent =
     nextSectionIndex === -1 ? afterHeader : afterHeader.slice(0, nextSectionIndex);
   return sectionContent.trim();
+};
+
+const resolveCategory = (labels: string[], formCategory: string): AnnouncementCategory => {
+  const match = (kw: string) => labels.some((l) => l.includes(kw)) || formCategory.includes(kw);
+  if (match("course") || match("選課") || match("學分")) return "course";
+  if (match("event") || match("迎新") || match("活動")) return "event";
+  if (match("department") || match("系所") || match("行政")) return "department";
+  if (match("career") || match("獎助") || match("職涯")) return "career";
+  if (match("system") || match("系統") || match("維護")) return "system";
+  return "general";
+};
+
+const resolvePriority = (labels: string[], formPriority: string): AnnouncementPriority => {
+  const match = (kw: string) => labels.some((l) => l.includes(kw)) || formPriority.includes(kw);
+  if (match("urgent") || match("緊急")) return "urgent";
+  if (match("high") || match("重要")) return "high";
+  if (match("low") || match("參考")) return "low";
+  return "normal";
+};
+
+const resolveAuthorRole = (
+  rawBody: string,
+  defaultAuthor: string,
+): { author: string; role: string } => {
+  const parsed = extractFormField(
+    rawBody,
+    /###\s+(?:發布單位與署名|Author\s*&\s*Role)[^\n]*/i,
+  );
+  let author = defaultAuthor;
+  let role = "系所公告";
+
+  if (parsed) {
+    const separator = parsed.includes("·") ? "·" : parsed.includes("/") ? "/" : null;
+    if (separator) {
+      const parts = parsed.split(separator);
+      role = parts[0]?.trim() || role;
+      author = parts[1]?.trim() || author;
+    } else {
+      author = parsed;
+    }
+  }
+
+  return { author, role };
+};
+
+const formatAnnouncementDate = (isoString: string): string => {
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return "近期";
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}/${m}/${day}`;
 };
 
 /**
@@ -104,114 +158,25 @@ export const parseGitHubIssue = (issue: GitHubIssue): AnnouncementItem => {
   const rawBody = issue.body || "";
   const labelNames = issue.labels.map((l) => (typeof l === "string" ? l : l.name).toLowerCase());
 
-  // Category resolution (check labels OR issue form dropdown value)
   const formCategory = extractFormField(rawBody, /###\s+(?:公告類別|Category)[^\n]*/i).toLowerCase();
-  let category: AnnouncementCategory = "general";
-  if (
-    labelNames.some((l) => l.includes("course") || l.includes("選課") || l.includes("學分")) ||
-    formCategory.includes("course") ||
-    formCategory.includes("選課") ||
-    formCategory.includes("學分")
-  ) {
-    category = "course";
-  } else if (
-    labelNames.some((l) => l.includes("event") || l.includes("迎新") || l.includes("活動")) ||
-    formCategory.includes("event") ||
-    formCategory.includes("迎新") ||
-    formCategory.includes("活動")
-  ) {
-    category = "event";
-  } else if (
-    labelNames.some((l) => l.includes("department") || l.includes("系所") || l.includes("行政")) ||
-    formCategory.includes("department") ||
-    formCategory.includes("系所") ||
-    formCategory.includes("行政")
-  ) {
-    category = "department";
-  } else if (
-    labelNames.some((l) => l.includes("career") || l.includes("獎助") || l.includes("職涯")) ||
-    formCategory.includes("career") ||
-    formCategory.includes("獎助") ||
-    formCategory.includes("職涯")
-  ) {
-    category = "career";
-  } else if (
-    labelNames.some((l) => l.includes("system") || l.includes("系統") || l.includes("維護")) ||
-    formCategory.includes("system") ||
-    formCategory.includes("系統") ||
-    formCategory.includes("維護")
-  ) {
-    category = "system";
-  }
+  const category = resolveCategory(labelNames, formCategory);
 
-  // Priority resolution (check labels OR issue form dropdown value)
   const formPriority = extractFormField(rawBody, /###\s+(?:重要程度|Priority)[^\n]*/i).toLowerCase();
-  let priority: AnnouncementPriority = "normal";
-  if (
-    labelNames.some((l) => l.includes("urgent") || l.includes("緊急")) ||
-    formPriority.includes("urgent") ||
-    formPriority.includes("緊急")
-  ) {
-    priority = "urgent";
-  } else if (
-    labelNames.some((l) => l.includes("high") || l.includes("重要")) ||
-    formPriority.includes("high") ||
-    formPriority.includes("重要")
-  ) {
-    priority = "high";
-  } else if (
-    labelNames.some((l) => l.includes("low") || l.includes("參考")) ||
-    formPriority.includes("low") ||
-    formPriority.includes("參考")
-  ) {
-    priority = "low";
-  }
+  const priority = resolvePriority(labelNames, formPriority);
 
-  // Author & Role
-  const parsedAuthorRole = extractFormField(
-    rawBody,
-    /###\s+(?:發布單位與署名|Author\s*&\s*Role)[^\n]*/i,
-  );
-  let author = issue.user?.login || "資管通團隊";
-  let role = "系所公告";
-  if (parsedAuthorRole) {
-    if (parsedAuthorRole.includes("·")) {
-      const parts = parsedAuthorRole.split("·");
-      role = parts[0]?.trim() || role;
-      author = parts[1]?.trim() || author;
-    } else if (parsedAuthorRole.includes("/")) {
-      const parts = parsedAuthorRole.split("/");
-      role = parts[0]?.trim() || role;
-      author = parts[1]?.trim() || author;
-    } else {
-      author = parsedAuthorRole;
-    }
-  }
+  const { author, role } = resolveAuthorRole(rawBody, issue.user?.login || "資管通團隊");
 
-  // Content
-  const parsedContent = extractFormField(
-    rawBody,
-    /###\s+(?:公告內文|Content)[^\n]*/i,
-  );
+  const parsedContent = extractFormField(rawBody, /###\s+(?:公告內文|Content)[^\n]*/i);
   const content = parsedContent || rawBody;
 
-  // Action URL
-  const actionUrlRaw = extractFormField(
-    rawBody,
-    /###\s+(?:相關連結|Action\s*URL)[^\n]*/i,
-  );
+  const actionUrlRaw = extractFormField(rawBody, /###\s+(?:相關連結|Action\s*URL)[^\n]*/i);
   const actionUrl =
     actionUrlRaw && actionUrlRaw.startsWith("http") && actionUrlRaw !== "_No response_"
       ? actionUrlRaw
       : undefined;
 
-  // Date formatting (YYYY/MM/DD)
-  const d = new Date(issue.created_at);
-  const dateStr = !isNaN(d.getTime())
-    ? `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`
-    : "近期";
+  const dateStr = formatAnnouncementDate(issue.created_at);
 
-  // Clean title (strips [公告] or [Announcement] prefixes for crisp presentation)
   const cleanTitle = issue.title
     .replace(/^(?:[\u{1F300}-\u{1FAFF}]\s*)?\[(?:公告|Announcement)\]\s*/iu, "")
     .trim();
@@ -247,10 +212,37 @@ export const sortAnnouncements = (items: readonly AnnouncementItem[]): Announcem
     const pA = PRIORITY_CONFIG[a.priority]?.order || 0;
     const pB = PRIORITY_CONFIG[b.priority]?.order || 0;
     if (pA !== pB) {
-      return pB - pA; // Higher priority first
+      return pB - pA;
     }
     return b.date.localeCompare(a.date);
   });
+};
+
+const readCache = (): AnnouncementItem[] | null => {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const raw = window.localStorage.getItem(CACHE_STORAGE_KEY);
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (Date.now() - cached.timestamp < CACHE_TTL_MS && Array.isArray(cached.data)) {
+      return sortAnnouncements(cached.data);
+    }
+  } catch {
+    // Ignore cache read error
+  }
+  return null;
+};
+
+const writeCache = (data: AnnouncementItem[]): void => {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(
+      CACHE_STORAGE_KEY,
+      JSON.stringify({ timestamp: Date.now(), data }),
+    );
+  } catch {
+    // Ignore cache write error
+  }
 };
 
 /**
@@ -259,27 +251,14 @@ export const sortAnnouncements = (items: readonly AnnouncementItem[]): Announcem
 export const fetchAnnouncements = async (
   options?: { forceRefresh?: boolean },
 ): Promise<AnnouncementItem[]> => {
-  // 1. Check local cache
-  if (!options?.forceRefresh && typeof window !== "undefined" && window.localStorage) {
-    try {
-      const cachedRaw = window.localStorage.getItem(CACHE_STORAGE_KEY);
-      if (cachedRaw) {
-        const cached = JSON.parse(cachedRaw);
-        if (Date.now() - cached.timestamp < CACHE_TTL_MS && Array.isArray(cached.data)) {
-          return sortAnnouncements(cached.data);
-        }
-      }
-    } catch {
-      // Ignore cache read errors
-    }
+  if (!options?.forceRefresh) {
+    const cached = readCache();
+    if (cached) return cached;
   }
 
-  // 2. Fetch from GitHub REST API
   try {
     const res = await fetch(GITHUB_REPO_API, {
-      headers: {
-        Accept: "application/vnd.github.v3+json",
-      },
+      headers: { Accept: "application/vnd.github.v3+json" },
     });
 
     if (!res.ok) {
@@ -295,36 +274,12 @@ export const fetchAnnouncements = async (
       const all = [...parsed, ...BUILTIN_ANNOUNCEMENTS];
       const unique = Array.from(new Map(all.map((item) => [item.id, item])).values());
       const sorted = sortAnnouncements(unique);
-
-      // Cache result
-      if (typeof window !== "undefined" && window.localStorage) {
-        try {
-          window.localStorage.setItem(
-            CACHE_STORAGE_KEY,
-            JSON.stringify({ timestamp: Date.now(), data: sorted }),
-          );
-        } catch {
-          // Ignore cache write errors
-        }
-      }
-
+      writeCache(sorted);
       return sorted;
     }
   } catch {
-    // 3. Fallback on network/rate-limit error: Use cached data if available, else static builtin
-    if (typeof window !== "undefined" && window.localStorage) {
-      try {
-        const cachedRaw = window.localStorage.getItem(CACHE_STORAGE_KEY);
-        if (cachedRaw) {
-          const cached = JSON.parse(cachedRaw);
-          if (Array.isArray(cached.data) && cached.data.length > 0) {
-            return sortAnnouncements(cached.data);
-          }
-        }
-      } catch {
-        // Fallback to builtin
-      }
-    }
+    const cached = readCache();
+    if (cached && cached.length > 0) return cached;
   }
 
   return sortAnnouncements(BUILTIN_ANNOUNCEMENTS);

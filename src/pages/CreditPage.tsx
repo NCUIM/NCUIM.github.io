@@ -29,15 +29,13 @@ import {
 import {
   checkmarkCircle,
   alertCircleOutline,
-  syncOutline,
   refreshOutline,
   schoolOutline,
   bookOutline,
   ribbonOutline,
   flashOutline,
 } from "ionicons/icons";
-import { cisLogout, isCisLoggedIn } from "../services/cis-login";
-import { fetchCisCourseHistory, type CisCourse } from "../services/cis-course-api";
+import { type CisCourse } from "../services/cis-course-api";
 import {
   TRACK_CONFIGS,
   GRADUATION_GATES,
@@ -715,8 +713,6 @@ const CreditPage: React.FC = () => {
   });
 
   const [showCisModal, setShowCisModal] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [cisAuthenticated, setCisAuthenticated] = useState(isCisLoggedIn());
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_TRACK, track);
@@ -739,7 +735,7 @@ const CreditPage: React.FC = () => {
   useEffect(() => {
     const handleHashSync = () => {
       const hash = window.location.hash;
-      if (!hash || !hash.includes("cis_data=")) return;
+      if (!hash?.includes("cis_data=")) return;
       try {
         const rawParam = hash.replace(/^#.*?cis_data=/, "");
         const decoded = decodeURIComponent(rawParam);
@@ -813,68 +809,7 @@ const CreditPage: React.FC = () => {
     });
   }, [presentAlert, presentToast]);
 
-  const handleSyncSuccess = useCallback((matchedCourseIds: string[], cisCourses: readonly CisCourse[]) => {
-    if (matchedCourseIds.length > 0) {
-      setSelectedCourseIds(matchedCourseIds);
-      setCisAuthenticated(true);
-      presentToast({
-        message: `已從 CIS 歷年與本學期選課結果同步 ${matchedCourseIds.length} 門課程！`,
-        duration: 2500,
-        color: "success",
-      });
-    } else {
-      const cisNames = cisCourses.map((c) => c.name).join("、");
-      presentToast({
-        message: `已從 CIS 讀取 ${cisCourses.length} 門選課紀錄（${cisNames}），但無符合此組別的碩士班必選修代碼`,
-        duration: 4000,
-        color: "medium",
-      });
-    }
-  }, [presentToast]);
-
-  const handleSyncError = useCallback((err: unknown) => {
-    const msg = err instanceof Error ? err.message : "同步 CIS 失敗";
-    if (msg.includes("過期") || msg.includes("尚未連結")) {
-      setCisAuthenticated(false);
-      setShowCisModal(true);
-    }
-    presentToast({ message: msg, duration: 3500, color: "danger" });
-  }, [presentToast]);
-
-  const handleSyncCis = useCallback(async () => {
-    if (!isCisLoggedIn()) {
-      setCisAuthenticated(false);
-      setShowCisModal(true);
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      const cisCourses = await fetchCisCourseHistory();
-      if (!cisCourses || cisCourses.length === 0) {
-        presentToast({ message: "課務系統目前沒有可用的選課結果，或需重新登入", duration: 3000, color: "warning" });
-        return;
-      }
-      const matchedCourseIds = matchCisToCurriculum(cisCourses, currentConfig, track);
-      handleSyncSuccess(matchedCourseIds, cisCourses);
-    } catch (err) {
-      handleSyncError(err);
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [currentConfig, handleSyncError, handleSyncSuccess, presentToast, track]);
-
   const handleOpenCisModal = useCallback(() => setShowCisModal(true), []);
-  const handleCisLoginSuccess = useCallback(() => {
-    setCisAuthenticated(true);
-    setShowCisModal(false);
-    handleSyncCis();
-  }, [handleSyncCis]);
-
-  const handleCisLogout = useCallback(() => {
-    cisLogout();
-    setCisAuthenticated(false);
-  }, []);
 
   return (
     <IonPage>
@@ -897,7 +832,6 @@ const CreditPage: React.FC = () => {
       <CisLoginModal
         isOpen={showCisModal}
         onDismiss={() => setShowCisModal(false)}
-        onSuccess={handleCisLoginSuccess}
       />
     </IonPage>
   );

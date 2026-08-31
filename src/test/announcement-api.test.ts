@@ -148,7 +148,7 @@ https://cis.ncu.edu.tw/`,
     );
 
     const res = await fetchAnnouncements();
-    expect(res.length).toBe(1);
+    expect(res).toHaveLength(1);
     expect(res[0].id).toBe("cached-1");
   });
 });

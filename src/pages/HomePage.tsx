@@ -26,7 +26,6 @@ import {
   megaphoneOutline,
   chevronForwardOutline,
   openOutline,
-  pricetagOutline,
   timeOutline,
 } from "ionicons/icons";
 import {
@@ -165,26 +164,27 @@ const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties =
   }
 
   const scale = 1.0 + (stage / 20) * 0.32;
-  const rotate = stage >= 20 ? 360 : (stage % 2 === 0 ? stage * 1.2 : -stage * 1.2);
-  let boxShadow = "var(--ncu-shadow-hard)";
-
-  if (stage >= 17) {
-    boxShadow = "0 0 45px #10b981, 0 0 24px #38bdf8, var(--ncu-shadow-hard)";
-  } else if (stage >= 13) {
-    boxShadow = "0 0 36px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)";
-  } else if (stage >= 9) {
-    boxShadow = "0 0 28px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)";
-  } else if (stage >= 5) {
-    boxShadow = "0 0 22px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)";
-  } else {
-    boxShadow = "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)";
-  }
+  const rotate = getStageRotation(stage);
+  const boxShadow = getStageBoxShadow(stage);
 
   return {
     ...base,
     transform: `scale(${scale.toFixed(2)}) rotate(${rotate}deg)`,
     boxShadow,
   };
+};
+
+const getStageBoxShadow = (stage: number): string => {
+  if (stage >= 17) return "0 0 45px #10b981, 0 0 24px #38bdf8, var(--ncu-shadow-hard)";
+  if (stage >= 13) return "0 0 36px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)";
+  if (stage >= 9) return "0 0 28px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)";
+  if (stage >= 5) return "0 0 22px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)";
+  return "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)";
+};
+
+const getStageRotation = (stage: number): number => {
+  if (stage >= 20) return 360;
+  return stage % 2 === 0 ? stage * 1.2 : -stage * 1.2;
 };
 
 interface ParticleData {
@@ -494,7 +494,16 @@ const AnnouncementBar = ({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      aria-label="查看最新公告"
       style={{
         margin: "0 0 16px",
         padding: "10px 14px",
@@ -925,16 +934,25 @@ const HomePage = () => {
     });
   }, []);
 
+const getCryptoRandom = (): number => {
+  if (typeof window !== "undefined" && window.crypto?.getRandomValues) {
+    const arr = new Uint32Array(1);
+    window.crypto.getRandomValues(arr);
+    return arr[0] / 0x100000000;
+  }
+  return 0.5;
+};
+
   const addParticle = useCallback((stage: number, text: string) => {
-    const side = Math.random() < 0.5 ? "left" : "right";
-    const sideOffset = 8 + Math.random() * 20;
-    const offsetY = -28 + Math.random() * 56;
-    const flyY = -35 - Math.random() * 25;
-    const driftX = (Math.random() - 0.5) * 18;
-    const scale = 0.85 + Math.random() * 0.35;
-    const rotate = (Math.random() - 0.5) * 14;
-    const duration = 2.2 + Math.random() * 0.6; // 2.2s ~ 2.8s
-    const id = Date.now() + Math.random();
+    const side = getCryptoRandom() < 0.5 ? "left" : "right";
+    const sideOffset = 8 + getCryptoRandom() * 20;
+    const offsetY = -28 + getCryptoRandom() * 56;
+    const flyY = -35 - getCryptoRandom() * 25;
+    const driftX = (getCryptoRandom() - 0.5) * 18;
+    const scale = 0.85 + getCryptoRandom() * 0.35;
+    const rotate = (getCryptoRandom() - 0.5) * 14;
+    const duration = 2.2 + getCryptoRandom() * 0.6; // 2.2s ~ 2.8s
+    const id = Date.now() + getCryptoRandom();
 
     const newParticle: ParticleData = {
       id,
@@ -977,10 +995,10 @@ const HomePage = () => {
       const icons = isCtfEnded()
         ? ["🏆", "✨", "👑", "🔥", "⚡", "🌟"]
         : ["🚩", "⚡", "🔓", "🔥", "💥", "✨", "💎"];
-      const icon = icons[Math.floor(Math.random() * icons.length)];
+      const icon = icons[Math.floor(getCryptoRandom() * icons.length)];
       addParticle(20, icon);
 
-      const nextDelay = 700 + Math.random() * 900; // 0.7s ~ 1.6s
+      const nextDelay = 700 + getCryptoRandom() * 900; // 0.7s ~ 1.6s
       timer = setTimeout(spawnAmbientParticle, nextDelay);
     };
 

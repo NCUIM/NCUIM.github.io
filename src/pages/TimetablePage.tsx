@@ -1250,7 +1250,6 @@ const TimetablePage = () => {
       <CisLoginModal
         isOpen={showCisLogin}
         onDismiss={() => setShowCisLogin(false)}
-        onSuccess={handleCisLoginSuccess}
       />
     </IonPage>
   );
