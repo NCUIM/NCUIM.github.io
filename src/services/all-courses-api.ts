@@ -199,10 +199,20 @@ const addCourseTimeToMap = (
   }
   const existing = result[key].find((item) => cleanCourseTitle(item.title) === cleanCourseTitle(c.title));
   if (existing) {
-    const combinedTeachers = Array.from(new Set([...existing.teachers, ...c.teachers]));
-    const combinedRoom = existing.room && c.room && existing.room !== c.room
-      ? `${existing.room} / ${c.room}`
-      : (existing.room || c.room);
+    let combinedTeachers: string[];
+    let combinedRoom: string | undefined;
+
+    if (existing.room && c.room && existing.room !== c.room) {
+      const t1 = existing.teachers.join(", ");
+      const t2 = c.teachers.join(", ");
+      const label1 = t1.includes("(") ? t1 : `${t1} (${existing.room})`;
+      const label2 = t2.includes("(") ? t2 : `${t2} (${c.room})`;
+      combinedTeachers = Array.from(new Set([label1, label2]));
+      combinedRoom = undefined;
+    } else {
+      combinedTeachers = Array.from(new Set([...existing.teachers, ...c.teachers]));
+      combinedRoom = existing.room || c.room;
+    }
 
     const idx = result[key].indexOf(existing);
     result[key][idx] = {

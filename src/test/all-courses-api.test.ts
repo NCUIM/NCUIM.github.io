@@ -21,6 +21,7 @@ describe("all-courses-api service", () => {
         classTimes: ["5-2", "5-3"],
         courseType: "REQUIRED",
         requiredTag: "碩一必修",
+        room: "I1-405-1",
       },
       {
         serialNo: 43026,
@@ -31,16 +32,17 @@ describe("all-courses-api service", () => {
         classTimes: ["5-2", "5-3"],
         courseType: "REQUIRED",
         requiredTag: "碩一必修",
+        room: "I1-404",
       },
     ];
 
     const map = buildTimetableMapFromMasterCourses(mockCourses);
 
-    // Friday (day 5 -> index 4) period 2 should have 1 merged card with 2 teachers
+    // Friday (day 5 -> index 4) period 2 should have 1 merged card with paired teachers & classrooms
     expect(map["2-4"]).toBeDefined();
     expect(map["2-4"]).toHaveLength(1);
     expect(map["2-4"][0].title).toBe("研究方法");
-    expect(map["2-4"][0].teachers).toEqual(["劉子源", "許智誠"]);
+    expect(map["2-4"][0].teachers).toEqual(["劉子源 (I1-405-1)", "許智誠 (I1-404)"]);
     expect(map["2-4"][0].requiredTag).toBe("碩一必修");
   });
 

@@ -263,17 +263,28 @@ const addCisCourseToMap = (
     }
     const existing = result[key].find((x) => x.name.trim() === c.name.trim());
     if (existing) {
-      const currentTeachers = existing.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
-      const newTeachers = c.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
-      const allTeachers = Array.from(new Set([...currentTeachers, ...newTeachers])).join(" / ");
+      let combinedTeacher: string;
+      let combinedRoom: string | undefined;
+
+      if (existing.room && c.room && existing.room !== c.room) {
+        const t1 = existing.teacher;
+        const t2 = c.teacher;
+        const label1 = t1.includes("(") ? t1 : `${t1} (${existing.room})`;
+        const label2 = t2.includes("(") ? t2 : `${t2} (${c.room})`;
+        combinedTeacher = `${label1} / ${label2}`;
+        combinedRoom = undefined;
+      } else {
+        const currentTeachers = existing.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
+        const newTeachers = c.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
+        combinedTeacher = Array.from(new Set([...currentTeachers, ...newTeachers])).join(" / ");
+        combinedRoom = existing.room || c.room;
+      }
 
       const idx = result[key].indexOf(existing);
       result[key][idx] = {
         ...existing,
-        teacher: allTeachers,
-        room: (c.room && existing.room && c.room !== existing.room && !existing.room.includes(c.room))
-          ? `${existing.room} / ${c.room}`
-          : (existing.room || c.room),
+        teacher: combinedTeacher,
+        room: combinedRoom,
         isMyCourse: existing.isMyCourse || c.isMyCourse,
       };
     } else {
@@ -532,7 +543,7 @@ const MobileTrackCard = ({
   const isRequired = course.courseType === "REQUIRED";
   const titleSize = maxTracks >= 3 ? 15.5 : 16;
   const descSize = maxTracks >= 3 ? 13.5 : 14;
-  const roomText = course.room ? ` · ${course.room}` : "";
+  const roomText = course.room && !course.teacher.includes("(") ? ` · ${course.room}` : "";
 
   return (
     <div style={{ minWidth: 0 }}>
@@ -896,10 +907,14 @@ const DesktopCourseCard = ({
           </span>
         )}
       </div>
-      <span style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.3, fontWeight: 500 }}>
-        {span.course.teacher}
-      </span>
-      {span.course.room && (
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+        {span.course.teacher.split(" / ").map((t) => (
+          <span key={t} style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.25, fontWeight: 500 }}>
+            {t}
+          </span>
+        ))}
+      </div>
+      {span.course.room && !span.course.teacher.includes("(") && (
         <span
           style={{
             fontSize: span.totalCols <= 2 ? 12 : 11,
