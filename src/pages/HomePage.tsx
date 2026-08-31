@@ -117,7 +117,7 @@ const getStageIcon = (stage: number): string => {
   return isCtfEnded() ? "🏆" : "🚩";
 };
 
-const getLogoStyle = (stage: number): React.CSSProperties => {
+const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties => {
   const base: React.CSSProperties = {
     width: 72,
     height: 72,
@@ -132,10 +132,18 @@ const getLogoStyle = (stage: number): React.CSSProperties => {
     cursor: "pointer",
     userSelect: "none",
     padding: 0,
-    transition: "transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease",
+    transition: "transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, border-color 0.3s ease",
     willChange: "transform, box-shadow",
     backfaceVisibility: "hidden",
   };
+
+  if (isUnlocked) {
+    return {
+      ...base,
+      border: "2.5px solid #10b981",
+      animation: "unlockedPulse 3s ease-in-out infinite",
+    };
+  }
 
   if (stage <= 0) {
     return {
@@ -181,10 +189,12 @@ interface ParticleData {
 
 const HeroHeader = ({
   stage,
+  isUnlocked,
   particle,
   onLogoClick,
 }: Readonly<{
   stage: number;
+  isUnlocked: boolean;
   particle: ParticleData | null;
   onLogoClick: () => void;
 }>) => (
@@ -198,6 +208,16 @@ const HeroHeader = ({
     }}
   >
     <style>{`
+      @keyframes unlockedPulse {
+        0%, 100% {
+          transform: scale(1.04);
+          box-shadow: 0 0 26px rgba(16, 185, 129, 0.75), 0 0 14px rgba(56, 189, 248, 0.5), var(--ncu-shadow-hard);
+        }
+        50% {
+          transform: scale(1.08);
+          box-shadow: 0 0 42px rgba(16, 185, 129, 0.95), 0 0 24px rgba(56, 189, 248, 0.7), var(--ncu-shadow-hard);
+        }
+      }
       @keyframes cyberGlowParticleLeft {
         0% {
           opacity: 1;
@@ -224,7 +244,7 @@ const HeroHeader = ({
         type="button"
         onClick={onLogoClick}
         aria-label="NCUIM Logo"
-        style={getLogoStyle(stage)}
+        style={getLogoStyle(stage, isUnlocked)}
         title="NCUIM"
       >
         <NcuimLogoIcon />
@@ -627,6 +647,7 @@ const AnnouncementModal = ({
 
 const HomeBody = ({
   stage,
+  isUnlocked,
   particle,
   hovered,
   onHover,
@@ -635,6 +656,7 @@ const HomeBody = ({
   onOpenAnnouncements,
 }: Readonly<{
   stage: number;
+  isUnlocked: boolean;
   particle: ParticleData | null;
   hovered: string | null;
   onHover: (route: string) => void;
@@ -644,7 +666,12 @@ const HomeBody = ({
 }>) => (
   <IonContent className="ion-padding">
     <div style={{ maxWidth: 680, margin: "0 auto" }}>
-      <HeroHeader stage={stage} particle={particle} onLogoClick={onLogoClick} />
+      <HeroHeader
+        stage={stage}
+        isUnlocked={isUnlocked}
+        particle={particle}
+        onLogoClick={onLogoClick}
+      />
       <AnnouncementBar onOpen={onOpenAnnouncements} />
       <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
     </div>
@@ -669,6 +696,7 @@ const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
   const [easterEggStage, setEasterEggStage] = useState(0);
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const [particle, setParticle] = useState<ParticleData | null>(null);
   const [presentAlert] = useIonAlert();
 
@@ -722,6 +750,27 @@ const HomePage = () => {
   }, [presentAlert]);
 
   const handleSecretTap = useCallback(() => {
+    if (isUnlocked) {
+      const side = Math.random() < 0.5 ? "left" : "right";
+      const sideOffset = 8 + Math.random() * 16;
+      const offsetY = (Math.random() - 0.5) * 20;
+      const scale = 0.9 + Math.random() * 0.3;
+      const rotate = (Math.random() - 0.5) * 14;
+
+      setParticle({
+        stage: 20,
+        text: getStageIcon(20),
+        side,
+        sideOffset,
+        offsetY,
+        scale,
+        rotate,
+        key: Date.now(),
+      });
+      triggerEasterEgg();
+      return;
+    }
+
     if (resetTimerRef.current) {
       clearTimeout(resetTimerRef.current);
     }
@@ -747,9 +796,9 @@ const HomePage = () => {
       });
 
       if (next >= 20) {
+        setIsUnlocked(true);
         setTimeout(() => {
           triggerEasterEgg();
-          setEasterEggStage(0);
           setParticle(null);
         }, 400);
         return 20;
@@ -761,13 +810,14 @@ const HomePage = () => {
       setEasterEggStage(0);
       setParticle(null);
     }, 2800);
-  }, [triggerEasterEgg]);
+  }, [isUnlocked, triggerEasterEgg]);
 
   return (
     <IonPage>
       <HomeHeader />
       <HomeBody
         stage={easterEggStage}
+        isUnlocked={isUnlocked}
         particle={particle}
         hovered={hovered}
         onHover={setHovered}
