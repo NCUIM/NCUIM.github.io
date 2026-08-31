@@ -12,6 +12,9 @@ import {
   IonCardSubtitle,
   IonIcon,
   IonBadge,
+  IonModal,
+  IonButtons,
+  IonButton,
   useIonAlert,
 } from "@ionic/react";
 import {
@@ -21,6 +24,7 @@ import {
   calculator,
   sparkles,
   megaphoneOutline,
+  chevronForwardOutline,
 } from "ionicons/icons";
 
 interface ModuleCard {
@@ -341,58 +345,158 @@ const announcements: readonly AnnouncementItem[] = [
   },
 ];
 
-const AnnouncementSection = () => (
-  <div style={{ marginBottom: "var(--ncu-space-3)" }}>
+const AnnouncementBar = ({ onOpen }: Readonly<{ onOpen: () => void }>) => {
+  const latest = announcements[0];
+  if (!latest) return null;
+
+  return (
     <div
+      onClick={onOpen}
       style={{
+        margin: "0 0 16px",
+        padding: "10px 14px",
+        background: "var(--ncu-surface)",
+        border: "1.5px solid var(--ncu-ink)",
+        borderRadius: "var(--ncu-radius-md)",
+        boxShadow: "var(--ncu-shadow-sm)",
         display: "flex",
         alignItems: "center",
-        gap: 8,
-        marginBottom: "var(--ncu-space-2)",
-        padding: "0 4px",
+        justifyContent: "space-between",
+        gap: 10,
+        cursor: "pointer",
       }}
     >
-      <IonIcon icon={megaphoneOutline} style={{ fontSize: 18, color: "var(--ncu-primary)" }} />
-      <h2 style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "var(--ncu-ink)" }}>
-        最新公告
-      </h2>
-    </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
+        <IonBadge
+          color="primary"
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "3px 6px",
+            borderRadius: 4,
+            flexShrink: 0,
+          }}
+        >
+          {latest.badge || "公告"}
+        </IonBadge>
+        <span
+          style={{
+            fontSize: 13.5,
+            fontWeight: 700,
+            color: "var(--ncu-ink)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {latest.title}
+        </span>
+      </div>
 
-    {announcements.map((item) => (
-      <IonCard
-        key={item.id}
+      <div
         style={{
-          margin: "0 0 12px",
-          border: "2px solid var(--ncu-ink)",
-          borderRadius: "var(--ncu-radius-md)",
-          boxShadow: "var(--ncu-shadow-hard)",
-          background: "var(--ncu-surface)",
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          color: "var(--ncu-muted)",
+          fontSize: 12,
+          fontWeight: 700,
+          flexShrink: 0,
         }}
       >
-        <IonCardHeader style={{ padding: "14px 16px 8px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {item.badge && (
-                <IonBadge color="primary" style={{ fontSize: 11, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}>
-                  {item.badge}
-                </IonBadge>
-              )}
-              <IonCardTitle style={{ fontSize: 15.5, fontWeight: 800, color: "var(--ncu-ink)" }}>
-                {item.title}
-              </IonCardTitle>
-            </div>
-            <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>{item.date}</span>
-          </div>
-        </IonCardHeader>
-        <IonCardContent style={{ padding: "0 16px 14px", fontSize: 13.5, color: "var(--ncu-ink)", lineHeight: 1.65 }}>
-          <p style={{ margin: "0 0 8px" }}>{item.content}</p>
-          <div style={{ textAlign: "right", fontSize: 12.5, color: "var(--ncu-muted)", fontWeight: 700 }}>
-            —— {item.role} · {item.author}
-          </div>
-        </IonCardContent>
-      </IonCard>
-    ))}
-  </div>
+        <span>{announcements.length > 1 ? `共 ${announcements.length} 則` : "詳情"}</span>
+        <IonIcon icon={chevronForwardOutline} style={{ fontSize: 14 }} />
+      </div>
+    </div>
+  );
+};
+
+const AnnouncementModal = ({
+  isOpen,
+  onDismiss,
+}: Readonly<{
+  isOpen: boolean;
+  onDismiss: () => void;
+}>) => (
+  <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
+    <IonHeader>
+      <IonToolbar>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 12 }}>
+          <IonIcon icon={megaphoneOutline} style={{ fontSize: 18, color: "var(--ncu-primary)" }} />
+          <IonTitle style={{ padding: 0 }}>最新公告與消息</IonTitle>
+        </div>
+        <IonButtons slot="end">
+          <IonButton onClick={onDismiss}>關閉</IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+    <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+        {announcements.map((item) => (
+          <IonCard
+            key={item.id}
+            style={{
+              margin: "0 0 16px",
+              border: "2px solid var(--ncu-ink)",
+              borderRadius: "var(--ncu-radius-md)",
+              boxShadow: "var(--ncu-shadow-hard)",
+              background: "var(--ncu-surface)",
+            }}
+          >
+            <IonCardHeader style={{ padding: "16px 16px 10px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginBottom: 6,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {item.badge && (
+                    <IonBadge
+                      color="primary"
+                      style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 7px", borderRadius: 4 }}
+                    >
+                      {item.badge}
+                    </IonBadge>
+                  )}
+                  <IonCardTitle style={{ fontSize: 16, fontWeight: 800, color: "var(--ncu-ink)" }}>
+                    {item.title}
+                  </IonCardTitle>
+                </div>
+                <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>{item.date}</span>
+              </div>
+            </IonCardHeader>
+            <IonCardContent
+              style={{
+                padding: "0 16px 16px",
+                fontSize: 14,
+                color: "var(--ncu-ink)",
+                lineHeight: 1.7,
+              }}
+            >
+              <p style={{ margin: "0 0 12px", whiteSpace: "pre-line" }}>{item.content}</p>
+              <div
+                style={{
+                  textAlign: "right",
+                  fontSize: 13,
+                  color: "var(--ncu-muted)",
+                  fontWeight: 700,
+                  borderTop: "1px dashed var(--ncu-border)",
+                  paddingTop: 8,
+                }}
+              >
+                —— {item.role} · {item.author}
+              </div>
+            </IonCardContent>
+          </IonCard>
+        ))}
+      </div>
+    </IonContent>
+  </IonModal>
 );
 
 const HomeBody = ({
@@ -400,21 +504,26 @@ const HomeBody = ({
   onHover,
   onLeave,
   onLogoClick,
+  onOpenAnnouncements,
 }: Readonly<{
   hovered: string | null;
   onHover: (route: string) => void;
   onLeave: () => void;
   onLogoClick: () => void;
+  onOpenAnnouncements: () => void;
 }>) => (
   <IonContent className="ion-padding">
-    <HeroHeader onLogoClick={onLogoClick} />
-    <AnnouncementSection />
-    <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
+    <div style={{ maxWidth: 680, margin: "0 auto" }}>
+      <HeroHeader onLogoClick={onLogoClick} />
+      <AnnouncementBar onOpen={onOpenAnnouncements} />
+      <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
+    </div>
   </IonContent>
 );
 
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
+  const [showAnnouncements, setShowAnnouncements] = useState(false);
   const [presentAlert] = useIonAlert();
 
   // Easter egg click counter
@@ -472,6 +581,11 @@ const HomePage = () => {
         onHover={setHovered}
         onLeave={() => setHovered(null)}
         onLogoClick={handleSecretTap}
+        onOpenAnnouncements={() => setShowAnnouncements(true)}
+      />
+      <AnnouncementModal
+        isOpen={showAnnouncements}
+        onDismiss={() => setShowAnnouncements(false)}
       />
     </IonPage>
   );
