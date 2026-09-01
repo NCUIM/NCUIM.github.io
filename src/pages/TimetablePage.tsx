@@ -168,8 +168,9 @@ const isClassNoMatch = (masterNo: string, cisNo?: string): boolean => {
   const mClean = masterNo.replace(/[-*]/g, "").trim().toUpperCase();
   if (cClean.length < 4 || mClean.length < 4) return false;
   // Extract course-number base (e.g. "IM5001" from "IM5001A") by splitting at section boundary
-  const cBase = cClean.match(/^[A-Z]+\d+/)?.[0] ?? cClean;
-  const mBase = mClean.match(/^[A-Z]+\d+/)?.[0] ?? mClean;
+  const courseNoRe = /^[A-Z]+\d+/;
+  const cBase = courseNoRe.exec(cClean)?.[0] ?? cClean;
+  const mBase = courseNoRe.exec(mClean)?.[0] ?? mClean;
   return cBase === mBase;
 };
 
@@ -538,7 +539,7 @@ const parseTeacherAndRoom = (
   rawTeacherItem: string,
   fallbackRoom?: string,
 ): { name: string; room?: string } => {
-  const match = /^([^()]+)\s*\(([^)]+)\)$/.exec(rawTeacherItem.trim());
+  const match = /^([^(]+)\(([^)]+)\)$/.exec(rawTeacherItem.trim());
   if (match) {
     return { name: match[1].trim(), room: match[2].trim() };
   }

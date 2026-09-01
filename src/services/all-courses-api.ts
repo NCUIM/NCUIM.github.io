@@ -108,7 +108,7 @@ const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
   );
 
 export const cleanCourseTitle = (rawTitle: string): string => {
-  const match = /^([\u4e00-\u9fa5\dⅠⅡⅢⅣ·、\s-]+)([A-Z][a-zA-Z\s\d-]+.*)$/.exec(rawTitle);
+  const match = /^([\u4e00-\u9fa5\dⅠⅡⅢⅣ·、]+[\s-]*)([A-Z][\s\S]*)$/.exec(rawTitle);
   if (match && /[\u4e00-\u9fa5]/.test(match[1])) {
     return match[1].trim();
   }
