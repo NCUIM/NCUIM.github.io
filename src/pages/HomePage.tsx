@@ -129,10 +129,10 @@ const getStageIcon = (stage: number): string => {
 
 const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties => {
   const base: React.CSSProperties = {
-    width: 72,
-    height: 72,
+    width: 84,
+    height: 84,
     marginBottom: 8,
-    borderRadius: "20px",
+    borderRadius: "24px",
     border: "2.5px solid var(--ncu-ink)",
     overflow: "hidden",
     display: "flex",
@@ -325,9 +325,9 @@ const HeroHeader = ({
 const CardIcon = ({ color, icon }: Readonly<{ color: string; icon: string }>) => (
   <div
     style={{
-      width: 48,
-      height: 48,
-      borderRadius: "var(--ncu-radius-md)",
+      width: 56,
+      height: 56,
+      borderRadius: "14px",
       background: color,
       display: "flex",
       alignItems: "center",
@@ -335,7 +335,7 @@ const CardIcon = ({ color, icon }: Readonly<{ color: string; icon: string }>) =>
       flexShrink: 0,
     }}
   >
-    <IonIcon icon={icon} style={{ fontSize: 24, color: "#fff" }} />
+    <IonIcon icon={icon} style={{ fontSize: 28, color: "#fff" }} />
   </div>
 );
 
