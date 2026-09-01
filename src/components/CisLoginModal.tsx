@@ -14,6 +14,7 @@ import {
   bookmarkOutline,
   copyOutline,
   openOutline,
+  shieldCheckmarkOutline,
 } from "ionicons/icons";
 
 interface CisLoginModalProps {
@@ -37,40 +38,74 @@ const BookmarkletInstructions = ({
   bookmarkletCode: string;
   onCopy: () => void;
 }>) => (
-  <div style={{ fontSize: 13.5, color: "var(--ncu-ink)", lineHeight: 1.5 }}>
-    <p style={{ margin: "0 0 14px", color: "var(--ncu-muted)", fontSize: 12.5 }}>
-      拖曳按鈕到書籤列，再到 <a href="https://cis.ncu.edu.tw/Course/main/login" target="_blank" rel="noreferrer" style={{ color: "var(--ncu-primary)", fontWeight: 600 }}>課務系統 <IonIcon icon={openOutline} style={{ fontSize: 11, verticalAlign: "middle" }} /></a> 登入後點擊即可同步。
-    </p>
+  <div style={{ fontSize: 13.5, color: "var(--ncu-ink)", lineHeight: 1.6 }}>
+    <div
+      style={{
+        background: "var(--ncu-surface)",
+        border: "1.5px solid var(--ncu-border)",
+        borderRadius: "var(--ncu-radius-md)",
+        padding: 16,
+        marginBottom: 14,
+      }}
+    >
+      <div style={{ fontWeight: 800, fontSize: 15, color: "var(--ncu-primary)", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+        <IonIcon icon={bookmarkOutline} />
+        <span>拖曳至書籤列，登入後點擊同步</span>
+      </div>
 
-    <div style={{ textAlign: "center", margin: "14px 0 10px" }}>
-      <a
-        href={bookmarkletCode}
-        title="將此按鈕拖曳至書籤列"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          background: "var(--ncu-primary)",
-          color: "#fff",
-          padding: "10px 20px",
-          borderRadius: "var(--ncu-radius-md)",
-          fontWeight: 800,
-          fontSize: 14,
-          textDecoration: "none",
-          boxShadow: "var(--ncu-shadow-sm)",
-          cursor: "grab",
-        }}
-      >
-        <IonIcon icon={bookmarkOutline} style={{ fontSize: 18 }} />
-        <span>🔖 拖曳此按鈕至書籤列</span>
-      </a>
+      <div style={{ textAlign: "center", margin: "12px 0 10px" }}>
+        <a
+          href={bookmarkletCode}
+          title="將此按鈕拖曳至書籤列"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: "var(--ncu-primary)",
+            color: "#fff",
+            padding: "10px 20px",
+            borderRadius: "var(--ncu-radius-md)",
+            fontWeight: 800,
+            fontSize: 14,
+            textDecoration: "none",
+            boxShadow: "var(--ncu-shadow-sm)",
+            cursor: "grab",
+          }}
+        >
+          <IonIcon icon={bookmarkOutline} style={{ fontSize: 18 }} />
+          <span>🔖 拖曳此按鈕至書籤列</span>
+        </a>
+      </div>
+
+      <div style={{ textAlign: "center", marginBottom: 10 }}>
+        <IonButton size="small" fill="outline" onClick={onCopy} style={{ fontSize: 12 }}>
+          <IonIcon slot="start" icon={copyOutline} />
+          複製書籤代碼
+        </IonButton>
+      </div>
+
+      <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
+        <li style={{ marginBottom: 4 }}>拖曳按鈕到瀏覽器書籤列</li>
+        <li style={{ marginBottom: 4 }}>開啟 <a href="https://cis.ncu.edu.tw/Course/main/login" target="_blank" rel="noreferrer" style={{ color: "var(--ncu-primary)", fontWeight: 600 }}>課務系統 <IonIcon icon={openOutline} style={{ fontSize: 11, verticalAlign: "middle" }} /></a> 並登入</li>
+        <li>點擊書籤，自動匯入課表</li>
+      </ol>
     </div>
 
-    <div style={{ textAlign: "center", marginBottom: 14 }}>
-      <IonButton size="small" fill="clear" onClick={onCopy} style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
-        <IonIcon slot="start" icon={copyOutline} />
-        或複製代碼
-      </IonButton>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "8px 12px",
+        background: "rgba(16, 185, 129, 0.06)",
+        borderRadius: "var(--ncu-radius-sm)",
+        border: "1px solid rgba(16, 185, 129, 0.15)",
+        color: "var(--ncu-muted)",
+        fontSize: 11.5,
+      }}
+    >
+      <IonIcon icon={shieldCheckmarkOutline} style={{ color: "#10b981", fontSize: 14, flexShrink: 0 }} />
+      <span>代碼僅在本地執行，不上傳任何帳號密碼。</span>
     </div>
   </div>
 );
