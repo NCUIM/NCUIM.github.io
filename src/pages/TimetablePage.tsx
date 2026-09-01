@@ -947,7 +947,16 @@ const DesktopCourseCard = ({
           </span>
         )}
       </div>
-      {span.course.teacher.includes(" / ") ? (
+      {(() => {
+        const singleParsed = parseTeacherAndRoom(span.course.teacher);
+        const singleName = singleParsed.name;
+        const singleRoom = span.course.room || singleParsed.room;
+        const singleMy = Boolean(
+          span.course.isMyCourse &&
+          ((span.course.myEnrolledTeacher && (singleName.includes(span.course.myEnrolledTeacher) || span.course.myEnrolledTeacher.includes(singleName))) ||
+           (span.course.myEnrolledRoom && singleRoom && span.course.myEnrolledRoom === singleRoom))
+        );
+        return span.course.teacher.includes(" / ") ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
           {span.course.teacher.split(" / ").map((t) => {
             const { name, room } = parseTeacherAndRoom(t);
@@ -1001,26 +1010,37 @@ const DesktopCourseCard = ({
           })}
         </div>
       ) : (
-        <>
-          <span style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.25, fontWeight: 500 }}>
-            {parseTeacherAndRoom(span.course.teacher).name}
-          </span>
-          {(span.course.room || parseTeacherAndRoom(span.course.teacher).room) && (
-            <span
-              style={{
-                fontSize: span.totalCols <= 2 ? 12 : 11,
-                color: "var(--ncu-primary)",
-                fontWeight: 700,
-                background: "rgba(49, 87, 200, 0.08)",
-                padding: "2px 8px",
-                borderRadius: 4,
-              }}
-            >
-              {span.course.room || parseTeacherAndRoom(span.course.teacher).room}
-            </span>
-          )}
-        </>
-      )}
+            <>
+              <span style={{
+                fontSize: teacherFontSize,
+                color: singleMy ? "var(--ncu-ink)" : "var(--ncu-muted)",
+                lineHeight: 1.25,
+                fontWeight: singleMy ? 700 : 500,
+                textDecoration: singleMy ? "underline" : "none",
+                textDecorationColor: "var(--ncu-primary)",
+                textUnderlineOffset: "3px",
+              }}>
+                {singleName}
+              </span>
+              {singleRoom && (
+                <span
+                  style={{
+                    fontSize: span.totalCols <= 2 ? 12 : 11,
+                    color: "var(--ncu-primary)",
+                    fontWeight: 700,
+                    background: "rgba(49, 87, 200, 0.08)",
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    textDecoration: singleMy ? "underline" : "none",
+                    textUnderlineOffset: "2px",
+                  }}
+                >
+                  {singleRoom}
+                </span>
+              )}
+            </>
+          );
+        })()}
     </div>
   );
 };
