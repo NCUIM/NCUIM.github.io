@@ -1381,6 +1381,7 @@ const TimetablePage = () => {
   }, [syncDefaultCourses]);
 
   const syncCisCourses = useCallback(async () => {
+    if (!isCisLoggedIn()) return;
     setLoading(true);
     setApiError(null);
     try {
