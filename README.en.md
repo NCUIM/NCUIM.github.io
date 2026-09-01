@@ -76,5 +76,11 @@ Please review before submitting a Pull Request:
 - [docs/engineering/commit-policy.md](docs/engineering/commit-policy.md) — Conventional Commits policy (commit messages and PR titles must be in English)
 - [docs/engineering/testing-policy.md](docs/engineering/testing-policy.md) — Testing strategy and acceptance criteria
 
+## License
+
+This project is licensed under the [MIT License](LICENSE).  
+Copyright (c) 2026 NCU 網安實驗室 | CYberMaw
+
+
 
 

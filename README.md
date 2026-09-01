@@ -76,5 +76,11 @@ npm run build        # 生產環境 Bundle 建置
 - [docs/engineering/commit-policy.md](docs/engineering/commit-policy.md) — Conventional Commits 規範（Commit 訊息與 PR 標題需使用英文）
 - [docs/engineering/testing-policy.md](docs/engineering/testing-policy.md) — 測試策略與驗收標準
 
+## 授權條款 (License)
+
+本專案採用 [MIT License](LICENSE) 授權釋出。  
+Copyright (c) 2026 NCU 網安實驗室 | CYberMaw
+
+
 
 
