@@ -329,7 +329,9 @@ function runSuggestScope() {
   let staged = false;
   if (paths.length === 0) {
     try {
-      const output = execFileSync("git", ["diff", "--cached", "--name-only"], { encoding: "utf8" }); // NOSONAR — local dev tool, PATH resolution is safe
+      // NOSONAR: Git binary resolved via PATH for cross-platform portability.
+      // Local PATH security is assumed per client-side threat model.
+      const output = execFileSync("git", ["diff", "--cached", "--name-only"], { encoding: "utf8" });
       paths = output.split("\n").map((p) => p.trim()).filter(Boolean);
       staged = true;
     } catch {
