@@ -93,27 +93,7 @@ const modules: readonly ModuleCard[] = [
 
 const NcuimLogoIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%" aria-hidden="true">
-    <defs>
-      <linearGradient id="logoBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#2b4c7e" />
-        <stop offset="100%" stopColor="#0f1b2e" />
-      </linearGradient>
-      <linearGradient id="logoTextGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#ffffff" />
-        <stop offset="100%" stopColor="#dce7f5" />
-      </linearGradient>
-      <linearGradient id="logoAccentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#38bdf8" />
-        <stop offset="100%" stopColor="#2563eb" />
-      </linearGradient>
-    </defs>
-    <rect width="128" height="128" rx="28" fill="url(#logoBgGrad)" />
-    <rect x="2" y="2" width="124" height="124" rx="26" fill="none" stroke="#476f9d" strokeWidth="2" strokeOpacity="0.4" />
-    <circle cx="64" cy="24" r="5" fill="#38bdf8" />
-    <line x1="64" y1="29" x2="64" y2="40" stroke="#38bdf8" strokeWidth="2" strokeDasharray="2 2" />
-    <text x="64" y="48" textAnchor="middle" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fontSize="13" fontWeight="800" fill="#93c5fd" letterSpacing="3">NCU</text>
-    <text x="64" y="96" textAnchor="middle" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fontSize="46" fontWeight="900" fill="url(#logoTextGrad)" letterSpacing="-1">IM</text>
-    <rect x="36" y="106" width="56" height="4" rx="2" fill="url(#logoAccentGrad)" />
+    <image href="/ncuim-icons/hero-logo.svg" x="0" y="0" width="128" height="128" preserveAspectRatio="xMidYMid meet" />
   </svg>
 );
 
@@ -129,28 +109,27 @@ const getStageIcon = (stage: number): string => {
 
 const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties => {
   const base: React.CSSProperties = {
-    width: 72,
-    height: 72,
+    width: 132,
+    height: 132,
     marginBottom: 8,
-    borderRadius: "20px",
-    border: "2.5px solid var(--ncu-ink)",
-    overflow: "hidden",
+    border: "none",
+    overflow: "visible",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "#1b2a4a",
+    background: "transparent",
     cursor: "pointer",
     userSelect: "none",
     padding: 0,
-    transition: "transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, border-color 0.3s ease",
-    willChange: "transform, box-shadow",
+    transition: "transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s ease",
+    willChange: "transform",
     backfaceVisibility: "hidden",
   };
 
   if (isUnlocked) {
     return {
       ...base,
-      border: "2.5px solid #10b981",
+      filter: "drop-shadow(0 0 12px #10b981)",
       animation: "unlockedPulse 3s ease-in-out infinite",
     };
   }
@@ -158,28 +137,28 @@ const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties =
   if (stage <= 0) {
     return {
       ...base,
-      boxShadow: "var(--ncu-shadow-hard)",
+      filter: "drop-shadow(0 4px 12px rgba(27, 42, 74, 0.15))",
       transform: "none",
     };
   }
 
   const scale = 1.0 + (stage / 20) * 0.32;
   const rotate = getStageRotation(stage);
-  const boxShadow = getStageBoxShadow(stage);
+  const filter = getStageDropShadow(stage);
 
   return {
     ...base,
     transform: `scale(${scale.toFixed(2)}) rotate(${rotate}deg)`,
-    boxShadow,
+    filter,
   };
 };
 
-const getStageBoxShadow = (stage: number): string => {
-  if (stage >= 17) return "0 0 45px #10b981, 0 0 24px #38bdf8, var(--ncu-shadow-hard)";
-  if (stage >= 13) return "0 0 36px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)";
-  if (stage >= 9) return "0 0 28px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)";
-  if (stage >= 5) return "0 0 22px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)";
-  return "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)";
+const getStageDropShadow = (stage: number): string => {
+  if (stage >= 17) return "drop-shadow(0 0 24px #10b981) drop-shadow(0 0 12px #38bdf8)";
+  if (stage >= 13) return "drop-shadow(0 0 20px rgba(239, 68, 68, 0.95))";
+  if (stage >= 9) return "drop-shadow(0 0 16px rgba(249, 115, 22, 0.9))";
+  if (stage >= 5) return "drop-shadow(0 0 12px rgba(168, 85, 247, 0.85))";
+  return "drop-shadow(0 0 8px rgba(56, 189, 248, 0.8))";
 };
 
 const getStageRotation = (stage: number): number => {
@@ -225,11 +204,11 @@ const HeroHeader = ({
       @keyframes unlockedPulse {
         0%, 100% {
           transform: scale(1.04);
-          box-shadow: 0 0 26px rgba(16, 185, 129, 0.75), 0 0 14px rgba(56, 189, 248, 0.5), var(--ncu-shadow-hard);
+          filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.85)) drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
         }
         50% {
           transform: scale(1.08);
-          box-shadow: 0 0 42px rgba(16, 185, 129, 0.95), 0 0 24px rgba(56, 189, 248, 0.7), var(--ncu-shadow-hard);
+          filter: drop-shadow(0 0 28px rgba(16, 185, 129, 1)) drop-shadow(0 0 14px rgba(56, 189, 248, 0.8));
         }
       }
       @keyframes cyberGlowParticle {
@@ -325,9 +304,9 @@ const HeroHeader = ({
 const CardIcon = ({ color, icon }: Readonly<{ color: string; icon: string }>) => (
   <div
     style={{
-      width: 48,
-      height: 48,
-      borderRadius: "var(--ncu-radius-md)",
+      width: 56,
+      height: 56,
+      borderRadius: "14px",
       background: color,
       display: "flex",
       alignItems: "center",
@@ -335,7 +314,7 @@ const CardIcon = ({ color, icon }: Readonly<{ color: string; icon: string }>) =>
       flexShrink: 0,
     }}
   >
-    <IonIcon icon={icon} style={{ fontSize: 24, color: "#fff" }} />
+    <IonIcon icon={icon} style={{ fontSize: 28, color: "#fff" }} />
   </div>
 );
 

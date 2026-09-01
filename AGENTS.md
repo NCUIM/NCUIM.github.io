@@ -52,7 +52,15 @@ One commit = one logical change. Apply the "revert test": if two changes can be 
 - Rename files using `git mv` — never delete and re-add.
 - Run `git status` before committing to verify no unrelated files are staged.
 
-### 4. Commit Message Format
+### 4. Branch Naming Convention
+
+Branches must follow: `<type>/<kebab-case-description>`
+
+- `<type>` must be one of the allowed commit types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
+- `<description>` must be a short kebab-case summary of the branch purpose.
+- Examples: `feat/timetable-improvements`, `fix/cis-session-refresh`, `style/hero-badge-and-brand-assets`
+
+### 5. Commit Message Format
 
 All commit messages must follow Conventional Commits:
 
@@ -76,11 +84,11 @@ feat(auth): implement anonymous sign-in with QR code entry
 2. Generate display name from random noun-adjective pair.
 ```
 
-### 5. Authorization Failure Escalation
+### 6. Authorization Failure Escalation
 
 If an authorized operation fails and fixing it requires a new branch, code change, PR, merge, workflow change, or release change, stop and report the evidence. Do not expand the authorization to unblock the task.
 
-### 6. User Revocation = Immediate Stop
+### 7. User Revocation = Immediate Stop
 
 If the user objects to or revokes an action, stop all mutations immediately. Do not revert, delete, cancel, or force-push as "cleanup" without separate authorization.
 
