@@ -4,9 +4,9 @@
   <p>National Central University (NCUIM) Graduate Student Portal & Survival Guide</p>
 
   <p>
-    <a href="https://github.com/NCUIM/NCUIM.github.io/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/NCUIM/NCUIM.github.io/test.yml?branch=main&label=CI&style=flat-square" alt="CI" /></a>
+    <a href="https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml"><img src="https://img.shields.io/github/actions/workflow/status/NCUIM/NCUIM.github.io/deploy-pages.yml?branch=main&label=Deploy&style=flat-square" alt="Deploy" /></a>
     <a href="https://ncuim.github.io/"><img src="https://img.shields.io/badge/Online-ncuim.github.io-blue?style=flat-square" alt="Online" /></a>
-    <a href="https://github.com/NCUIM/NCUIM.github.io/blob/main/LICENSE"><img src="https://img.shields.io/github/license/NCUIM/NCUIM.github.io?style=flat-square" alt="License" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" /></a>
   </p>
 
   <p>
