@@ -166,7 +166,11 @@ const isClassNoMatch = (masterNo: string, cisNo?: string): boolean => {
   if (!cisNo || !masterNo) return false;
   const cClean = cisNo.replace(/[-*]/g, "").trim().toUpperCase();
   const mClean = masterNo.replace(/[-*]/g, "").trim().toUpperCase();
-  return cClean.length >= 4 && (cClean === mClean || cClean.startsWith(mClean) || mClean.startsWith(cClean));
+  if (cClean.length < 4 || mClean.length < 4) return false;
+  // Extract course-number base (e.g. "IM5001" from "IM5001A") by splitting at section boundary
+  const cBase = cClean.match(/^[A-Z]+\d+/)?.[0] ?? cClean;
+  const mBase = mClean.match(/^[A-Z]+\d+/)?.[0] ?? mClean;
+  return cBase === mBase;
 };
 
 // skipcq: JS-R1005
