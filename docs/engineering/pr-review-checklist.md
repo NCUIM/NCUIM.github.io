@@ -1,116 +1,73 @@
-# PR Review Checklist
+# PR 審查檢核表 (PR Review Checklist)
 
-Use this checklist to keep NCUIM2026-Fresher PR reviews focused. The goal is to catch auth, security, challenge, and data regressions without restarting product brainstorming in every review.
+使用本檢核表進行聚焦且高效率的 Code Review，確保資料正確性、使用者介面品質與架構健全。
 
-## Review Scope
+---
 
-Every PR should state:
+## 審查範圍 (Review Scope)
 
-- what user problem or engineering problem it solves
-- which spec or task it implements
-- what files or modules are intentionally in scope
-- what is explicitly out of scope
-- how it was verified
+每一個 Pull Request (PR) 應說明：
+- 解決了什麼使用者或工程問題。
+- 實作了哪一份規格或需求。
+- 本 PR 的涵蓋檔案範圍與排除範圍。
+- 如何進行驗證（附上測試結果）。
 
-If a PR implements a feature spec, the PR should link to the relevant `docs/specs/<feature-name>/` folder and list completed tasks.
+> ⚠️ **提交語言規範**：PR 標題與 Commit 訊息一律強制使用英文撰寫。
 
-If a PR changes behavior that conflicts with a spec, update the spec first or in the same PR.
+---
 
-## Required Checks For All PRs
+## 全域基礎檢核 (Required Checks For All PRs)
 
-- The branch is focused on one concern.
-- Generated artifacts are not staged.
-- New dependencies are justified.
-- Existing user data assumptions are not silently changed.
-- User-facing text is clear and consistent.
-- Documentation links still point to valid files.
-- Review threads from prior rounds are resolved before merge.
+- 分支專注於單一目標（符合原子化原則）。
+- 未暫存任何自動生成物或 `.env` 檔案。
+- 新增相依套件具備充分合理性。
+- 使用者介面文字繁體中文語意通順、清晰一致。
+- 所有 Markdown 文件連結皆有效。
+- 前一輪 Review 的討論已全數解決。
 
-## Auth And Access Control Checks
+---
 
-Apply when a PR touches auth, roles, permissions, or user management.
+## 業務邏輯與資料檢核 (Business Logic & Data)
 
-- Login and signup flows work correctly.
-- Role-based access is enforced in Security Rules and frontend.
-- Session expiration is handled gracefully.
-- No hardcoded credentials or service account keys.
+- 學分試算邏輯符合中央資管修業規章。
+- CIS 書籤解析腳本具備充分的例外處理（如 undefined 或格式異動）。
+- 多班合開課程合併演算法能正確配對教師與教室。
+- 抽籤演算法保證同組相鄰不拆散。
 
-## Firestore And Data Checks
+---
 
-Apply when a PR touches Firestore models, queries, or data flow.
+## UI 介面與無障礙檢核 (UI & Accessibility)
 
-- Data models match the schema.
-- Queries use correct indexes.
-- Security Rules allow only intended access patterns.
-- No silent data loss on error paths.
-- Amounts use correct precision.
+- `npm run build` 通過。
+- 瀏覽器冒煙測試通過（Desktop 與 Mobile 皆無破版或文字重疊）。
+- 瀏覽器 Console 無任何 Error 或嚴重 Warning。
+- 按鈕與圖標具備 `aria-label` 或無障礙名稱。
+- 空資料狀態（Empty State）顯示清楚的提示文字。
 
-## Security Rules Checks
+---
 
-Apply when a PR touches Firestore or Storage Security Rules.
+## 測試驗證要求 (Test Expectations)
 
-- Every rule path is tested.
-- No overly permissive rules (e.g., `allow read, write: if true`).
-- Deny rules are explicit and cover all unauthorized paths.
-- Rules are consistent between development and production.
+各變更領域所需之具體驗收證據詳見 [測試規範 (Testing Policy)](testing-policy.md)。
 
-## Challenge System Checks
+---
 
-Apply when a PR touches challenges, progress, or XP.
+## 何時應阻擋 PR (When To Block A PR)
 
-- XP calculation is correct and idempotent.
-- Progress tracking does not allow作弊.
-- Weekly reset behavior is correct.
-- Leaderboard sorting is deterministic.
+出現以下情況時必須阻擋合併：
+- 隱私資料外洩或存在安全漏洞。
+- 學分計算或課表資料存在靜默遺失/算錯風險。
+- 高風險變更缺少單元測試驗證。
+- CI 自動化檢驗（`test:docs`、`test:policy`、`typecheck`、`test`）未全數通過。
 
-## UI And Accessibility Checks
+---
 
-Apply to frontend PRs.
-
-- `npm run build` passes.
-- Browser smoke test passes.
-- Console has no errors.
-- Desktop layout has no overlapping text.
-- Mobile layout has no overlapping text.
-- Primary actions use clear controls and labels.
-- Buttons and icon buttons have accessible names.
-- Empty states are helpful and informative.
-
-## Security Scan Checks
-
-Apply when ZAP scan results are available (weekly CI or local `npm run test:zap`).
-
-- Review any new HIGH or MEDIUM risk alerts since the last scan.
-- Verify false positives are documented in `.zap/rules.tsv` with a comment.
-- Check that security headers (CSP, HSTS, X-Content-Type-Options) are present.
-- Verify no sensitive information is leaked in error messages or comments.
-
-## Test Expectations By Risk
-
-The required verification evidence per risk area is defined in exactly one
-place — the [Testing Policy](testing-policy.md). This checklist
-does not restate the mapping so the two cannot drift.
-
-## When To Block A PR
-
-Block merge when:
-
-- Security Rules can be bypassed
-- Auth can be spoofed
-- Data can be silently lost
-- XP/currency can be manipulated
-- A required spec is missing for high-risk work
-- Verification evidence is missing for the touched risk area
-
-Do not block merge only because a future feature is not implemented, unless the PR claims it is implemented or makes later implementation harder.
-
-## Suggested Review Prompt
-
-Use this prompt for external reviewers:
+## 建議 Review 提示詞 (Suggested Review Prompt)
 
 ```text
 Please review only the changed files and the linked spec.
-Focus on whether the PR satisfies the spec, preserves auth/security correctness,
-does not weaken data integrity, and has enough verification evidence.
+Focus on whether the PR satisfies the spec, preserves privacy and data correctness,
+has no UI overlap at mobile/desktop widths, and includes adequate test evidence.
 Please avoid proposing new product scope unless it blocks the current behavior.
 ```
+

@@ -1,92 +1,74 @@
-# Commit and PR Policy
+# Commit 與 PR 規範 (Commit and PR Policy)
 
-## Status
+## 狀態 (Status)
 
-**Resolved and enforced.** This document is the human-readable record of the
-repository's commit/PR policy. The rules live in exactly one file:
-`scripts/commit-policy.mjs`.
+**已啟用並強制執行。** 本文件為本專案 Commit 訊息與 Pull Request 規範的說明。所有檢驗規則皆唯一定義於 `scripts/commit-policy.mjs`。
 
-## Single source of truth
+> ⚠️ **重要原則**：儘管本專案文件以繁體中文維護，**所有 Git Commit 訊息、Subject 標題、Body 內容與 GitHub PR 標題，均一律強制要求使用英文書寫**，以利 CI 自動化檢驗與跨工具鏈分析。
 
-All enforced rules live in **exactly one file**: `scripts/commit-policy.mjs`.
+## 單一事實來源 (Single Source of Truth)
 
-Both enforcement gates execute that file, so they cannot drift. An advisory
-pre-commit hook uses the same file for an early hint:
+所有強制執行的規則皆定義於 **`scripts/commit-policy.mjs` 單一檔案**。
 
-| Gate | File | Runs |
+本地端的 Git Hook 與 GitHub Actions CI 皆直接執行該檔案，保證本機與雲端檢驗完全一致：
+
+| 檢驗關卡 | 執行檔案 | 觸發時機與行為 |
 | --- | --- | --- |
-| **Local (advisory)** | `scripts/hooks/pre-commit`, installed into `.git/hooks/pre-commit` by `npm run prepare` | `suggest-scope` tip from the staged files, before the message is written; **never blocks** |
-| **Local (hard gate)** | `scripts/hooks/commit-msg`, installed into `.git/hooks/commit-msg` by `npm run prepare` (runs automatically on every `npm install`) | `message` mode on every `git commit` |
-| **CI** | `.github/workflows/policy.yml` | `subject` mode on the PR title, `message` mode on every commit in the PR, plus `self-test` |
+| **本機提示 (Advisory)** | `scripts/hooks/pre-commit` | 於 `git add` 後提示合適的 scope；**不阻擋 Commit** |
+| **本機攔截 (Hard Gate)** | `scripts/hooks/commit-msg` | 每次執行 `git commit` 時即時檢驗；**不符規範則阻擋提交** |
+| **CI 雲端檢查** | `.github/workflows/policy.yml` | 每次發起或更新 PR 時，檢驗 PR 標題與所有 Commit 訊息 |
 
-Because both gates run the same script, a message that passes locally passes
-CI, and one that fails CI also fails locally. There is **no second copy of any
-rule anywhere else**: `.gitmessage.txt`, `CONTRIBUTING.md`, and the PR
-template reference this policy but do not restate the rules.
+---
 
-If local and CI ever disagree, that is a bug in the wiring (hook install or
-workflow), not a rules problem — the rules themselves have one home.
+## 核心規範 (The Rules)
 
-## The rules (what both gates block)
+### 1. Subject 標題格式 (Subject Format)
 
-### Subject format
-
-Every commit subject and every PR title must match:
+每一筆 Commit Subject 與 PR 標題必須符合以下格式：
 
 ```text
 <type>(<scope>): <description>
 ```
 
-- The scope is **required** and must be from the allowlist below.
-- The subject must be **at most 72 characters**.
-- The description must **start with a lowercase letter or digit**.
-- The subject must **not end with a period**.
-- Vague descriptions are rejected: `update`, `misc`, `stuff`, `changes`,
-  `fix bug`, `bug fix` (case-insensitive).
-- Subjects are written in English.
+- **必須指定 scope**，且必須屬於下方允許的清單。
+- Subject 總長度 **最多 72 字元 (at most 72 characters)**。
+- 描述開頭必須為 **小寫英文字母或數字**。
+- 結尾 **不可有句號 (.)**。
+- 禁止使用模糊描述：如 `update`, `misc`, `stuff`, `changes`, `fix bug`, `bug fix`。
+- **必須全英文書寫 (written in English)**。
 
-### Allowed types
+### 2. 允許的 Type (Allowed Types)
 
 `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
 
-### Allowed scopes
+### 3. 允許的 Scope (Allowed Scopes)
 
 `app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `challenge`,
 `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`,
 `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`,
 `quality`
 
-Use a new scope only when none of the above fits, and add it to
-`scripts/commit-policy.mjs` in the same commit.
+### 4. Body 內容格式 (Body Format)
 
-### Body format
-
-The commit body must contain a **numbered list in English** whose first item
-starts with `1. ` or `1)`:
+Commit 的 Body 內容必須包含 **英文數字編號清單 (numbered list in English)**，第一項由 `1. ` 或 `1)` 開始：
 
 ```text
-feat(challenge): add weekly challenge system
+feat(timetable): add smart merged multi-section course card
 
-1. Add challenge model and Firestore schema.
-2. Wire up the challenge list view.
+1. Merge identical courses in the same time slot into a unified card.
+2. Render separate professor and classroom badges with enrolled underline.
 ```
 
-Git comment lines (starting with `#`) are ignored by the check, so the
-`.gitmessage.txt` template's comment block does not affect validation.
+### 5. PR 標題規範 (PR Title)
 
-### PR title
+Pull Request 標題與 Commit Subject 遵守完全相同的格式與長度規則。
 
-The PR title is validated with the same subject rules as commits.
+---
 
-## How to change a rule
+## 如何修改規範
 
-1. Edit `scripts/commit-policy.mjs` **only** — this is the single source of
-   truth for the rules.
-2. Run `npm run test:policy` (built-in self-test).
-3. Commit the change with a valid subject, e.g. `chore(ci): extend allowed
-   commit scopes`. Both gates validate your own commit.
-4. If the change affects the human-readable rule list, update this document
-   in the same commit.
+1. 僅需修改 `scripts/commit-policy.mjs` —— 這是全專案規則的唯一來源。
+2. 執行 `npm run test:policy` 進行內建自我測試。
+3. 提交符合規範的 Commit（如 `chore(ci): extend allowed commit scopes`）。
+4. 同步更新本文件。
 
-No other file needs a parallel edit, which is the point: the rules live in
-one home and cannot drift apart.
