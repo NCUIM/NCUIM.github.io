@@ -58,7 +58,7 @@ export const BUILTIN_ANNOUNCEMENTS: readonly AnnouncementItem[] = [];
 const GITHUB_REPO_API =
   "https://api.github.com/repos/NCUIM/NCUIM.github.io/issues?labels=announcement&state=open&sort=created&direction=desc";
 const CACHE_STORAGE_KEY = "ncuim_announcements_cache_v1";
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 1 * 60 * 1000; // 1 minute
 
 interface GitHubLabel {
   name: string;
