@@ -173,8 +173,8 @@ export const parseBookmarkletPayload = (hash: string): BookmarkletPayload | null
       ? parsed
       : (parsed?.current || []);
     const historyCourses: CisCourse[] = Array.isArray(parsed)
-      ? parsed
-      : (parsed?.history || parsed?.current || []);
+      ? []
+      : (parsed?.history || []);
     return { currentCourses, historyCourses };
   } catch {
     return null;
