@@ -29,7 +29,7 @@ import {
   getCourseRoom,
   type MasterCourseItem,
 } from "../services/all-courses-api";
-import { star, swapHorizontalOutline, linkOutline } from "ionicons/icons";
+import { star, swapHorizontalOutline, linkOutline, calendarOutline } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
 import { TRACK_CONFIGS, type TrackType } from "../data/im-curriculum";
 import { matchCisToCurriculum } from "./CreditPage";
@@ -1196,6 +1196,16 @@ const TimetableHeader = ({
       </IonButtons>
       <IonTitle>{viewScope === "mine" ? "我的課表" : "碩士班課表"}</IonTitle>
       <IonButtons slot="end">
+        <IonButton
+          size="small"
+          fill="clear"
+          href="https://course.ncu.edu.tw/static/file/14/1014/img/371/COUR_S.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <IonIcon slot="start" icon={calendarOutline} />
+          課務日程
+        </IonButton>
         {cisAuthenticated ? (
           <>
             <IonButton
