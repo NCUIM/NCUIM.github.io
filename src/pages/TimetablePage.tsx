@@ -1380,9 +1380,6 @@ const TimetablePage = () => {
   }, [syncDefaultCourses]);
 
   const syncCisCourses = useCallback(async () => {
-    if (localStorage.getItem(STORAGE_KEY_CIS_COURSES)) {
-      return;
-    }
     setLoading(true);
     setApiError(null);
     try {
