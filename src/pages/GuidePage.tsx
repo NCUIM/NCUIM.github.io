@@ -87,8 +87,8 @@ const ResourceItem = ({
             style={{
               fontSize: 15,
               fontWeight: 800,
-              padding: "4px 9px",
-              borderRadius: 6,
+              padding: "4px 6px",
+              borderRadius: 4,
               letterSpacing: 0.3,
               display: "inline-flex",
               alignItems: "center",
