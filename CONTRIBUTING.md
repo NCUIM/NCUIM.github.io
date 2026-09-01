@@ -4,7 +4,18 @@
 
 ---
 
-## 分支規範 (Branch Rules)
+## 如何貢獻 (How to Contribute)
+
+歡迎任何貢獻！本專案提供兩種方式：
+
+1. **加入 Collaborator**：聯繫專案維護者取得 collaborator 權限後，可直接建立分支、推送變更並發起 PR。
+2. **Fork & PR**：Fork 專案後從自己的 repo 發起 PR，由維護者審查合併。
+
+---
+
+## 分支規範 (Branch Rules)（僅 Collaborator）
+
+> 以下規範僅限已取得 collaborator 權限的成員。Fork 貢獻者請直接從 Fork 發起 PR。
 
 - `main` 分支必須隨時保持可部署狀態。
 - 嚴禁直接 Push 至 `main` 分支。
