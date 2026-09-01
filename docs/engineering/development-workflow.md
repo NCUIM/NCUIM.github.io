@@ -27,12 +27,12 @@ Granularity lives at two levels:
 
 ## Frontend Stack
 
-- Ionic
-- React
-- TypeScript
-- Vite
-- Firebase (Auth, Firestore, Cloud Storage, Cloud Functions, Hosting)
-- Playwright (E2E)
+- Ionic Framework (v8)
+- React 18
+- TypeScript (Strict Mode)
+- Vite 6
+- Vitest & Playwright (E2E)
+- GitHub Pages (Static Hosting)
 
 ## Frontend Commands
 
