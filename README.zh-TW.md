@@ -1,53 +1,109 @@
-# NCUIM2026-Fresher
+# CIM-Life (中央資管通) · NCUIM 新生綜合服務與生活入口平台
 
-NCUIM 新生綜合服務與生活入口平台：以手機瀏覽器為主要載體，整合迎新活動互動、研究室選位、校園生活資訊於單一入口。
+[![CI Tests](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/test.yml/badge.svg)](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/test.yml)
+[![Repository Policy](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/policy.yml/badge.svg)](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/policy.yml)
+[![Deploy to GitHub Pages](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml)
+[![React](https://img.shields.io/badge/React-18.3-blue.svg?logo=react)](https://react.dev/)
+[![Ionic](https://img.shields.io/badge/Ionic-8.0-3880ff.svg?logo=ionic)](https://ionicframework.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF.svg?logo=vite)](https://vitejs.dev/)
 
-[English](README.md)
+> **國立中央大學資訊管理學系碩士班綜合服務與新生生活指南平台（CIM-Life）**  
+> 為資管所新生量身打造的行動優先 Web 應用，整合選課課表、畢業學分檢核試算、新生生活指南、研究室座位格局圖與抽籤大會。
 
-## 模組總覽
+[English Documentation](README.md)
 
-| 模組 | 路由 | 說明 | 負責人 |
-| --- | --- | --- | --- |
-| [活動卡片收集](docs/specs/0001-event-card-collection.md) | `/cards` | QR 掃碼互換、Profile 卡片、成就與排行榜 | ThanatosJun |
-| [新生生存指南](docs/specs/0002-freshman-survival-guide.md) | `/guide`, `/seats`, `/stage/lottery`, `/timetable`, `/food`, `/tools/credit` | 抽籤大會、座位表、課表、美食地圖、學分試算 | Youchen Jiang |
+---
 
-## 產品原則
+## 🌟 核心功能特色
 
-- 掃描連結或 QR Code 即可使用，不要求安裝。
-- 主要支援目前的 iOS Safari 與 Android Chrome。
-- 新生不必註冊永久帳號即可參加活動。
-- QR Code 是主要互動方式。
-- 計分與管理操作必須由伺服器驗證。
-- 只蒐集活動真正需要的資料。
+### 1. 📅 碩士班課表與 CIS 同步 (`/timetable`)
+- **全所開課總表與個人週課表切換**：快速檢視研究所各時段開課狀況，支援當日精簡與全週完整視圖。
+- **一鍵 CIS 書籤小工具同步**：無需繁瑣手動輸入，透過瀏覽器書籤腳本直接解析校務系統，同時同步當期選課與歷年修課紀錄。
+- **多班合開課程智慧合併**：相同課名與時段的合開課程（如《管理溝通》）合併於同一區塊呈現，清楚標示各班教授與專屬教室，並以底線標註個人修習班級。
+- **碩一 / 碩二必修清晰標籤**：醒目標記必修與選修類別，排課選課一目瞭然。
 
-## 技術棧（暫定，待 ADR 確認）
+### 2. 🎓 碩士畢業學分試算系統 (`/tools/credit`)
+- **畢業學分與門檻檢核**：依據中央資管碩士班修業規章，自動計算應修學分（含畢業學分門檻、必修與選修領域分配）。
+- **抵免學分與歷年紀錄整合**：支援自選課程、抵免學分登錄與即時差額計算。
 
-- Ionic React、TypeScript、Vite
-- Firebase Authentication
-- Cloud Firestore
-- Cloud Storage for Firebase
-- Cloud Functions
-- Firebase Hosting、Security Rules、App Check
+### 3. 🧭 新生生存指南與生活工具 (`/guide`, `/food`)
+- **中央資管生活指南**：選課技巧、校園必備連結、新生待辦事項指引。
+- **中大美食地圖**：後門、宵夜街、前門與校內餐廳生活推薦。
 
-## 規格文件
+### 4. 🗺️ 研究室座位格局與抽籤大會 (`/seats`, `/stage/lottery`)
+- **研究室座位格局圖**：互動式視覺化平面圖，清晰標註各研究室格局與座位配置。
+- **抽籤大會舞台模式**：支援大螢幕即時開獎與蛇形相鄰分配演算法。
 
-以中文規格為主要來源。相關決策記錄於 ADR。
+---
 
-| 文件 | 說明 |
+## 🏗️ 系統架構與技術棧
+
+本專案採純前端靜態單頁應用（SPA）架構設計，兼具極致載入效能與資安隱私，無外部伺服器資料外洩風險。
+
+| 領域 | 技術選型 |
 | --- | --- |
-| [CONTEXT.md](CONTEXT.md) | 領域術語辭典：所有規格文件的詞彙基準 |
-| [Spec 0001](docs/specs/0001-event-card-collection.md) | 活動卡片收集系統完整產品規格 |
-| [Spec 0002](docs/specs/0002-freshman-survival-guide.md) | 新生生存指南與生活工具箱系統規格 |
-| [ADR-0001](docs/adr/0001-per-event-identity-without-accounts.md) | 身分繫於單場活動，不建立帳號系統 |
-| [ADR-0002](docs/adr/0002-achievements-are-never-revoked.md) | 已達成的 Achievement 永不撤銷 |
-| [ADR-0003](docs/adr/0003-unified-portal-and-seating-architecture.md) | 整合多模組入口架構決策 |
+| **前端框架** | [React 18](https://react.dev/) + [Ionic Framework v8](https://ionicframework.com/) |
+| **程式語言** | [TypeScript 5.7](https://www.typescriptlang.org/)（嚴格型別模式） |
+| **建置工具** | [Vite 6](https://vitejs.dev/) |
+| **單元測試** | [Vitest](https://vitest.dev/) + [@testing-library/react](https://testing-library.com/) |
+| **端到端測試** | [Playwright](https://playwright.dev/) |
+| **CI / CD** | GitHub Actions（自動規範檢查、安全掃描與 GitHub Pages 部署） |
+| **託管平台** | [GitHub Pages](https://pages.github.com/) |
 
-## 規模
+---
 
-單場活動約七十人，每組五至八人。沒有效能或擴展性顧慮。
+## 🚀 快速上手 (Quick Start)
 
-## 語言規則
+### 環境需求
+- **Node.js** `>= 20.6.0`
+- **npm** `>= 10.0.0`
 
-- 文件預設使用繁體中文；英文文件使用 `.en.md` 後綴。
-- App 至少支援英文 `en` 與繁體中文 `zh-TW`。
-- 找不到翻譯時回退英文。
+### 安裝與啟動
+```bash
+# 1. 複製專案
+git clone https://github.com/NCUIM/NCUIM.github.io.git
+cd NCUIM.github.io
+
+# 2. 安裝相依套件（自動安裝 Git commit-msg hook）
+npm install
+
+# 3. 啟動本機開發伺服器
+npm run dev
+```
+啟動後於瀏覽器開啟 `http://localhost:5173` 即可預覽。
+
+---
+
+## 🧪 測試與代碼規範 (Testing & Quality Assurance)
+
+為確保系統穩定度與代碼品質，本專案實施嚴格的自動化檢驗：
+
+```bash
+# 執行 TypeScript 型別檢查
+npm run typecheck
+
+# 執行全套單元測試 (Vitest)
+npm test
+
+# 執行測試覆蓋率分析
+npm run test:coverage
+
+# 執行文件完整性檢查
+npm run test:docs
+
+# 執行 Commit 與 PR Policy 自我檢驗
+npm run test:policy
+
+# 生產環境建置
+npm run build
+```
+
+---
+
+## 🤝 貢獻指南 (Contributing)
+
+我們歡迎任何功能改善與 Bug 修復！請在發起 Pull Request 前參閱：
+- [CONTRIBUTING.md](CONTRIBUTING.md) —— 貢獻流程與 Commit 訊息標準規範
+- [docs/engineering/commit-policy.md](docs/engineering/commit-policy.md) —— Conventional Commits 規範文件
+- [docs/engineering/testing-policy.md](docs/engineering/testing-policy.md) —— 測試策略與驗收標準

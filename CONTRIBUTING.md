@@ -59,9 +59,9 @@ per change area is defined in exactly one place — the
 [Testing Policy](docs/engineering/testing-policy.md) — and the commands are
 defined in `package.json`.
 
-## Privacy Rules
+## Privacy & Security Rules
 
-- Never commit `.env` files, real API keys, service account keys, or Firestore security rule bypasses.
-- Use `.env.example` for placeholders.
-- Test data must be fake and obviously non-personal.
-- Security rules must be reviewed before deployment.
+- Never commit `.env` files, real API keys, credentials, or personal student records.
+- Use `.env.example` or sanitized placeholders when configuration templates are needed.
+- Test fixtures and mock data must be synthetic and non-personal.
+- All code changes must pass automated typecheck and unit tests before requesting review.

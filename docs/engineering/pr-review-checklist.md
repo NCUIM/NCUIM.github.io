@@ -88,7 +88,7 @@ Apply when ZAP scan results are available (weekly CI or local `npm run test:zap`
 ## Test Expectations By Risk
 
 The required verification evidence per risk area is defined in exactly one
-place — the [Testing Policy](docs/engineering/testing-policy.md). This checklist
+place — the [Testing Policy](testing-policy.md). This checklist
 does not restate the mapping so the two cannot drift.
 
 ## When To Block A PR
