@@ -157,6 +157,30 @@ const fetchRoomMap = async (): Promise<Map<string, string>> => {
   return rooms;
 };
 
+export interface BookmarkletPayload {
+  readonly currentCourses: CisCourse[];
+  readonly historyCourses: CisCourse[];
+}
+
+/** Parse the bookmarklet's `#cis_data=` hash payload into current and history courses. */
+export const parseBookmarkletPayload = (hash: string): BookmarkletPayload | null => {
+  if (!hash?.includes("cis_data=")) return null;
+  try {
+    const rawParam = hash.replace(/^#.*?cis_data=/, "");
+    const decoded = decodeURIComponent(rawParam);
+    const parsed = JSON.parse(decoded);
+    const currentCourses: CisCourse[] = Array.isArray(parsed)
+      ? parsed
+      : (parsed?.current || []);
+    const historyCourses: CisCourse[] = Array.isArray(parsed)
+      ? []
+      : (parsed?.history || []);
+    return { currentCourses, historyCourses };
+  } catch {
+    return null;
+  }
+};
+
 /** Fetch only the student's current CIS timetable for the timetable page. */
 export const fetchCisSelectedCourses = async (): Promise<CisCourse[]> => {
   if (!isCisLoggedIn()) throw new Error("尚未連結課務系統，請輸入 JSESSIONID 登入");

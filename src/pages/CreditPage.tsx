@@ -35,7 +35,7 @@ import {
   ribbonOutline,
   flashOutline,
 } from "ionicons/icons";
-import { type CisCourse } from "../services/cis-course-api";
+import { parseBookmarkletPayload, type CisCourse } from "../services/cis-course-api";
 import {
   TRACK_CONFIGS,
   GRADUATION_GATES,
@@ -82,7 +82,7 @@ const hasUnmatchedSysFreeElective = (
       ),
   );
 
-const matchCisToCurriculum = (
+export const matchCisToCurriculum = (
   cisCourses: readonly CisCourse[],
   config: (typeof TRACK_CONFIGS)[TrackType],
   track: TrackType,
@@ -735,19 +735,20 @@ const CreditPage: React.FC = () => {
   useEffect(() => {
     const handleHashSync = () => {
       const hash = window.location.hash;
-      if (!hash?.includes("cis_data=")) return;
+      const payload = parseBookmarkletPayload(hash);
+      if (!payload) return;
       try {
-        const rawParam = hash.replace(/^#.*?cis_data=/, "");
-        const decoded = decodeURIComponent(rawParam);
-        const cisCourses: CisCourse[] = JSON.parse(decoded);
-        if (Array.isArray(cisCourses) && cisCourses.length > 0) {
-          const matchedIds = matchCisToCurriculum(cisCourses, currentConfig, track);
-          setSelectedCourseIds((prev) => {
-            const merged = Array.from(new Set([...prev, ...matchedIds]));
-            return merged;
-          });
+        const { currentCourses, historyCourses } = payload;
+
+        if (currentCourses.length > 0) {
+          localStorage.setItem("ncu_my_cis_courses", JSON.stringify(currentCourses));
+        }
+
+        if (historyCourses.length > 0) {
+          const matchedIds = matchCisToCurriculum(historyCourses, currentConfig, track);
+          setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...matchedIds])));
           presentToast({
-            message: `🎉 成功從課務系統同步 ${cisCourses.length} 門課程（自動配對 ${matchedIds.length} 門必選修）！`,
+            message: `🎉 成功同步！已匯入 ${historyCourses.length} 門歷年修課（自動配對 ${matchedIds.length} 門必選修）與本學期課表！`,
             duration: 4000,
             color: "success",
             position: "top",

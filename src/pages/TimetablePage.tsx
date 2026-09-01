@@ -17,16 +17,24 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  useIonToast,
 } from "@ionic/react";
 import { isCisLoggedIn, cisLogout } from "../services/cis-login";
-import { fetchCisSelectedCourses, type CisCourse } from "../services/cis-course-api";
+import { fetchCisSelectedCourses, parseBookmarkletPayload, type CisCourse } from "../services/cis-course-api";
 import {
   fetchImMasterCourses,
   buildTimetableMapFromMasterCourses,
+  getRequiredTag,
+  cleanCourseTitle,
+  getCourseRoom,
   type MasterCourseItem,
 } from "../services/all-courses-api";
 import { star, swapHorizontalOutline, linkOutline } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
+import { TRACK_CONFIGS, type TrackType } from "../data/im-curriculum";
+import { matchCisToCurriculum } from "./CreditPage";
+
+const STORAGE_KEY_CIS_COURSES = "ncu_my_cis_courses";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -36,7 +44,10 @@ export interface Course {
   readonly name: string;
   readonly teacher: string;
   readonly room?: string;
+  readonly myEnrolledTeacher?: string;
+  readonly myEnrolledRoom?: string;
   readonly courseType?: "REQUIRED" | "ELECTIVE";
+  readonly requiredTag?: "碩一必修" | "碩二必修" | "必修" | null;
   readonly credit?: number;
   readonly isMyCourse?: boolean;
 }
@@ -137,36 +148,56 @@ const getTimeIndicators = (
   return { current, next };
 };
 
-const isTeacherMatch = (teachers: readonly string[], target: string): boolean => {
+const isTeacherMatch = (teachers: readonly string[] = [], target?: string): boolean => {
+  if (!target) return false;
   const tTrim = target.trim();
+  if (tTrim.length === 0) return false;
   return teachers.some((t) => {
+    if (!t) return false;
     const item = t.trim();
     return item.length > 0 && (tTrim.includes(item) || item.includes(tTrim));
   });
 };
 
 const isSerialMatch = (masterSerial: number, cisSerial?: string): boolean =>
-  Boolean(cisSerial && String(masterSerial) === String(cisSerial));
+  Boolean(cisSerial && String(masterSerial) === String(cisSerial).trim());
 
-const isClassNoMatch = (masterNo: string, cisNo?: string): boolean =>
-  Boolean(cisNo && masterNo && cisNo === masterNo);
+const isClassNoMatch = (masterNo: string, cisNo?: string): boolean => {
+  if (!cisNo || !masterNo) return false;
+  const cClean = cisNo.replace(/[-*]/g, "").trim().toUpperCase();
+  const mClean = masterNo.replace(/[-*]/g, "").trim().toUpperCase();
+  if (cClean.length < 4 || mClean.length < 4) return false;
+  // Extract course-number base (e.g. "IM5001" from "IM5001A") by splitting at section boundary
+  const courseNoRe = /^[A-Z]+\d+/;
+  const cBase = courseNoRe.exec(cClean)?.[0] ?? cClean;
+  const mBase = courseNoRe.exec(mClean)?.[0] ?? mClean;
+  return cBase === mBase;
+};
 
 // skipcq: JS-R1005
-const isCourseMatch = (master: MasterCourseItem, cis: CisCourse): boolean => {
+const isCourseMatch = (master: MasterCourseItem, cis: Partial<CisCourse>): boolean => {
   if (isSerialMatch(master.serialNo, cis.serialNo)) return true;
   if (isClassNoMatch(master.classNo, cis.classNo)) return true;
-  const isSameTitle = cis.name.trim() === master.title.trim();
-  return isSameTitle && isTeacherMatch(master.teachers, cis.teacher);
+  const cisTitle = cleanCourseTitle(cis.name || "");
+  const masterTitle = cleanCourseTitle(master.title || "");
+  const isSameTitle = cisTitle.length > 0 && cisTitle === masterTitle;
+  if (isSameTitle) {
+    if (!cis.teacher) return true;
+    return isTeacherMatch(master.teachers, cis.teacher);
+  }
+  return false;
 };
 
 const matchCisCourse = (
   master: MasterCourseItem,
   myCourses: readonly CisCourse[],
-): { isMine: boolean; room?: string } => {
+): { isMine: boolean; room?: string; matchedTeacher?: string; matchedRoom?: string } => {
   const matched = myCourses.find((courseItem) => isCourseMatch(master, courseItem));
   return {
     isMine: Boolean(matched),
     room: matched?.room || master.room,
+    matchedTeacher: matched?.teacher,
+    matchedRoom: matched?.room || (matched?.classNo ? getCourseRoom(matched.classNo) : undefined),
   };
 };
 
@@ -174,14 +205,18 @@ const mapMasterCourseToCourse = (
   c: MasterCourseItem,
   myCourses: readonly CisCourse[],
 ): Course => {
-  const { isMine, room } = matchCisCourse(c, myCourses);
+  const { isMine, room, matchedTeacher, matchedRoom } = matchCisCourse(c, myCourses);
+  const reqTag = c.requiredTag ?? getRequiredTag(c.classNo, c.title);
   return {
     id: String(c.serialNo),
     classNo: c.classNo,
     name: c.title,
-    teacher: c.teachers.join(", "),
+    teacher: c.teachers.join(" / "),
     room: room || c.room,
-    courseType: c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE",
+    myEnrolledTeacher: matchedTeacher,
+    myEnrolledRoom: matchedRoom,
+    courseType: (reqTag || c.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
+    requiredTag: reqTag,
     credit: c.credit,
     isMyCourse: isMine,
   };
@@ -189,7 +224,7 @@ const mapMasterCourseToCourse = (
 
 const areSameCourse = (a: Course, b: Course): boolean =>
   (Boolean(a.id) && Boolean(b.id) && a.id === b.id) ||
-  (a.name.trim() === b.name.trim() && a.teacher.trim() === b.teacher.trim());
+  a.name.trim() === b.name.trim();
 
 const parseHyphenTime = (ct: string): { dayIdx: number; periodChars: string } | null => {
   if (!ct.includes("-")) return null;
@@ -225,9 +260,23 @@ const parseClassTimeDayAndPeriods = (
 ): { dayIdx: number; periodChars: string } =>
   parseHyphenTime(ct) || parseDigitTime(ct) || parseNamedDayTime(ct, dayMap);
 
+const mergeTeacherWithRoom = (
+  existing: Course,
+  incoming: Course,
+): { teacher: string; room: string | undefined } => {
+  if (existing.room && incoming.room && existing.room !== incoming.room) {
+    const label1 = existing.teacher.includes("(") ? existing.teacher : `${existing.teacher} (${existing.room})`;
+    const label2 = incoming.teacher.includes("(") ? incoming.teacher : `${incoming.teacher} (${incoming.room})`;
+    return { teacher: `${label1} / ${label2}`, room: undefined };
+  }
+  const split = (t: string) => t.split(/[/,、]\s*/).map((s) => s.trim()).filter(Boolean);
+  const merged = Array.from(new Set([...split(existing.teacher), ...split(incoming.teacher)]));
+  return { teacher: merged.join(" / "), room: existing.room || incoming.room };
+};
+
 const addCisCourseToMap = (
   result: Record<string, Course[]>,
-  c: CisCourse,
+  c: Course,
   dayIdx: number,
   periodChars: string,
 ): void => {
@@ -235,25 +284,22 @@ const addCisCourseToMap = (
     const periodItem = periods.find((p) => p.id === ch);
     if (!periodItem) continue;
     const key = `${periodItem.id}-${dayIdx}`;
-    if (!result[key]) {
-      result[key] = [];
+    if (!result[key]) result[key] = [];
+    const existing = result[key].find((x) => x.name.trim() === c.name.trim());
+    if (!existing) {
+      result[key].push(c);
+      continue;
     }
-    const exists = result[key].some((x) => x.name === c.name && x.teacher === c.teacher);
-    if (!exists) {
-      result[key].push({
-        id: c.serialNo,
-        classNo: c.classNo,
-        name: c.name,
-        teacher: c.teacher,
-        room: c.room,
-        credit: c.credit,
-        isMyCourse: true,
-      });
-    }
+    const merged = mergeTeacherWithRoom(existing, c);
+    const idx = result[key].indexOf(existing);
+    result[key][idx] = { ...existing, ...merged, isMyCourse: existing.isMyCourse || c.isMyCourse };
   }
 };
 
-const buildTimetableFromCisCourses = (courses: readonly CisCourse[]): Record<string, Course[]> => {
+const buildTimetableFromCisCourses = (
+  courses: readonly CisCourse[],
+  masterCourses: readonly MasterCourseItem[] = [],
+): Record<string, Course[]> => {
   const DAY_MAP: Record<string, number> = {
     "一": 0, "二": 1, "三": 2, "四": 3, "五": 4,
     "Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4,
@@ -261,10 +307,31 @@ const buildTimetableFromCisCourses = (courses: readonly CisCourse[]): Record<str
   const result: Record<string, Course[]> = {};
 
   for (const c of courses) {
-    for (const ct of c.classTimes) {
+    const matchedMaster = masterCourses.find((m) => isCourseMatch(m, c));
+    const effectiveTimes: readonly string[] = (c.classTimes && c.classTimes.length > 0)
+      ? c.classTimes
+      : (matchedMaster?.classTimes || []);
+
+    const effectiveRoom = c.room || matchedMaster?.room || getCourseRoom(c.classNo || matchedMaster?.classNo);
+    const effectiveTeacher = c.teacher || matchedMaster?.teachers.join(" / ") || "";
+    const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(c.classNo, c.name);
+
+    const enrichedCourse: Course = {
+      id: c.serialNo || (matchedMaster ? String(matchedMaster.serialNo) : undefined),
+      classNo: c.classNo || matchedMaster?.classNo,
+      name: cleanCourseTitle(c.name || matchedMaster?.title || ""),
+      teacher: effectiveTeacher,
+      room: effectiveRoom,
+      courseType: (reqTag || matchedMaster?.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
+      requiredTag: reqTag,
+      credit: c.credit ?? matchedMaster?.credit,
+      isMyCourse: true,
+    };
+
+    for (const ct of effectiveTimes) {
       const { dayIdx, periodChars } = parseClassTimeDayAndPeriods(ct, DAY_MAP);
       if (dayIdx >= 0) {
-        addCisCourseToMap(result, c, dayIdx, periodChars);
+        addCisCourseToMap(result, enrichedCourse, dayIdx, periodChars);
       }
     }
   }
@@ -468,6 +535,17 @@ const getDesktopCourseSpans = (
 
 // ── Mobile View Components ─────────────────────────────────────
 
+const parseTeacherAndRoom = (
+  rawTeacherItem: string,
+  fallbackRoom?: string,
+): { name: string; room?: string } => {
+  const match = /^([^(]+)\(([^)]+)\)$/.exec(rawTeacherItem.trim());
+  if (match) {
+    return { name: match[1].trim(), room: match[2].trim() };
+  }
+  return { name: rawTeacherItem.trim(), room: fallbackRoom };
+};
+
 // skipcq: JS-R1005
 const MobileTrackCard = ({
   course,
@@ -479,7 +557,7 @@ const MobileTrackCard = ({
   const isRequired = course.courseType === "REQUIRED";
   const titleSize = maxTracks >= 3 ? 15.5 : 16;
   const descSize = maxTracks >= 3 ? 13.5 : 14;
-  const roomText = course.room ? ` · ${course.room}` : "";
+  const roomText = course.room && !course.teacher.includes("(") ? ` · ${course.room}` : "";
 
   return (
     <div style={{ minWidth: 0 }}>
@@ -504,7 +582,11 @@ const MobileTrackCard = ({
           />
         )}
         {course.name}
-        {isRequired && (
+        {course.requiredTag ? (
+          <span style={{ fontSize: 11, color: "var(--ncu-primary)", marginLeft: 4, fontWeight: 700 }}>
+            [{course.requiredTag}]
+          </span>
+        ) : isRequired && (
           <span style={{ fontSize: 11, color: "var(--ncu-primary)", marginLeft: 4, fontWeight: 700 }}>
             [必修]
           </span>
@@ -515,11 +597,38 @@ const MobileTrackCard = ({
           margin: "3px 0 0",
           fontSize: descSize,
           color: "var(--ncu-muted)",
-          lineHeight: 1.3,
+          lineHeight: 1.35,
           wordBreak: "break-word",
         }}
       >
-        {course.teacher}{roomText}
+        {course.teacher.includes(" / ") ? (
+          course.teacher.split(" / ").map((t, idx) => {
+            const { name, room } = parseTeacherAndRoom(t);
+            const isThisMySection = Boolean(
+              course.isMyCourse &&
+              ((course.myEnrolledTeacher && (name.includes(course.myEnrolledTeacher) || course.myEnrolledTeacher.includes(name))) ||
+               (course.myEnrolledRoom && room && course.myEnrolledRoom === room))
+            );
+            return (
+              <span key={t}>
+                {idx > 0 && " / "}
+                <span
+                  style={{
+                    textDecoration: isThisMySection ? "underline" : "none",
+                    textDecorationColor: "var(--ncu-primary)",
+                    textUnderlineOffset: "3px",
+                    fontWeight: isThisMySection ? 700 : 400,
+                    color: isThisMySection ? "var(--ncu-ink)" : "var(--ncu-muted)",
+                  }}
+                >
+                  {name}{room ? ` (${room})` : ""}
+                </span>
+              </span>
+            );
+          })
+        ) : (
+          `${course.teacher}${roomText}`
+        )}
       </p>
     </div>
   );
@@ -829,29 +938,110 @@ const DesktopCourseCard = ({
         <strong style={{ fontSize: titleFontSize, fontWeight: 800, lineHeight: 1.3, color: "var(--ncu-ink)" }}>
           {span.course.name}
         </strong>
-        {isRequired && (
+        {span.course.requiredTag ? (
+          <span style={{ fontSize: 11, color: "var(--ncu-primary)", fontWeight: 700 }}>
+            [{span.course.requiredTag}]
+          </span>
+        ) : isRequired && (
           <span style={{ fontSize: 11, color: "var(--ncu-primary)", fontWeight: 700 }}>
             [必修]
           </span>
         )}
       </div>
-      <span style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.3, fontWeight: 500 }}>
-        {span.course.teacher}
-      </span>
-      {span.course.room && (
-        <span
-          style={{
-            fontSize: span.totalCols <= 2 ? 12 : 11,
-            color: "var(--ncu-primary)",
-            fontWeight: 700,
-            background: "rgba(49, 87, 200, 0.08)",
-            padding: "2px 8px",
-            borderRadius: 4,
-          }}
-        >
-          {span.course.room}
-        </span>
-      )}
+      {(() => {
+        const singleParsed = parseTeacherAndRoom(span.course.teacher);
+        const singleName = singleParsed.name;
+        const singleRoom = span.course.room || singleParsed.room;
+        const singleMy = Boolean(
+          span.course.isMyCourse &&
+          ((span.course.myEnrolledTeacher && (singleName.includes(span.course.myEnrolledTeacher) || span.course.myEnrolledTeacher.includes(singleName))) ||
+           (span.course.myEnrolledRoom && singleRoom && span.course.myEnrolledRoom === singleRoom))
+        );
+        return span.course.teacher.includes(" / ") ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
+          {span.course.teacher.split(" / ").map((t) => {
+            const { name, room } = parseTeacherAndRoom(t);
+            const isThisMySection = Boolean(
+              span.course.isMyCourse &&
+              ((span.course.myEnrolledTeacher && (name.includes(span.course.myEnrolledTeacher) || span.course.myEnrolledTeacher.includes(name))) ||
+               (span.course.myEnrolledRoom && room && span.course.myEnrolledRoom === room))
+            );
+            return (
+              <div
+                key={t}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: teacherFontSize,
+                    color: isThisMySection ? "var(--ncu-ink)" : "var(--ncu-muted)",
+                    lineHeight: 1.25,
+                    fontWeight: isThisMySection ? 700 : 500,
+                    textDecoration: isThisMySection ? "underline" : "none",
+                    textDecorationColor: "var(--ncu-primary)",
+                    textUnderlineOffset: "3px",
+                  }}
+                >
+                  {name}
+                </span>
+                {room && (
+                  <span
+                    style={{
+                      fontSize: span.totalCols <= 2 ? 11 : 10,
+                      color: "var(--ncu-primary)",
+                      fontWeight: 700,
+                      background: "rgba(49, 87, 200, 0.08)",
+                      padding: "1px 6px",
+                      borderRadius: 4,
+                      textDecoration: isThisMySection ? "underline" : "none",
+                      textUnderlineOffset: "2px",
+                    }}
+                  >
+                    {room}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+            <>
+              <span style={{
+                fontSize: teacherFontSize,
+                color: singleMy ? "var(--ncu-ink)" : "var(--ncu-muted)",
+                lineHeight: 1.25,
+                fontWeight: singleMy ? 700 : 500,
+                textDecoration: singleMy ? "underline" : "none",
+                textDecorationColor: "var(--ncu-primary)",
+                textUnderlineOffset: "3px",
+              }}>
+                {singleName}
+              </span>
+              {singleRoom && (
+                <span
+                  style={{
+                    fontSize: span.totalCols <= 2 ? 12 : 11,
+                    color: "var(--ncu-primary)",
+                    fontWeight: 700,
+                    background: "rgba(49, 87, 200, 0.08)",
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                    textDecoration: singleMy ? "underline" : "none",
+                    textUnderlineOffset: "2px",
+                  }}
+                >
+                  {singleRoom}
+                </span>
+              )}
+            </>
+          );
+        })()}
     </div>
   );
 };
@@ -1038,8 +1228,9 @@ const TimetableHeader = ({
 const mergeCisCoursesIntoResult = (
   result: Record<string, Course[]>,
   myCisCourses: CisCourse[],
+  masterCourses: readonly MasterCourseItem[] = [],
 ): void => {
-  const cisMap = buildTimetableFromCisCourses(myCisCourses);
+  const cisMap = buildTimetableFromCisCourses(myCisCourses, masterCourses);
   for (const [key, cisList] of Object.entries(cisMap)) {
     if (!result[key]) {
       result[key] = [];
@@ -1059,7 +1250,7 @@ const computeMergedTimetableData = (
   viewScope: "all" | "mine",
 ): Record<string, Course[]> => {
   if (viewScope === "mine" && myCisCourses.length > 0) {
-    return buildTimetableFromCisCourses(myCisCourses);
+    return buildTimetableFromCisCourses(myCisCourses, masterCourses);
   }
 
   const map = buildTimetableMapFromMasterCourses(masterCourses);
@@ -1069,13 +1260,14 @@ const computeMergedTimetableData = (
   }
 
   if (myCisCourses.length > 0) {
-    mergeCisCoursesIntoResult(result, myCisCourses);
+    mergeCisCoursesIntoResult(result, myCisCourses, masterCourses);
   }
 
   return result;
 };
 
 const TimetablePage = () => {
+  const [presentToast] = useIonToast();
   const defaultDay = getDefaultDayIndex();
   const [selectedDay, setSelectedDay] = useState(String(defaultDay));
   const [viewScope, setViewScope] = useState<"all" | "mine">(() =>
@@ -1102,11 +1294,73 @@ const TimetablePage = () => {
   }, [currentTimestamp]);
 
   const [masterCourses, setMasterCourses] = useState<MasterCourseItem[]>([]);
-  const [myCisCourses, setMyCisCourses] = useState<CisCourse[]>([]);
+  const [myCisCourses, setMyCisCourses] = useState<CisCourse[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_CIS_COURSES);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [cisAuthenticated, setCisAuthenticated] = useState(isCisLoggedIn());
+  const [cisAuthenticated, setCisAuthenticated] = useState(
+    () => isCisLoggedIn() || Boolean(localStorage.getItem(STORAGE_KEY_CIS_COURSES)),
+  );
   const [showCisLogin, setShowCisLogin] = useState(false);
+
+  useEffect(() => {
+    const handleHashSync = () => {
+      const hash = window.location.hash;
+      const payload = parseBookmarkletPayload(hash);
+      if (!payload) return;
+      try {
+        const { currentCourses, historyCourses } = payload;
+
+        if (currentCourses.length > 0) {
+          setMyCisCourses(currentCourses);
+          localStorage.setItem(STORAGE_KEY_CIS_COURSES, JSON.stringify(currentCourses));
+          setCisAuthenticated(true);
+          setViewScope("mine");
+        }
+
+        if (historyCourses.length > 0) {
+          const track = (localStorage.getItem("ncu_credit_track") as TrackType) || "mgmt";
+          const config = TRACK_CONFIGS[track] || TRACK_CONFIGS.mgmt;
+          const matchedIds = matchCisToCurriculum(historyCourses, config, track);
+          let prevSelected: string[] = [];
+          try {
+            const saved = localStorage.getItem("ncu_selected_credit_courses");
+            if (saved) prevSelected = JSON.parse(saved);
+          } catch {
+            // ignore
+          }
+          const merged = Array.from(new Set([...prevSelected, ...matchedIds]));
+          localStorage.setItem("ncu_selected_credit_courses", JSON.stringify(merged));
+        }
+
+        presentToast({
+          message: `🎉 成功同步！已匯入 ${currentCourses.length} 門本學期課表與 ${historyCourses.length} 門歷年學分紀錄！`,
+          duration: 4000,
+          color: "success",
+          position: "top",
+        });
+      } catch {
+        presentToast({
+          message: "課務資料解析失敗，請重新嘗試同步",
+          duration: 3000,
+          color: "danger",
+          position: "top",
+        });
+      } finally {
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      }
+    };
+
+    handleHashSync();
+    window.addEventListener("hashchange", handleHashSync);
+    return () => window.removeEventListener("hashchange", handleHashSync);
+  }, [presentToast]);
 
   const syncDefaultCourses = useCallback(async () => {
     setLoading(true);
@@ -1127,6 +1381,7 @@ const TimetablePage = () => {
   }, [syncDefaultCourses]);
 
   const syncCisCourses = useCallback(async () => {
+    if (!isCisLoggedIn()) return;
     setLoading(true);
     setApiError(null);
     try {
@@ -1187,6 +1442,7 @@ const TimetablePage = () => {
 
   const handleLogout = useCallback(() => {
     cisLogout();
+    localStorage.removeItem(STORAGE_KEY_CIS_COURSES);
     setCisAuthenticated(false);
     setMyCisCourses([]);
     setViewScope("all");

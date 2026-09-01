@@ -12,6 +12,7 @@ export interface MasterCourseItem {
   readonly teachers: readonly string[];
   readonly classTimes: readonly string[];
   readonly courseType: "REQUIRED" | "ELECTIVE";
+  readonly requiredTag?: "碩一必修" | "碩二必修" | "必修" | null;
   readonly passwordCard?: string;
   readonly limitCnt?: number | null;
   readonly admitCnt?: number | null;
@@ -23,18 +24,13 @@ export const ALL_COURSES_API_URL =
   "https://ncucf-data.s3.amazonaws.com/data/dynamic/all.json";
 
 /**
- * Excluded courses for master freshers (碩二專用必修 / 論文)
- * Uses both classNo prefix and course title keywords for future-proof filtering.
+ * Excluded courses (個別指導之碩士論文，無固定排課時段)
  */
 export const EXCLUDED_CLASS_NOS: readonly string[] = [
-  "IM5019", // 管理溝通
-  "IM7043", // 書報研討Ⅰ
   "IM7000", // 碩士論文
 ];
 
 export const EXCLUDED_MASTER_KEYWORDS: readonly string[] = [
-  "管理溝通",
-  "書報研討",
   "論文",
 ];
 
@@ -45,7 +41,13 @@ export const IM_CLASSROOM_MAP: Record<string, string> = {
   "IM5001-*": "I1-405-1", // 社會網路分析
   "IM5007-*": "I1-405-1", // 資訊檢索
   "IM5008-*": "I1-404", // 商業智慧
+  "IM5019-A": "I1-404", // 管理溝通 (黃子菱)
+  "IM5019-B": "I1-405-1", // 管理溝通 (何迪亞)
+  "IM5019-*": "I1-404", // 管理溝通
   "IM5022-*": "I1-405-1", // 多媒體資料庫
+  "IM5025-A": "I1-405-1", // 研究方法 (劉子源)
+  "IM5025-B": "I1-404", // 研究方法 (許智誠)
+  "IM5025-*": "I1-405-1", // 研究方法
   "IM5032-*": "I1-405-1", // 物聯網實務應用
   "IM5038-*": "I1-404", // 進階區塊鏈應用與隱私防護
   "IM5041-*": "I1-405-1", // 現代與後量子密碼學導論
@@ -57,8 +59,18 @@ export const IM_CLASSROOM_MAP: Record<string, string> = {
   "IM6055-*": "I1-405-1", // 電腦網路安全
   "IM6082-*": "I1-404", // 行銷管理
   "IM6103-*": "I1-405-1", // 網路經濟與賽局智慧
+  "IM7043-*": "I1-404", // 書報研討Ⅰ
+  "IM7044-*": "I1-404", // 書報研討Ⅱ
   "IM7071-*": "I1-405-1", // 企業電腦網路
   "IM7082-*": "I1-404", // 智慧型資訊系統
+};
+
+export const getCourseRoom = (classNo?: string): string => {
+  if (!classNo) return "I1-404";
+  if (IM_CLASSROOM_MAP[classNo]) return IM_CLASSROOM_MAP[classNo];
+  const prefix = classNo.split("-")[0];
+  if (IM_CLASSROOM_MAP[`${prefix}-*`]) return IM_CLASSROOM_MAP[`${prefix}-*`];
+  return "I1-404";
 };
 
 interface RawCourse {
@@ -95,26 +107,63 @@ const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
     (c) => isImCourse(c) && !isExcludedMasterCourse(c) && isMasterLevelCourse(c),
   );
 
-const getCourseType = (t?: string): "REQUIRED" | "ELECTIVE" =>
-  t === "REQUIRED" ? "REQUIRED" : "ELECTIVE";
+export const cleanCourseTitle = (rawTitle: string): string => {
+  const match = /^([\u4e00-\u9fa5\dⅠⅡⅢⅣ·、]+[\s-]*)([A-Z][\s\S]*)$/.exec(rawTitle);
+  if (match && /[\u4e00-\u9fa5]/.test(match[1])) {
+    return match[1].trim();
+  }
+  return rawTitle.trim();
+};
 
-const mapRawCourse = (c: RawCourse): MasterCourseItem => ({
-  serialNo: c.serialNo,
-  classNo: c.classNo,
-  title: c.title,
-  credit: c.credit,
-  teachers: c.teachers || [],
-  classTimes: c.classTimes || [],
-  courseType: getCourseType(c.courseType),
-  passwordCard: c.passwordCard || undefined,
-  limitCnt: c.limitCnt,
-  admitCnt: c.admitCnt,
-  room: IM_CLASSROOM_MAP[c.classNo] || "I1-404",
-});
+export const getRequiredTag = (classNo: string = "", title: string = ""): "碩一必修" | "碩二必修" | "必修" | null => {
+  if (
+    classNo.startsWith("IM5019") || title.includes("管理溝通") ||
+    classNo.startsWith("IM7043") || classNo.startsWith("IM7044") || title.includes("書報研討")
+  ) {
+    return "碩二必修";
+  }
+
+  if (
+    classNo.startsWith("IM5025") || title.includes("研究方法") ||
+    classNo.startsWith("IM6012") || title.includes("管理資訊系統") ||
+    classNo.startsWith("IM6053") || title.includes("多變量分析") ||
+    classNo.startsWith("IM6003") || title.includes("軟體工程") ||
+    classNo.startsWith("IM6055") || title.includes("電腦網路安全")
+  ) {
+    return "碩一必修";
+  }
+
+  return null;
+};
+
+const getCourseType = (c: RawCourse): "REQUIRED" | "ELECTIVE" => {
+  if (getRequiredTag(c.classNo, c.title)) {
+    return "REQUIRED";
+  }
+  return c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE";
+};
+
+const mapRawCourse = (c: RawCourse): MasterCourseItem => {
+  const reqTag = getRequiredTag(c.classNo, c.title);
+  return {
+    serialNo: c.serialNo,
+    classNo: c.classNo,
+    title: cleanCourseTitle(c.title),
+    credit: c.credit,
+    teachers: c.teachers || [],
+    classTimes: c.classTimes || [],
+    courseType: getCourseType(c),
+    requiredTag: reqTag,
+    passwordCard: c.passwordCard || undefined,
+    limitCnt: c.limitCnt,
+    admitCnt: c.admitCnt,
+    room: getCourseRoom(c.classNo),
+  };
+};
 
 /**
- * Fetch all NCU courses from S3 and filter for IM Fresher / Master courses.
- * Excludes 碩二課程 (IM5019 管理溝通, IM7043 書報研討Ⅰ) and doctoral courses (IM8xxx).
+ * Fetch all NCU courses from S3 and filter for IM Master courses.
+ * Excludes individual research (IM7000 碩士論文) and doctoral courses (IM8xxx).
  * Falls back to bundled static json if network fails or offline.
  */
 export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
@@ -157,10 +206,33 @@ const addCourseTimeToMap = (
   if (!result[key]) {
     result[key] = [];
   }
-  const exists = result[key].some((item) => item.classNo === c.classNo);
-  if (!exists) {
-    result[key].push(c);
+  const existing = result[key].find((item) => cleanCourseTitle(item.title) === cleanCourseTitle(c.title));
+  if (existing) {
+    let combinedTeachers: string[];
+    let combinedRoom: string | undefined;
+
+    if (existing.room && c.room && existing.room !== c.room) {
+      const t1 = existing.teachers.join(", ");
+      const t2 = c.teachers.join(", ");
+      const label1 = t1.includes("(") ? t1 : `${t1} (${existing.room})`;
+      const label2 = t2.includes("(") ? t2 : `${t2} (${c.room})`;
+      combinedTeachers = Array.from(new Set([label1, label2]));
+      combinedRoom = undefined;
+    } else {
+      combinedTeachers = Array.from(new Set([...existing.teachers, ...c.teachers]));
+      combinedRoom = existing.room || c.room;
+    }
+
+    const idx = result[key].indexOf(existing);
+    result[key][idx] = {
+      ...existing,
+      teachers: combinedTeachers,
+      room: combinedRoom,
+    };
+    return;
   }
+
+  result[key].push(c);
 };
 
 /**
