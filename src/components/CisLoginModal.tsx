@@ -49,15 +49,15 @@ const BookmarkletInstructions = ({
         marginBottom: 16,
       }}
     >
-      <div style={{ fontWeight: 800, fontSize: 15, color: "var(--ncu-primary)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ fontWeight: 800, fontSize: 15, color: "var(--ncu-primary)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
         <IonIcon icon={flashOutline} />
-        <span>一鍵書籤同步（免開 F12 · 零密碼外洩）</span>
+        <span>一鍵同步課表</span>
       </div>
-      <p style={{ margin: "0 0 12px", color: "var(--ncu-muted)", fontSize: 12.5 }}>
-        透過瀏覽器書籤在課務系統直接讀取歷年與本學期已修課程，自動回傳至 CIM-Life 學分試算與課表：
+      <p style={{ margin: "0 0 14px", color: "var(--ncu-muted)", fontSize: 12.5 }}>
+        免開 DevTools，直接從課務系統匯入修課紀錄。
       </p>
 
-      <div style={{ textAlign: "center", margin: "16px 0 12px" }}>
+      <div style={{ textAlign: "center", margin: "14px 0 10px" }}>
         <a
           href={bookmarkletCode}
           title="將此按鈕拖曳至書籤列"
@@ -81,54 +81,41 @@ const BookmarkletInstructions = ({
         </a>
       </div>
 
-      <div style={{ textAlign: "center", marginBottom: 16 }}>
+      <div style={{ textAlign: "center", marginBottom: 14 }}>
         <IonButton size="small" fill="outline" onClick={onCopy} style={{ fontSize: 12 }}>
           <IonIcon slot="start" icon={copyOutline} />
-          複製書籤代碼（手機或手動新增）
+          複製書籤代碼
         </IonButton>
       </div>
 
-      <ol style={{ margin: 0, paddingLeft: 20, color: "var(--ncu-ink)", fontSize: 13 }}>
-        <li style={{ marginBottom: 8 }}>
-          將上方按鈕<strong>拖曳至瀏覽器書籤列</strong>（或複製代碼手動建立書籤）。
-        </li>
-        <li style={{ marginBottom: 8 }}>
-          在瀏覽器開啟並登入{" "}
-          <a
-            href="https://cis.ncu.edu.tw/Course/main/login"
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: "var(--ncu-primary)", fontWeight: 700 }}
-          >
-            cis.ncu.edu.tw <IonIcon icon={openOutline} style={{ fontSize: 12, verticalAlign: "middle" }} />
-          </a>。
-        </li>
-        <li style={{ marginBottom: 8 }}>
-          登入成功後，<strong>點擊剛剛加入的書籤</strong>。
-        </li>
-        <li>
-          書籤將安全讀取已選課程代碼，並<strong>自動跳轉回 CIM-Life</strong> 匯入課程與學分！
-        </li>
-      </ol>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
+        {[
+          <span key="1"><strong>1.</strong> 拖曳上方按鈕到瀏覽器書籤列</span>,
+          <span key="2"><strong>2.</strong> 開啟並登入 <a href="https://cis.ncu.edu.tw/Course/main/login" target="_blank" rel="noreferrer" style={{ color: "var(--ncu-primary)", fontWeight: 700 }}>課務系統 <IonIcon icon={openOutline} style={{ fontSize: 11, verticalAlign: "middle" }} /></a></span>,
+          <span key="3"><strong>3.</strong> 登入後點擊書籤，自動匯入课表</span>,
+        ].map((item, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            {item}
+          </div>
+        ))}
+      </div>
     </div>
 
     <div
       style={{
         display: "flex",
-        alignItems: "flex-start",
+        alignItems: "center",
         gap: 8,
-        padding: "10px 14px",
-        background: "rgba(16, 185, 129, 0.08)",
+        padding: "8px 12px",
+        background: "rgba(16, 185, 129, 0.06)",
         borderRadius: "var(--ncu-radius-sm)",
-        border: "1px solid rgba(16, 185, 129, 0.2)",
-        color: "var(--ncu-ink)",
-        fontSize: 12,
+        border: "1px solid rgba(16, 185, 129, 0.15)",
+        color: "var(--ncu-muted)",
+        fontSize: 11.5,
       }}
     >
-      <IonIcon icon={shieldCheckmarkOutline} style={{ color: "#10b981", fontSize: 16, flexShrink: 0, marginTop: 2 }} />
-      <span>
-        <strong>隱私承諾</strong>：代碼僅在您的本地瀏覽器執行讀取與跳轉，任何帳號、密碼或非公開資料絕不上傳任何第三方伺服器。
-      </span>
+      <IonIcon icon={shieldCheckmarkOutline} style={{ color: "#10b981", fontSize: 14, flexShrink: 0 }} />
+      <span>代碼僅在本地執行，不上傳任何帳號密碼。</span>
     </div>
   </div>
 );
