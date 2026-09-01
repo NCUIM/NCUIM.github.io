@@ -43,7 +43,7 @@
 
 - **Header**：不得超過 72 字元，結尾不得有句號。
 - **Allowed Types**：`feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
-- **Allowed Scopes**：`app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`, `setup`, `style`
+- **Allowed Scopes**：`app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `challenge`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`, `setup`, `style`
 - **Body**：必須為以 `1. ` 開始的英文數字編號清單。
 
 ### 5. 使用者拒絕或撤回 = 立即中止 (User Revocation = Immediate Stop)
