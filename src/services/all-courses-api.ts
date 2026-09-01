@@ -108,30 +108,27 @@ const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
   );
 
 export const cleanCourseTitle = (rawTitle: string): string => {
-  const match = /^([\u4e00-\u9fa5\dⅠⅡⅢⅣ·、\s\-]+?)([A-Z][a-zA-Z\s\d\-]+.*)$/.exec(rawTitle);
+  const match = /^([\u4e00-\u9fa5\dⅠⅡⅢⅣ·、\s-]+)([A-Z][a-zA-Z\s\d-]+.*)$/.exec(rawTitle);
   if (match && /[\u4e00-\u9fa5]/.test(match[1])) {
     return match[1].trim();
   }
   return rawTitle.trim();
 };
 
-export const getRequiredTag = (classNo?: string, title?: string): "碩一必修" | "碩二必修" | "必修" | null => {
-  const no = classNo || "";
-  const t = title || "";
-
+export const getRequiredTag = (classNo: string = "", title: string = ""): "碩一必修" | "碩二必修" | "必修" | null => {
   if (
-    no.startsWith("IM5019") || t.includes("管理溝通") ||
-    no.startsWith("IM7043") || no.startsWith("IM7044") || t.includes("書報研討")
+    classNo.startsWith("IM5019") || title.includes("管理溝通") ||
+    classNo.startsWith("IM7043") || classNo.startsWith("IM7044") || title.includes("書報研討")
   ) {
     return "碩二必修";
   }
 
   if (
-    no.startsWith("IM5025") || t.includes("研究方法") ||
-    no.startsWith("IM6012") || t.includes("管理資訊系統") ||
-    no.startsWith("IM6053") || t.includes("多變量分析") ||
-    no.startsWith("IM6003") || t.includes("軟體工程") ||
-    no.startsWith("IM6055") || t.includes("電腦網路安全")
+    classNo.startsWith("IM5025") || title.includes("研究方法") ||
+    classNo.startsWith("IM6012") || title.includes("管理資訊系統") ||
+    classNo.startsWith("IM6053") || title.includes("多變量分析") ||
+    classNo.startsWith("IM6003") || title.includes("軟體工程") ||
+    classNo.startsWith("IM6055") || title.includes("電腦網路安全")
   ) {
     return "碩一必修";
   }

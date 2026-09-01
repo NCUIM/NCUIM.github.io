@@ -538,7 +538,7 @@ const parseTeacherAndRoom = (
   rawTeacherItem: string,
   fallbackRoom?: string,
 ): { name: string; room?: string } => {
-  const match = /^(.*?)\s*\((.*?)\)$/.exec(rawTeacherItem.trim());
+  const match = /^([^()]+)\s*\(([^)]+)\)$/.exec(rawTeacherItem.trim());
   if (match) {
     return { name: match[1].trim(), room: match[2].trim() };
   }
