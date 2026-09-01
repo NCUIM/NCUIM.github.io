@@ -329,7 +329,7 @@ function runSuggestScope() {
   let staged = false;
   if (paths.length === 0) {
     try {
-      const output = execFileSync("git", ["diff", "--cached", "--name-only"], { encoding: "utf8" });
+      const output = execFileSync("git", ["diff", "--cached", "--name-only"], { encoding: "utf8" }); // NOSONAR — local dev tool, PATH resolution is safe
       paths = output.split("\n").map((p) => p.trim()).filter(Boolean);
       staged = true;
     } catch {
