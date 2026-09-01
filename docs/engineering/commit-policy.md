@@ -46,7 +46,7 @@
 `app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `challenge`,
 `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`,
 `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`,
-`quality`
+`quality`, `setup`, `style`
 
 ### 4. Body 內容格式 (Body Format)
 

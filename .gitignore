@@ -15,17 +15,6 @@ test-results/
 tmp/
 *.tsbuildinfo
 
-# Agent tool directories
-.agents/
-.claude/
-skills-lock.json
-
-# Firebase local state
-.firebase/
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-
 # Logs and OS files
 *.log
 Thumbs.db
@@ -35,5 +24,3 @@ Thumbs.db
 zap-reports/
 zap.yaml
 
-# Freebuff local tool state
-.freebuff/

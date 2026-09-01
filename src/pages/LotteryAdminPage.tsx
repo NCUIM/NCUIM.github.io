@@ -47,8 +47,8 @@ const ValidationSection = () => (
 const PublishSection = () => (
   <section>
     <h2>3. 現場發布</h2>
-    <p>發布後，手機端會以 Firestore 即時接收抽籤狀態。</p>
-    <IonButton disabled>Firebase 尚未設定</IonButton>
+    <p>發布後，本機將同步更新研究室抽籤結果與座位表。</p>
+    <IonButton disabled>尚未載入抽籤名單</IonButton>
   </section>
 );
 

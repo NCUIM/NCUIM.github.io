@@ -6,7 +6,7 @@ Accepted (Updated 2026-08)
 
 ## Context
 
-原專案曾規劃於單一 Repository 中同時維護「迎新電子名片收集」與「新生生活指南與工具」（見 [舊版 Spec 0001 存檔](../archive/legacy-card-system/0001-event-card-collection.md)）。
+原專案曾規劃於單一 Repository 中同時維護「迎新電子名片收集」與「新生生活指南與工具」。
 
 隨著專案發展與需求聚焦：
 1. **電子名片與現場破冰系統**（Next.js / 雲端資料庫後端）已正式拆分至獨立專案與獨立團隊維護。

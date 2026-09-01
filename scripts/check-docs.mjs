@@ -28,8 +28,6 @@ const EXCLUDED_DIRS = new Set([
   "coverage",
   "tmp",
   ".vite",
-  ".freebuff",
-  ".firebase",
   "test-results",
   "playwright-report",
   ".turbo",
