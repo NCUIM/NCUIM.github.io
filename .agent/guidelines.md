@@ -1,122 +1,47 @@
-# NCUIM2026-Fresher AI Agent Guidelines
+# NCUIM2026-Fresher AI 代理人行為準則 (AI Agent Guidelines)
 
-This document defines core behavioral, architectural, and quality rules for AI agents operating in the NCUIM2026-Fresher codebase.
-
----
-
-## 1. Problem-Solving Strategy
-
-### Core Principle: **難題求一，得一求全**
-
-遇到問題時，不要急著嘗試解法。先把問題縮到最簡單的形式，看懂它的運作機制，再回來解決原本的問題。
-
-### Rules
-
-1. **Stop and observe first**: Do NOT immediately try random fixes. Each failed attempt without understanding the system is wasted effort.
-2. **Read the error message, read the source code, read the documentation**: Understand *why* it fails before attempting a fix.
-3. **Normalize to base case**: What is the minimum unit you can verify? Get that working first, then scale back to the full problem.
-4. **Self-check**: Ask yourself "Am I solving the problem, or just trying random solutions?" The difference is observation vs. trial-and-error.
-
-### Example
-
-**Problem**: Firebase Security Rules reject client writes.
-
-**Wrong approach (brute force)**:
-1. Try different rule syntax → Error
-2. Add more allow rules → Error
-3. Remove all rules → Security hole
-4. Give up
-
-**Right approach**:
-1. Stop. Do not touch the rules file.
-2. Read the current Security Rules — understand the model.
-3. Read the error message in Firebase Console — which specific rule is failing?
-4. Test with Firebase Emulator locally to see the exact validation error.
-5. Fix the specific condition that's failing.
-6. Verify with emulator before deploying.
+本文件定義 AI 代理人於本專案進行架構設計、程式撰寫與問題排查的核心行為準則。
 
 ---
 
-## 2. Communication Protocol
+## 1. 問題排查策略 (Problem-Solving Strategy)
 
-### Diff Summary
+### 核心哲學：**難題求一，得一求全**
 
-Before ending a turn, if there are file changes:
-- List affected files and approximate line counts.
-- Briefly state what changed and why.
+遇到問題時，不要急著盲目嘗試解法。先把問題縮到最簡單的形式，看懂它的底層機制，再回來解決原本的問題。
 
-### Draft Labeling
-
-Your output is a **draft**, not a final result:
-1. Label suggestions as "suggested" or "draft" — do not assume completion.
-2. Wait for explicit user confirmation before treating anything as decided.
-3. High-risk decisions (Security Rules, Firestore schema changes, Cloud Functions deploy) require user approval before execution.
-4. Low-risk operations (UI tweaks, component refactoring) can proceed with notification.
+### 準則：
+1. **先觀察再動手 (Stop and observe first)**：切勿立即嘗試隨機修改。未理解系統前的不斷試錯是無效的。
+2. **細讀錯誤訊息、原始碼與文件**：在動手前徹底理解報錯的原因。
+3. **歸納為最小基礎案例 (Normalize to base case)**：找出可被驗證的最小單元，先讓它成功運作，再擴展至全局。
+4. **隨時自我反思**：問自己「我是在解決核心問題，還是只是在碰運氣試錯？」
 
 ---
 
-## 3. Code Stability
+## 2. 溝通與授權原則 (Communication Protocol)
 
-### Incremental Changes
+### 變更摘要 (Diff Summary)
+每次修改程式碼結束前：
+- 列出受影響的檔案路徑與變更行數。
+- 簡要說明修改目的與驗證結果。
 
-- **Preserve existing structure** by default. If refactoring is needed, explain the reason and scope to the user first.
-- **i18n required**: All user-facing strings must use the i18n system (en, zh-TW). Never hardcode strings in components.
-- **Type safety**: TypeScript strict mode. No `any` types without documented justification.
-- **Firebase Emulator**: Test all Firestore/Functions changes locally before deploying.
-
-### Quality Findings
-
-When a quality or performance issue is discovered but fixing it is out of scope:
-1. Record it immediately in a `TECH_DEBT.md` or equivalent tracking file.
-2. Include: affected file/method, current issue details, date, and reason for deferral.
-3. Commit it with the current change so the next developer can pick it up.
+### 提交規範 (Commit & PR Requirements)
+- **所有 Git Commit 訊息與 PR 標題一律強制使用英文**，遵循 Conventional Commits 格式（`type(scope): description`）。
+- 嚴禁自動執行 `git push`。
 
 ---
 
-## 4. Test Strategy (Match Test to Risk)
+## 3. 程式碼品質與型別安全 (Code Stability)
 
-| Risk Level | Worst Case | Test Requirement |
-|-----------|------------|------------------|
-| Low | UI tweak, doc update | Build + smoke test |
-| Medium | Feature broken, UX degraded | Unit test + manual verification |
-| High | Data loss, privacy leak, scoring wrong | Acceptance test + automated verification |
-
-### Firebase-Specific Risk Zones
-
-- **Security Rules**: HIGH risk — a misconfigured rule can expose all user data.
-- **Cloud Functions (scoring, lottery)**: HIGH risk — incorrect logic affects event fairness.
-- **Firestore schema changes**: HIGH risk — data migration can lose existing data.
-- **UI components**: MEDIUM risk — visual bugs affect UX but not data integrity.
-- **i18n files**: LOW risk — missing translations degrade experience but don't break functionality.
+- **保留現有架構**：除非使用者明確要求，否則維持既有結構與命名一致性。
+- **嚴格型別 (Type Safety)**：TypeScript Strict 模式，禁止無註解的 `any` 型別。
+- **零後端純前端原則**：使用者選課與學分資料全數保存於 LocalStorage，避免引入非必要的雲端伺服器相依。
 
 ---
 
-## 5. Architecture Conventions
+## 4. 測試與驗收 (Testing Strategy)
 
-### Component Structure
-- Use functional components with hooks.
-- Separate container logic from presentational components.
-- Co-locate test files with components (`ComponentName.test.tsx`).
+- **高風險邏輯 (學分試算、課表解析、抽籤演算法)**：必須具備完整的 Vitest 單元測試與極端值覆蓋。
+- **UI 介面變更**：必須確認桌面版與行動版排版無文字重疊破版，且瀏覽器 Console 無 Error。
+- **全套檢查**：變更後執行 `npm run build`、`npm run typecheck`、`npm test` 與 `npm run test:policy`。
 
-### Firebase Structure
-- `src/firebase/` — Firebase config, initialization, and SDK setup.
-- `src/services/` — Business logic that calls Firebase APIs.
-- `src/hooks/` — Custom React hooks for data access (useAuth, useFirestore, etc.).
-- `functions/` — Cloud Functions (separate Node.js project).
-
-### File Naming
-- Components: `PascalCase.tsx` (e.g., `QRScanner.tsx`)
-- Hooks: `camelCase.ts` starting with `use` (e.g., `useAnonymousAuth.ts`)
-- Services: `camelCase.ts` (e.g., `encounterService.ts`)
-- Types: `PascalCase.types.ts` or co-located in the same file
-
----
-
-## 6. Offline Challenge Station Rules
-
-The challenge station runs independently on a local machine:
-- **SQLite** for local data storage.
-- **Signed proofs** for integrity verification.
-- Must operate **without internet connectivity**.
-- Proof verification must happen server-side (Cloud Functions) when connectivity is restored.
-- Never trust client-side validation alone for score submission.

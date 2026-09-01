@@ -1,67 +1,55 @@
-# Contributing to NCUIM2026-Fresher
+# 專案貢獻指南 (Contributing Guide)
 
-NCUIM2026-Fresher uses a strict commit and pull request policy. The goal is to keep history easy to review, easy to bisect, and useful for future AI-assisted maintenance.
+感謝您對 CIM-Life (中央資管通) 的貢獻！為維持程式庫之高品質與可維護性，本專案採用嚴格的 Commit 與 Pull Request 規範。
 
-## Branch Rules
+---
 
-- `main` must stay deployable.
-- Do not push directly to `main`.
-- Do not create a long-lived `dev` branch.
-- Create topic branches from `main`:
-  - `feature/<short-name>` for features
-  - `fix/<short-name>` for bug fixes
-  - `docs/<short-name>` for documentation-only work
-  - `chore/<short-name>` for maintenance
-- Keep branches short-lived. Rebase on `main` before opening a PR if the branch is stale.
+## 分支規範 (Branch Rules)
 
-## Commit Format
+- `main` 分支必須隨時保持可部署狀態。
+- 嚴禁直接 Push 至 `main` 分支。
+- 依任務類型從 `main` 切出短期分支：
+  - `feature/<short-name>`：新功能開發
+  - `fix/<short-name>`：Bug 修復
+  - `docs/<short-name>`：文件撰寫與維護
+  - `style/<short-name>`：UI 樣式與排版調整
+  - `chore/<short-name>`：相依套件與工程維護
+- 若分支過期，發起 PR 前請先針對 `main` 進行 Rebase。
 
-Every commit and PR title must follow the [repository commit policy](docs/engineering/commit-policy.md):
+---
 
+## 提交訊息格式 (Commit Format)
+
+> ⚠️ **重要**：雖然專案文件以繁體中文撰寫，但 **所有 Commit 訊息與 PR 標題必須使用英文**，並嚴格遵循 [Commit 與 PR 規範](docs/engineering/commit-policy.md)。
+
+格式範例：
 ```text
-<type>(<scope>): <description>
+feat(timetable): add smart merged multi-section course card
 ```
 
-Example:
+允許的 Type、Scope、字數限制與 Body 編號清單格式皆唯一定義於規範文件與 `scripts/commit-policy.mjs`。
 
-```text
-feat(challenge): add weekly challenge system
-```
+---
 
-The allowed types, scopes, length, and body requirements are defined in the
-policy doc — **do not restate them here**. The policy is enforced identically
-by the local `commit-msg` hook and by CI, and the rules live in exactly one
-file (`scripts/commit-policy.mjs`). To change a rule, edit that file only (see
-the policy doc).
+## 原子化 Commit 原則 (Atomic Commits)
 
-## Atomic Commit Rules
+每次 Commit 僅能代表一個獨立邏輯變更：
+- 分離無關功能的修改。
+- 分離 Refactor 重構與功能行為變更。
+- 檔案重新命名或移動一律使用 `git mv` 以保留 Git 歷史。
 
-One commit must represent one logical change.
+---
 
-- Separate unrelated features.
-- Separate refactors from behavior changes.
-- Separate generated files from manual source changes when that makes review easier.
-- Use `git mv` for renames so history stays readable.
-- Do not mix secret/config examples with real credentials.
+## Pull Request 流程
 
-## Pull Request Rules
+- PR 標題遵守與 Commit 相同之英文格式。
+- 請使用 [`.github/pull_request_template.md`](.github/pull_request_template.md) 提供的範本填寫 PR 描述與驗證結果。
+- 發起 PR 前請確保本地執行 `npm test`、`npm run typecheck`、`npm run test:policy` 與 `npm run test:docs` 通過。
 
-PR titles must follow the same commit policy (enforced by CI and the local
-hook). Fill the PR description using the sections defined in
-[`.github/pull_request_template.md`](.github/pull_request_template.md).
+---
 
-Small PRs are preferred. If a PR touches more than one subsystem, explain why it should be reviewed together.
+## 隱私與資安防護
 
-## Verification Expectations
+- 嚴禁提交真實學生個資、真實選課私密資料或任何 API 憑證。
+- 測試資料與 Mock Fixture 必須全面使用去識別化之合成資料。
 
-Before requesting review, include the checks you ran. The required evidence
-per change area is defined in exactly one place — the
-[Testing Policy](docs/engineering/testing-policy.md) — and the commands are
-defined in `package.json`.
-
-## Privacy Rules
-
-- Never commit `.env` files, real API keys, service account keys, or Firestore security rule bypasses.
-- Use `.env.example` for placeholders.
-- Test data must be fake and obviously non-personal.
-- Security rules must be reviewed before deployment.

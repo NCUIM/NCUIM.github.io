@@ -20,15 +20,17 @@
 5. **中大美食地圖 (Food Guide & Randomizer)**：收錄後門、宵夜街與校內餐廳資訊，提供分類篩選、營業狀態及「今天吃什麼」隨機抽籤轉盤。
 6. **學分試算工具 (Credit Calculator)**：勾選修習課程，即時試算必修、選修、跨所學分抵免與畢業門檻達成率。
 
-## Module Ownership & Team Boundaries
+## Module Overview & Scope
 
-本專案採模組化責任切分，確保多人協作時架構解耦且無 Git 衝突：
+本專案採模組化架構設計，各模組功能邊界與路由如下：
 
-| 模組領域 | 負責人 | 規格對應 | 目錄邊界 (建議) | 包含功能與路由 |
-| :--- | :--- | :--- | :--- | :--- |
-| **電子名片與破冰活動** | **ThanatosJun** | Spec 0001 | `src/features/cards/`<br>`src/services/cards/` | QR 掃碼互換、Profile 卡片、破冰成就、排行榜 (`/cards`, `/scan`, `/leaderboard`) |
-| **研究室選位與座位地圖** | **Youchen Jiang** | Spec 0002 (空間) | `src/features/seating/`<br>`src/features/lottery/` | 蛇形回溯抽籤演算法、現場開獎大會舞台 (`/stage/lottery`)、209/310/313/919 實體座位表 (`/seats`) |
-| **新生生活指南與實用工具** | **Youchen Jiang** | Spec 0002 (生活) | `src/features/guide/`<br>`src/features/timetable/`<br>`src/features/food/`<br>`src/features/tools/` | 入學 Checklist、全系週課表 (`/timetable`)、中大美食地圖與轉盤 (`/food`)、學分試算器 (`/tools/credit`) |
+| 模組領域 | 包含功能與路由 | 核心特色 |
+| :--- | :--- | :--- |
+| **碩士班課表與 CIS 同步** | `/timetable` | 全所開課總表、週課表切換、多班合開智慧合併、個人選課底線標記、CIS 書籤小工具同步 |
+| **畢業學分試算系統** | `/tools/credit` | 碩士畢業必選修門檻檢核、抵免學分登錄、即時差額計算 |
+| **研究室座位與抽籤大會** | `/seats`<br>`/stage/lottery` | 209/310/313/919 擬真實體格局座位表、S型蛇形相鄰抽籤演算法、大螢幕即時開獎舞台 |
+| **新生生活指南與美食地圖** | `/guide`<br>`/food` | 入學待辦 Checklist、校園資源直達車、中大周邊美食地圖與「今天吃什麼」轉盤 |
+
 
 
 

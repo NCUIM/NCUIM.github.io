@@ -1,6 +1,7 @@
-# Spec: 活動卡片收集系統
+# Spec: 活動卡片收集系統 (Legacy Archive)
 
-> 詞彙依循 [CONTEXT.md](../../CONTEXT.md)。相關決策：[ADR-0001](../adr/0001-per-event-identity-without-accounts.md)、[ADR-0002](../adr/0002-achievements-are-never-revoked.md)。
+> ⚠️ **此模組已於 2026 年 8 月正式拆分至獨立專案維護，本文件僅供歷史參考。**  
+> 詞彙依循 [CONTEXT.md](../../../CONTEXT.md)。相關決策：[ADR-0001](0001-per-event-identity-without-accounts.md)、[ADR-0002](0002-achievements-are-never-revoked.md)。
 
 ## Problem Statement
 

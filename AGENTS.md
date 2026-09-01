@@ -1,107 +1,60 @@
-# NCUIM2026-Fresher Agent Authorization Gate
+# AI 代理人操作授權與行為準則 (Agent Authorization Gate)
 
-This file is the mandatory first-read rule for every agent working in NCUIM2026-Fresher.
-
----
-
-## 🚦 Action Classification Before Any Tool Call
-
-Before performing any tool call, categorize the action into one of three tiers:
-
-1. **Read-only**:
-   - Inspect files, Git status/history, test results, CI status, or external state.
-   - *Status*: **Allowed by default**.
-2. **Local edit**:
-   - Modify or create files only when explicitly requested by the user.
-   - *Status*: Allowed for the requested task. **Does not imply permission to commit, push, or publish**.
-3. **External mutation / Git commits**:
-   - Any branch operation, commit, push/force-push, tag modification, PR operation, release creation, or workflow dispatch.
-   - *Status*: **Requires explicit authorization from the user** in the current conversation turn.
+本文件為所有於本專案執行的 AI 代理人（Agent）之**強制首讀規範**。
 
 ---
 
-## 🛡️ Critical Invariants & Non-Negotiable Rules
+## 🚦 工具呼叫前之動作分級 (Action Classification)
 
-### 1. Authorization Non-Transitivity
+在進行任何工具呼叫前，必須將動作嚴格歸類為以下三個層級：
 
-Authorization for task A never extends to task B. Always report verification evidence and confirm before proceeding to irreversible state changes.
+1. **唯讀操作 (Read-only)**：
+   - 檢視檔案、Git 狀態與歷史紀錄、測試結果、CI 狀態或外部公開狀態。
+   - *權限*：**預設允許**。
+2. **本地端修改 (Local edit)**：
+   - 僅在使用者明確指示下建立或修改檔案。
+   - *權限*：允許於本次任務範圍內修改。**不代表擁有 Commit、Push 或發布之授權**。
+3. **外部變更與 Git 提交 (External mutation / Git commits)**：
+   - 任何分支操作、Commit 提交、Push/Force-Push、標籤修改、PR 建立/合併或 Workflow 觸發。
+   - *權限*：**必須取得使用者在該輪對話中的明確授權**。
 
-Examples of separate operations requiring separate authorization:
-- create, switch to, rename, or delete a branch
-- commit, push, force-push, create, move, or delete a tag
-- create, edit, merge, close, or delete a pull request
-- create, edit, delete, rerun, dispatch, or cancel a GitHub Actions workflow or release
+---
 
-Before any external action:
-1. Quote the user authorization and list the exact operation(s) it covers.
-2. Check the current target (repository, branch, tag, PR, workflow, or release).
-3. Stop and ask if the next required operation is not explicitly covered.
-4. Execute one authorized mutation at a time and report its result before considering another.
+## 🛡️ 核心不可變規則 (Non-Negotiable Rules)
 
-### 2. No Autonomous Push
+### 1. 授權不可傳遞 (Authorization Non-Transitivity)
+任務 A 的授權絕不延伸至任務 B。在執行具不可逆性的狀態變更前，一律先回報驗證結果並等待確認。
 
-**NEVER** run `git push` automatically. Only commit locally.
-Only push when the user explicitly requests it.
+### 2. 嚴禁自主 Push (No Autonomous Push)
+**嚴禁自主執行 `git push`**。預設僅進行本地 Commit。唯有使用者明確要求 Push 時方可執行。
 
-### 3. Strict Atomic Commits
+### 3. 嚴格原子化 Commit (Strict Atomic Commits)
+每一次 Commit 僅能代表一個獨立邏輯變更。無關修改必須分開提交。
 
-One commit = one logical change. Apply the "revert test": if two changes can be independently reverted without breaking the other, they are separate purposes and require separate commits.
+### 4. Commit 訊息格式強制全英文 (Commit Message Format)
+所有 Commit 訊息一律遵循 Conventional Commits 格式，且**必須全英文書寫**：
 
-- Never mix code changes with static asset changes (e.g., screenshots, localization docs) in a single commit.
-- Even within a single file, changes with different purposes must be committed separately (use `git add -p`).
-- Rename files using `git mv` — never delete and re-add.
-- Run `git status` before committing to verify no unrelated files are staged.
-
-### 4. Branch Naming Convention
-
-Branches must follow: `<type>/<kebab-case-description>`
-
-- `<type>` must be one of the allowed commit types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
-- `<description>` must be a short kebab-case summary of the branch purpose.
-- Examples: `feat/timetable-improvements`, `fix/cis-session-refresh`, `style/hero-badge-and-brand-assets`
-
-### 5. Commit Message Format
-
-All commit messages must follow Conventional Commits:
-
-```
+```text
 <type>(<scope>): <short description>
 
 1. <Numbered detail 1 in English>
 2. <Numbered detail 2 in English>
 ```
 
-- **Header**: Must not exceed 72 characters; must not end with a period.
-- **Allowed types**: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
-- **Allowed scopes**: `app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`
-- **Body**: Must be a numbered English list starting with `1. `, separated from header by a blank line.
+- **Header**：不得超過 72 字元，結尾不得有句號。
+- **Allowed Types**：`feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
+- **Allowed Scopes**：`app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`
+- **Body**：必須為以 `1. ` 開始的英文數字編號清單。
 
-Example:
-```
-feat(auth): implement anonymous sign-in with QR code entry
-
-1. Add Firebase anonymous auth flow triggered by QR scan.
-2. Generate display name from random noun-adjective pair.
-```
-
-### 6. Authorization Failure Escalation
-
-If an authorized operation fails and fixing it requires a new branch, code change, PR, merge, workflow change, or release change, stop and report the evidence. Do not expand the authorization to unblock the task.
-
-### 7. User Revocation = Immediate Stop
-
-If the user objects to or revokes an action, stop all mutations immediately. Do not revert, delete, cancel, or force-push as "cleanup" without separate authorization.
+### 5. 使用者拒絕或撤回 = 立即中止 (User Revocation = Immediate Stop)
+若使用者表達拒絕或撤回指令，立即停止一切變更操作。
 
 ---
 
-## 📐 Technical Context
+## 📐 技術環境 (Technical Context)
 
-This project is a **mobile-first web app** built with:
-- Ionic React + TypeScript + Vite
-- Firebase (Auth, Firestore, Cloud Storage, Realtime Database, Cloud Functions, Hosting)
+本專案為 **行動優先之純靜態 Web 應用（SPA）**，技術棧：
+- **Ionic React 8 + React 18 + TypeScript + Vite 6**
+- **GitHub Pages 靜態發佈**
+- **無後端資料庫 / LocalStorage 本機保存**
 
-### Firebase-Specific Guardrails
-- Security Rules changes require careful review — they affect all client access.
-- Cloud Functions handle all trusted operations (scoring, flag validation, lottery).
-- Never expose Firebase Admin SDK or service account keys to client code.
-- Firestore writes from client must respect Security Rules; test with Firebase Emulator.

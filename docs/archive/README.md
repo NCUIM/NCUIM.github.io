@@ -1,24 +1,27 @@
-# Archive
+# Archive (歷史存檔文件)
 
-本目錄存放已過時的規格文件。這些文件描述了更廣的產品範圍（包含隱藏 Flag 挑戰站、實驗室抽選等功能），這些功能已拆分至獨立倉庫或方案。
+本目錄存放已過時或已拆分至獨立專案之規格、決策與歷史審計文件。
 
-主要規格文件位於：
-- [CONTEXT.md](../../CONTEXT.md) — 領域術語辭典
-- [docs/specs/0001-event-card-collection.md](../specs/0001-event-card-collection.md) — 活動卡片收集系統規格
-- [docs/adr/](../adr/) — 架構決策紀錄
+---
 
-### 檔案對應
+## 🗂️ 存檔分類
 
-| 原始檔案 | 內容 | 備註 |
+### 1. 電子名片系統 (`legacy-card-system/`)
+電子名片收集系統、QR 掃碼、Profile 與成就系統已於 2026 年 8 月正式拆分至獨立的新專案進行維護。本專案目前專注於 **CIM-Life 中央資管通**（課表、學分、座位格局與新生生活指南）。
+
+| 存檔檔案 | 原文件名稱 | 說明 |
 | --- | --- | --- |
-| 01-product-requirements.md | 產品需求 | 已由 specs/0001 取代 |
-| 02-system-architecture.md | 系統架構（Firebase） | 技術棧待 ADR 確認 |
-| 03-data-and-security.md | 資料模型與安全 | 待重寫 |
-| 04-interactions-and-rewards.md | 互動與獎勵 | 隱藏 Flag 已拆出 |
-| 05-admin-and-operations.md | 後台與營運 | 待重寫 |
-| 06-quality-and-launch.md | 品質與上線 | 待重寫 |
-| 07-visual-design.md | 視覺設計（Pixel Quest） | 待確認是否沿用 |
-| 08-challenge-server.md | 離線挑戰伺服器 | 已拆出 |
-| 09-grouping-leaderboard-and-lottery.md | 分組、排行榜與實驗室抽選 | 實驗室抽選已拆出 |
-| examples/ | 範例設定檔 | 120 人種子資料，待更新為 70 人 |
+| `0001-event-card-collection.md` | Spec 0001 | 活動名片收集系統完整產品規格 |
+| `0001-per-event-identity-without-accounts.md` | ADR-0001 | 名片身分繫於單場活動架構決策 |
+| `0002-achievements-are-never-revoked.md` | ADR-0002 | 名片成就永不撤銷決策 |
+
+### 2. 歷史技術審計 (`audits/`)
+| 存檔檔案 | 說明 |
+| --- | --- |
+| `backend-gap-audit-2026-08-27.md` | 2026-08-27 舊後端 API 與規格落差審計報告 |
+| `ui-audit-2026-08-27.md` | 2026-08-27 舊版 UI 設計系統審查報告 |
+
+### 3. 早期草案規格 (Draft Specs 01 ~ 09)
+* `01-product-requirements.md` 至 `09-grouping-leaderboard-and-lottery.md`：早期專案規劃草稿。
+
 

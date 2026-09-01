@@ -1,53 +1,86 @@
-# NCUIM2026-Fresher
+<div align="center">
+  <img src="public/favicon.svg" alt="CIM-Life Logo" width="80" height="80" />
+  <h1>CIM-Life (中央資管通)</h1>
+  <p>國立中央大學資訊管理學系碩士班 · 綜合服務與生活入口平台</p>
 
-NCUIM 新生綜合服務與生活入口平台：以手機瀏覽器為主要載體，整合迎新活動互動、研究室選位、校園生活資訊於單一入口。
+  <p>
+    <a href="https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml"><img src="https://img.shields.io/github/actions/workflow/status/NCUIM/NCUIM.github.io/deploy-pages.yml?branch=main&label=Deploy&style=flat-square" alt="Deploy" /></a>
+    <a href="https://ncuim.github.io/"><img src="https://img.shields.io/badge/Online-ncuim.github.io-blue?style=flat-square" alt="Online" /></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" /></a>
+  </p>
 
-[繁體中文說明](README.zh-TW.md)
+  <p>
+    <b>繁體中文</b> | <a href="README.en.md">English</a>
+  </p>
+</div>
 
-## 模組總覽
+---
 
-| 模組 | 路由 | 說明 | 負責人 |
-| --- | --- | --- | --- |
-| [活動卡片收集](docs/specs/0001-event-card-collection.md) | `/cards` | QR 掃碼互換、Profile 卡片、成就與排行榜 | ThanatosJun |
-| [新生生存指南](docs/specs/0002-freshman-survival-guide.md) | `/guide`, `/seats`, `/stage/lottery`, `/timetable`, `/food`, `/tools/credit` | 抽籤大會、座位表、課表、美食地圖、學分試算 | Youchen Jiang |
+**CIM-Life** 是專為國立中央大學資管所學生設計的 Web 工具，整合全所開課課表、個人課表排程、碩士畢業學分試算、研究室座位格局圖與校園生活資訊。
 
-## 產品原則
+純前端單頁應用（SPA），所有個人選課與學分資料僅保存在本機瀏覽器（LocalStorage），無後端伺服器儲存，確保個人隱私。
 
-- 掃描連結或 QR Code 即可使用，不要求安裝。
-- 主要支援目前的 iOS Safari 與 Android Chrome。
-- 新生不必註冊永久帳號即可參加活動。
-- QR Code 是主要互動方式。
-- 計分與管理操作必須由伺服器驗證。
-- 只蒐集活動真正需要的資料。
+## 主要功能
 
-## 技術棧（暫定，待 ADR 確認）
+### 課表與選課同步 (`/timetable`)
+- **全所開課總表與個人週課表**：提供全週矩陣視圖與每日精簡視圖，支援快速篩選必修/選修。
+- **多班合開課程合併**：同名同時間之合開課程（如《管理溝通》）自動合併為單一方塊，清楚呈現各班教授與教室，並以底線標註個人修習班級。
+- **CIS 書籤小工具同步**：提供 Bookmarklet 腳本，登入學校課務系統後點擊即可自動解析選課資料並匯入本機。
 
-- Ionic React、TypeScript、Vite
-- Firebase Authentication
-- Cloud Firestore
-- Cloud Storage for Firebase
-- Cloud Functions
-- Firebase Hosting、Security Rules、App Check
+### 畢業學分檢核 (`/tools/credit`)
+- **修業規章審查**：依據資管所碩士班修業規定，自動統計核心必修、組別選修、外所選修與畢業總學分差額。
+- **抵免學分登記**：支援輸入大學預修與跨校抵免學分。
 
-## 規格文件
+### 研究室座位圖 (`/seats`)
+- **管二館實體格局**：收錄 209（20席）、310（27席）、313（23席）、919（9席）平面圖。
+- **座位與成員搜尋**：支援依學生姓名或指導教授即時搜尋與定位座位。
 
-以中文規格為主要來源。相關決策記錄於 ADR。
+### 新生指南與校園生活 (`/guide`, `/food`)
+- **入學時程與資源清單**：包含選課時程、校園授權軟體與常用系統連結。
+- **中大周邊美食**：整理後門、宵夜街與校內餐飲資訊與營業時間。
 
-| 文件 | 說明 |
-| --- | --- |
-| [CONTEXT.md](CONTEXT.md) | 領域術語辭典：所有規格文件的詞彙基準 |
-| [Spec 0001](docs/specs/0001-event-card-collection.md) | 活動卡片收集系統完整產品規格 |
-| [Spec 0002](docs/specs/0002-freshman-survival-guide.md) | 新生生存指南與生活工具箱系統規格 |
-| [ADR-0001](docs/adr/0001-per-event-identity-without-accounts.md) | 身分繫於單場活動，不建立帳號系統 |
-| [ADR-0002](docs/adr/0002-achievements-are-never-revoked.md) | 已達成的 Achievement 永不撤銷 |
-| [ADR-0003](docs/adr/0003-unified-portal-and-seating-architecture.md) | 整合多模組入口架構決策 |
+## 線上使用
 
-## 規模
+直接開啟網頁即可使用，無須安裝：
+**https://ncuim.github.io**
 
-單場活動約七十人，每組五至八人。沒有效能或擴展性顧慮。
+## 本機開發
 
-## 語言規則
+### 環境需求
+- Node.js >= 20.6.0
+- npm >= 10.0.0
 
-- 文件預設使用繁體中文；英文文件使用 `.en.md` 後綴。
-- App 至少支援英文 `en` 與繁體中文 `zh-TW`。
-- 找不到翻譯時回退英文。
+### 安裝與執行
+```bash
+git clone https://github.com/NCUIM/NCUIM.github.io.git
+cd NCUIM.github.io
+npm install
+npm run dev
+```
+
+開發伺服器預設啟動於 `http://localhost:5173`。
+
+### 測試與建置
+```bash
+npm run typecheck    # TypeScript 型別檢查
+npm test             # 單元測試 (Vitest)
+npm run test:docs    # 文件完整性檢查
+npm run test:policy  # Commit 規範檢查
+npm run build        # 生產環境 Bundle 建置
+```
+
+## 貢獻
+
+發起 Pull Request 前請參閱：
+- [CONTRIBUTING.md](CONTRIBUTING.md) — 貢獻流程說明
+- [docs/engineering/commit-policy.md](docs/engineering/commit-policy.md) — Conventional Commits 規範（Commit 訊息與 PR 標題需使用英文）
+- [docs/engineering/testing-policy.md](docs/engineering/testing-policy.md) — 測試策略與驗收標準
+
+## 授權條款 (License)
+
+本專案採用 [MIT License](LICENSE) 授權釋出。  
+Copyright (c) 2026 NCU 網安實驗室 | CYberMaw
+
+
+
+

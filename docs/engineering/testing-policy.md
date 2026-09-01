@@ -1,86 +1,58 @@
-# Testing Policy
+# 測試規範 (Testing Policy)
 
-This document defines what verification evidence each change area requires. It
-is the single source of truth for test expectations — the development workflow
-and PR review checklist reference it but do not restate the mapping.
+本文件定義各模組與變更領域所需的測試驗證標準。本文件為全專案測試期望的**單一事實來源**。
 
-## Risk Areas
+---
 
-| Area | Description | Risk |
-|------|-------------|------|
-| **Auth** | Login, signup, password reset, role-based access | High |
-| **Firestore** | Data models, queries, security rules | High |
-| **Security Rules** | Firestore/Storage rules, access control | Critical |
-| **Challenge** | Weekly challenges, progress tracking, XP calculation | High |
-| **Admin** | Admin dashboard, user management | High |
-| **UI** | Pages, components, styling, layout | Medium |
-| **Functions** | Cloud Functions, API endpoints | Medium |
-| **i18n** | Internationalization, locale handling | Low |
-| **Hosting** | Deployment, redirects, headers | Low |
-| **Config** | Environment, build config, tooling | Low |
+## 風險領域定義 (Risk Areas)
 
-## Required Evidence by Risk
+| 領域 | 包含模組與範圍 | 風險等級 |
+| :--- | :--- | :--- |
+| **學分計算 (Credit)** | 碩士畢業學分試算、必選修門檻統計、抵免學分邏輯 | High |
+| **課表與同步 (Timetable)** | CIS 課程解析、雙人合開課程合併、時段矩陣計算 | High |
+| **抽籤演算法 (Lottery)** | S型蛇形相鄰分配、房間容量約束求解 | High |
+| **UI 介面與排版 (UI)** | 響應式佈局（電腦與手機端）、文字排版、座位平面圖 | Medium |
+| **指南與公告 (Guide)** | 新生待辦 Checklist、美食推薦、公告彈窗 | Low |
+| **建置與設定 (Config)** | Vite 設定、TypeScript 設定、CI/CD 腳本 | Low |
 
-### Critical Risk (Security Rules)
+---
 
-- Unit tests for every rule path
-- Integration tests with emulator
-- Manual review of deny rules
-- No silent permissive rules
+## 各風險層級之驗收要求 (Required Evidence)
 
-### High Risk (Auth, Firestore, Challenge, Admin)
+### 高風險領域 (High Risk: Credit, Timetable, Lottery)
+- 業務邏輯與邊界案例需有完整的單元測試覆蓋（Vitest）。
+- 空資料（Empty State）、無效輸入與極端情境驗證。
+- TypeScript 嚴格型別檢查 (`npm run typecheck`) 100% 通過。
 
-- Unit tests for business logic
-- Integration tests for data flow
-- Edge case coverage (empty state, error state)
-- TypeScript strict mode passes
+### 中風險領域 (Medium Risk: UI & Layout)
+- 視覺冒煙測試（確認 Desktop 與 Mobile 寬度下皆無破版或重疊文字）。
+- 瀏覽器 Console 無任何 JavaScript 異常或 Warning。
+- 生產環境建置 (`npm run build`) 成功。
 
-### Medium Risk (UI, Functions)
+### 低風險領域 (Low Risk: Guide, Config)
+- `npm run build` 與 `npm run typecheck` 通過。
+- 手動驗證修改之功能與行為。
 
-- Unit tests for complex logic
-- Visual smoke test (desktop + mobile)
-- No console errors
-- `npm run build` passes
+---
 
-### Low Risk (i18n, Hosting, Config)
-
-- `npm run build` passes
-- `npm run typecheck` passes
-- Manual verification of changed behavior
-
-## Test Commands
+## 測試指令一覽 (Test Commands)
 
 ```sh
-npm run typecheck    # TypeScript strict check
-npm run build        # Production build
-npm run test         # Unit tests (vitest)
-npm run test:e2e     # E2E tests (Playwright)
-npm run test:policy  # Commit policy self-test
-npm run test:docs    # Doc link check
-npm run test:zap     # OWASP ZAP baseline scan (requires Docker)
+npm run typecheck    # TypeScript 嚴格型別檢查
+npm run build        # 生產環境 Bundle 建置
+npm test             # 單元測試 (Vitest)
+npm run test:policy  # Commit 規範與 PR 標題自我檢查
+npm run test:docs    # 文件完整性與連結有效性檢查
+npm run test:zap     # OWASP ZAP 靜態安全掃描 (需 Docker)
 ```
 
-## Security Scanning
+---
 
-OWASP ZAP baseline scans run automatically on a weekly schedule via GitHub
-Actions (`.github/workflows/zap-scan.yml`). Developers can also run scans
-locally:
+## 自動化安全掃描 (Security Scanning)
+
+每週一由 GitHub Actions 自動執行 OWASP ZAP Baseline 安全掃描（`.github/workflows/zap-scan.yml`），檢驗 HTTP 安全標頭、Cookie 政策與敏感資訊洩漏防護。亦可於本地端手動執行：
 
 ```sh
-npm run test:zap     # Builds app, starts preview server, runs ZAP, stops server
+npm run test:zap
 ```
 
-ZAP performs passive scanning (header analysis, information disclosure,
-cookie issues, etc.) against the running app. Reports are saved to
-`zap-reports/` (git-ignored). The CI workflow uploads reports as artifacts
-with 30-day retention.
-
-## Generated Artifacts
-
-Do not commit generated or local-only files:
-
-- `node_modules/`
-- `dist/`
-- `tmp/`
-- `*.tsbuildinfo`
-- Real `.env` files
