@@ -259,6 +259,20 @@ const parseClassTimeDayAndPeriods = (
 ): { dayIdx: number; periodChars: string } =>
   parseHyphenTime(ct) || parseDigitTime(ct) || parseNamedDayTime(ct, dayMap);
 
+const mergeTeacherWithRoom = (
+  existing: Course,
+  incoming: Course,
+): { teacher: string; room: string | undefined } => {
+  if (existing.room && incoming.room && existing.room !== incoming.room) {
+    const label1 = existing.teacher.includes("(") ? existing.teacher : `${existing.teacher} (${existing.room})`;
+    const label2 = incoming.teacher.includes("(") ? incoming.teacher : `${incoming.teacher} (${incoming.room})`;
+    return { teacher: `${label1} / ${label2}`, room: undefined };
+  }
+  const split = (t: string) => t.split(/[/,、]\s*/).map((s) => s.trim()).filter(Boolean);
+  const merged = Array.from(new Set([...split(existing.teacher), ...split(incoming.teacher)]));
+  return { teacher: merged.join(" / "), room: existing.room || incoming.room };
+};
+
 const addCisCourseToMap = (
   result: Record<string, Course[]>,
   c: Course,
@@ -269,38 +283,15 @@ const addCisCourseToMap = (
     const periodItem = periods.find((p) => p.id === ch);
     if (!periodItem) continue;
     const key = `${periodItem.id}-${dayIdx}`;
-    if (!result[key]) {
-      result[key] = [];
-    }
+    if (!result[key]) result[key] = [];
     const existing = result[key].find((x) => x.name.trim() === c.name.trim());
-    if (existing) {
-      let combinedTeacher: string;
-      let combinedRoom: string | undefined;
-
-      if (existing.room && c.room && existing.room !== c.room) {
-        const t1 = existing.teacher;
-        const t2 = c.teacher;
-        const label1 = t1.includes("(") ? t1 : `${t1} (${existing.room})`;
-        const label2 = t2.includes("(") ? t2 : `${t2} (${c.room})`;
-        combinedTeacher = `${label1} / ${label2}`;
-        combinedRoom = undefined;
-      } else {
-        const currentTeachers = existing.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
-        const newTeachers = c.teacher.split(/[/,、]\s*/).map((t) => t.trim()).filter(Boolean);
-        combinedTeacher = Array.from(new Set([...currentTeachers, ...newTeachers])).join(" / ");
-        combinedRoom = existing.room || c.room;
-      }
-
-      const idx = result[key].indexOf(existing);
-      result[key][idx] = {
-        ...existing,
-        teacher: combinedTeacher,
-        room: combinedRoom,
-        isMyCourse: existing.isMyCourse || c.isMyCourse,
-      };
-    } else {
+    if (!existing) {
       result[key].push(c);
+      continue;
     }
+    const merged = mergeTeacherWithRoom(existing, c);
+    const idx = result[key].indexOf(existing);
+    result[key][idx] = { ...existing, ...merged, isMyCourse: existing.isMyCourse || c.isMyCourse };
   }
 };
 
