@@ -129,28 +129,27 @@ const getStageIcon = (stage: number): string => {
 
 const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties => {
   const base: React.CSSProperties = {
-    width: 84,
-    height: 84,
+    width: 132,
+    height: 132,
     marginBottom: 8,
-    borderRadius: "24px",
-    border: "2.5px solid var(--ncu-ink)",
-    overflow: "hidden",
+    border: "none",
+    overflow: "visible",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: "#1b2a4a",
+    background: "transparent",
     cursor: "pointer",
     userSelect: "none",
     padding: 0,
-    transition: "transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, border-color 0.3s ease",
-    willChange: "transform, box-shadow",
+    transition: "transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.18s ease",
+    willChange: "transform",
     backfaceVisibility: "hidden",
   };
 
   if (isUnlocked) {
     return {
       ...base,
-      border: "2.5px solid #10b981",
+      filter: "drop-shadow(0 0 12px #10b981)",
       animation: "unlockedPulse 3s ease-in-out infinite",
     };
   }
@@ -158,28 +157,28 @@ const getLogoStyle = (stage: number, isUnlocked: boolean): React.CSSProperties =
   if (stage <= 0) {
     return {
       ...base,
-      boxShadow: "var(--ncu-shadow-hard)",
+      filter: "drop-shadow(0 4px 12px rgba(27, 42, 74, 0.15))",
       transform: "none",
     };
   }
 
   const scale = 1.0 + (stage / 20) * 0.32;
   const rotate = getStageRotation(stage);
-  const boxShadow = getStageBoxShadow(stage);
+  const filter = getStageDropShadow(stage);
 
   return {
     ...base,
     transform: `scale(${scale.toFixed(2)}) rotate(${rotate}deg)`,
-    boxShadow,
+    filter,
   };
 };
 
-const getStageBoxShadow = (stage: number): string => {
-  if (stage >= 17) return "0 0 45px #10b981, 0 0 24px #38bdf8, var(--ncu-shadow-hard)";
-  if (stage >= 13) return "0 0 36px rgba(239, 68, 68, 0.95), var(--ncu-shadow-hard)";
-  if (stage >= 9) return "0 0 28px rgba(249, 115, 22, 0.9), var(--ncu-shadow-hard)";
-  if (stage >= 5) return "0 0 22px rgba(168, 85, 247, 0.85), var(--ncu-shadow-hard)";
-  return "0 0 16px rgba(56, 189, 248, 0.8), var(--ncu-shadow-hard)";
+const getStageDropShadow = (stage: number): string => {
+  if (stage >= 17) return "drop-shadow(0 0 24px #10b981) drop-shadow(0 0 12px #38bdf8)";
+  if (stage >= 13) return "drop-shadow(0 0 20px rgba(239, 68, 68, 0.95))";
+  if (stage >= 9) return "drop-shadow(0 0 16px rgba(249, 115, 22, 0.9))";
+  if (stage >= 5) return "drop-shadow(0 0 12px rgba(168, 85, 247, 0.85))";
+  return "drop-shadow(0 0 8px rgba(56, 189, 248, 0.8))";
 };
 
 const getStageRotation = (stage: number): number => {
@@ -225,11 +224,11 @@ const HeroHeader = ({
       @keyframes unlockedPulse {
         0%, 100% {
           transform: scale(1.04);
-          box-shadow: 0 0 26px rgba(16, 185, 129, 0.75), 0 0 14px rgba(56, 189, 248, 0.5), var(--ncu-shadow-hard);
+          filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.85)) drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
         }
         50% {
           transform: scale(1.08);
-          box-shadow: 0 0 42px rgba(16, 185, 129, 0.95), 0 0 24px rgba(56, 189, 248, 0.7), var(--ncu-shadow-hard);
+          filter: drop-shadow(0 0 28px rgba(16, 185, 129, 1)) drop-shadow(0 0 14px rgba(56, 189, 248, 0.8));
         }
       }
       @keyframes cyberGlowParticle {
