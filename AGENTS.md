@@ -1,6 +1,6 @@
-# AI 代理人操作授權與行為準則 (Agent Authorization Gate)
+# AI 代理人操作授權與行為準則 (AI Agent Guidelines & Authorization Gate)
 
-本文件為所有於本專案執行的 AI 代理人（Agent）之**強制首讀規範**。
+本文件為所有於本專案執行的 AI 代理人（Agent）之**強制首讀與唯一權威規範**。
 
 ---
 
@@ -43,7 +43,7 @@
 
 - **Header**：不得超過 72 字元，結尾不得有句號。
 - **Allowed Types**：`feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`, `perf`, `security`
-- **Allowed Scopes**：`app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`
+- **Allowed Scopes**：`app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`, `setup`, `style`
 - **Body**：必須為以 `1. ` 開始的英文數字編號清單。
 
 ### 5. 使用者拒絕或撤回 = 立即中止 (User Revocation = Immediate Stop)
@@ -51,10 +51,38 @@
 
 ---
 
-## 📐 技術環境 (Technical Context)
+## 🧠 問題排查策略 (Problem-Solving Strategy)
 
-本專案為 **行動優先之純靜態 Web 應用（SPA）**，技術棧：
-- **Ionic React 8 + React 18 + TypeScript + Vite 6**
-- **GitHub Pages 靜態發佈**
-- **無後端資料庫 / LocalStorage 本機保存**
+### 核心哲學：**難題求一，得一求全**
+遇到複雜問題或測試失敗時，不要盲目嘗試解法。先把問題縮小到最簡單的最小單元，釐清底層運作機制後，再回頭解決全局問題。
+
+### 執行準則：
+1. **先觀察再動手 (Stop and observe first)**：切勿隨意修改。動手前必須理解錯誤訊息、原始碼與相關文件。
+2. **歸納為最小基礎案例 (Normalize to base case)**：找出可被驗證的最小單元，先讓它成功運作，再擴展至全局。
+3. **隨時自我反思**：問自己「我是在解決核心問題，還是只是在試錯？」。
+
+---
+
+## 📐 領域知識與架構指引 (Domain & Technical Context)
+
+在探索與修改本專案程式碼前，請依照以下指引閱讀領域文件：
+1. **`CONTEXT.md`**（專案根目錄）：領域術語辭典，定義課表、學分、研究室、抽籤等專用名詞。在命名變數、檔案、測試或 Issue 時，請務必遵循此定義。
+2. **`docs/adr/`**：架構決策紀錄（ADR），記載純前端 SPA 架構與各項技術選型。
+3. **`docs/specs/`**：產品功能規格書（如 `0002-freshman-survival-guide.md`）。
+4. **技術環境**：
+   - **Ionic React 8 + React 18 + TypeScript (Strict 模式) + Vite 6**
+   - **GitHub Pages 靜態發布**
+   - **零後端純前端原則**：使用者選課與學分資料全數保存於 LocalStorage。
+
+---
+
+## 📋 協作與標籤規範 (Issue & Triage Vocabulary)
+
+專案 Issue 採用以下標準標籤體系，請勿自創或重新命名標籤：
+- `needs-triage`：新建立尚未經人工或 Agent 審閱的 Issue。
+- `needs-info`：需求描述不清、缺少重現步驟或需要發起者補充資訊。
+- `ready-for-agent`：需求明確、規格完整，可由 AI 代理人獨立承接執行。
+- `ready-for-human`：涉及主觀設計決策、架構重大調整或需人工審查。
+- `wontfix`：經評估後不予處理或超出專案範圍之項目。
+
 
