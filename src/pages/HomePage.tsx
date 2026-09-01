@@ -93,27 +93,7 @@ const modules: readonly ModuleCard[] = [
 
 const NcuimLogoIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%" aria-hidden="true">
-    <defs>
-      <linearGradient id="logoBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#2b4c7e" />
-        <stop offset="100%" stopColor="#0f1b2e" />
-      </linearGradient>
-      <linearGradient id="logoTextGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#ffffff" />
-        <stop offset="100%" stopColor="#dce7f5" />
-      </linearGradient>
-      <linearGradient id="logoAccentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#38bdf8" />
-        <stop offset="100%" stopColor="#2563eb" />
-      </linearGradient>
-    </defs>
-    <rect width="128" height="128" rx="28" fill="url(#logoBgGrad)" />
-    <rect x="2" y="2" width="124" height="124" rx="26" fill="none" stroke="#476f9d" strokeWidth="2" strokeOpacity="0.4" />
-    <circle cx="64" cy="24" r="5" fill="#38bdf8" />
-    <line x1="64" y1="29" x2="64" y2="40" stroke="#38bdf8" strokeWidth="2" strokeDasharray="2 2" />
-    <text x="64" y="48" textAnchor="middle" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fontSize="13" fontWeight="800" fill="#93c5fd" letterSpacing="3">NCU</text>
-    <text x="64" y="96" textAnchor="middle" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" fontSize="46" fontWeight="900" fill="url(#logoTextGrad)" letterSpacing="-1">IM</text>
-    <rect x="36" y="106" width="56" height="4" rx="2" fill="url(#logoAccentGrad)" />
+    <image href="/ncuim-icons/hero-logo.svg" x="0" y="0" width="128" height="128" preserveAspectRatio="xMidYMid meet" />
   </svg>
 );
 
