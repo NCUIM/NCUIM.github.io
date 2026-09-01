@@ -1,111 +1,108 @@
-# CIM-Life (NCUIM Graduate Student Portal & Freshman Survival Guide)
+<div align="center">
+  <img src="public/favicon.svg" alt="CIM-Life Logo" width="96" height="96" />
+  <h1>CIM-Life</h1>
+  <p><b>National Central University (NCUIM) Graduate Student Portal & Survival Guide</b></p>
 
-[![CI Tests](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/test.yml/badge.svg)](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/test.yml)
-[![Repository Policy](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/policy.yml/badge.svg)](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/policy.yml)
-[![Deploy to GitHub Pages](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml)
-[![React](https://img.shields.io/badge/React-18.3-blue.svg?logo=react)](https://react.dev/)
-[![Ionic](https://img.shields.io/badge/Ionic-8.0-3880ff.svg?logo=ionic)](https://ionicframework.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg?logo=typescript)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF.svg?logo=vite)](https://vitejs.dev/)
+  <p>
+    <a href="https://github.com/NCUIM/NCUIM.github.io/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/NCUIM/NCUIM.github.io/test.yml?branch=main&label=CI%20Tests&style=flat-square" alt="CI Tests" /></a>
+    <a href="https://github.com/NCUIM/NCUIM.github.io/actions/workflows/policy.yml"><img src="https://img.shields.io/github/actions/workflow/status/NCUIM/NCUIM.github.io/policy.yml?branch=main&label=Policy&style=flat-square" alt="Policy" /></a>
+    <a href="https://ncuim.github.io/"><img src="https://img.shields.io/badge/Deploy-GitHub%20Pages-success?style=flat-square&logo=github" alt="GitHub Pages" /></a>
+    <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" /></a>
+    <a href="https://ionicframework.com/"><img src="https://img.shields.io/badge/Ionic-8.0-3880FF?style=flat-square&logo=ionic" alt="Ionic" /></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript" alt="TypeScript" /></a>
+    <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Vite-6.0-646CFF?style=flat-square&logo=vite" alt="Vite" /></a>
+  </p>
 
-> **National Central University, Department of Information Management (NCUIM)**  
-> **Graduate Student Comprehensive Portal & Freshman Survival Guide (CIM-Life)**  
-> A mobile-first, privacy-oriented Single Page Application designed for NCUIM graduate students, integrating master's curriculum schedules, credit calculation, campus survival guides, lab floor layouts, and seating lottery tools.
-
-[繁體中文說明文件](README.md)
-
----
-
-## 🌟 Key Features
-
-### 1. 📅 Master's Curriculum Schedule & CIS Sync (`/timetable`)
-- **Department Overview & Personal Weekly Timetable**: Toggle between department-wide course offerings and personal enrolled courses with both daily and weekly views.
-- **One-Click CIS Bookmarklet Sync**: Securely parse and synchronize enrolled and historical course records directly from NCU Portal/CIS without manual data entry.
-- **Smart Merged Multi-Section Cards**: Automatically merges courses with identical titles and time slots (e.g. *Management Communication*) into a single unified block with clear teacher-classroom pairings and enrolled section underlining.
-- **Clear Year 1 / Year 2 Required Badges**: Explicitly marks core required vs. elective courses for intuitive curriculum planning.
-
-### 2. 🎓 Graduation Credit Calculator (`/tools/credit`)
-- **Curriculum Requirement Verification**: Automatically evaluates accumulated credits against NCUIM master's graduation requirements across required and elective domain categories.
-- **Credit Waiver & Historical Course Tracking**: Easily log transferred/waived credits and inspect remaining credit requirements in real time.
-
-### 3. 🧭 Freshman Survival Guide & Campus Life Tools (`/guide`, `/food`)
-- **NCUIM Survival Guide**: Course registration strategies, critical university links, and freshman checklists.
-- **Campus Food & Dining Map**: Curated dining recommendations around NCU Back Gate, Midnight Snack Street, Front Gate, and on-campus cafeterias.
-
-### 4. 🗺️ Lab Seating Layout & Stage Lottery (`/seats`, `/stage/lottery`)
-- **Interactive Lab Seating Floor Plan**: Visualized laboratory layout with desk and seat allocations.
-- **Lottery Ceremony Stage Mode**: Live drawing projection interface with serpentine adjacent seat distribution algorithms.
+  <p>
+    <b>English</b> • <a href="README.md">繁體中文</a> • <a href="https://ncuim.github.io/">🌐 Live Demo</a>
+  </p>
+</div>
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## 💡 Why CIM-Life?
 
-The project is built as a pure client-side static Single Page Application (SPA), delivering instant loading performance, offline resilience, and zero privacy leakage risks.
+Graduate life and orientation at NCUIM often involve scattered information and tedious manual processes:
+* **Fragmented Course Schedules**: University CIS portal makes it difficult to grasp the entire department's weekly timetable at a glance.
+* **Complex Credit Calculation**: Core requirements, elective domain minimums, and waiver caps are complicated and error-prone to tally by hand.
+* **Finding Lab Seats**: Navigating large graduate research rooms (209, 310, 313, 919) to find specific advisors' students or colleagues is frustrating without a visual map.
+* **Orientation Seating Lottery**: Arranging seat drawings while guaranteeing lab group cohesion and serpentine adjacency used to require manual spreadsheets.
 
-| Category | Technology |
-| --- | --- |
-| **Frontend Framework** | [React 18](https://react.dev/) + [Ionic Framework v8](https://ionicframework.com/) |
-| **Language** | [TypeScript 5.7](https://www.typescriptlang.org/) (Strict Mode) |
-| **Build Tool** | [Vite 6](https://vitejs.dev/) |
-| **Unit Testing** | [Vitest](https://vitest.dev/) + [@testing-library/react](https://testing-library.com/) |
-| **End-to-End Testing** | [Playwright](https://playwright.dev/) |
-| **CI / CD** | GitHub Actions (automated policy checks, security scans, and GitHub Pages deployment) |
-| **Hosting** | [GitHub Pages](https://pages.github.com/) |
+**CIM-Life** is a **mobile-first, zero-backend, privacy-centric single-page web app** designed to solve these pain points seamlessly.
 
 ---
 
-## 🚀 Quick Start
+## ✨ Key Features
 
-### Prerequisites
-- **Node.js** `>= 20.6.0`
-- **npm** `>= 10.0.0`
+### 📅 1. Smart Weekly Timetable & CIS Sync (`/timetable`)
+- **Department Master Schedule & Personal Timetable**: Toggle between department-wide offerings and enrolled courses with both daily and full-week grid views.
+- **Smart Merged Multi-Section Cards**: Automatically merges courses with identical titles and time slots into unified cards with clear teacher-classroom pairings and enrolled section underlining.
+- **One-Click CIS Bookmarklet Sync**: Securely parse course records directly from NCU CIS portal without entering credentials.
 
-### Installation & Development
+### 🎓 2. Graduation Credit Calculator (`/tools/credit`)
+- **Automated Curriculum Review**: Built-in rules verify core required credits, elective categories, and graduation deficits in real time.
+- **Credit Waiver Tracking**: Log waived/transferred credits with live progress tracking.
+
+### 🗺️ 3. Realistic Lab Floor Plan (`/seats`)
+- **Authentic Room Layouts**: Accurately reproduces physical dimensions, entryways, printers, and structural pillars for 209, 310, 313, and 919.
+- **Instant Search & Highlighting**: Locate any graduate student or advisor with instant seat highlighting.
+
+### 🎲 4. Seating Lottery Ceremony Stage (`/stage/lottery`)
+- **Serpentine Adjacency Solver**: Backtracking algorithm guarantees all lab members sit together in the same room without splitting.
+- **Audience Stage Mode**: Fullscreen projection UI with rolling animations, live capacity gauges, and celebratory particle effects.
+
+### 🍜 5. Freshman Survival Guide & Campus Food Map (`/guide`, `/food`)
+- **Freshman Checklist**: Timelines, enrollment procedures, and software perks (GitHub Student Pack, JetBrains, etc.).
+- **Midnight Snack Wheel**: Curated dining recommendations around NCU Back Gate and Midnight Snack Street to solve decision paralysis.
+
+---
+
+## ⚡ 1-Minute Quick Start
+
+### Method A: No Install, Use Online 🌐
+Open the live GitHub Pages app directly:  
+👉 **[https://ncuim.github.io](https://ncuim.github.io)**
+
+### Method B: Run Locally 💻
 ```bash
-# 1. Clone the repository
+# 1. Clone repository
 git clone https://github.com/NCUIM/NCUIM.github.io.git
 cd NCUIM.github.io
 
-# 2. Install dependencies (automatically installs Git commit hooks)
+# 2. Install dependencies (installs Git commit hooks automatically)
 npm install
 
 # 3. Start local development server
 npm run dev
 ```
-Open `http://localhost:5173` in your browser to view the application.
+Open `http://localhost:5173` in your browser.
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🔒 Zero-Backend & 100% Client Privacy
 
-To ensure codebase stability and release quality, automated checks are enforced:
+- **Pure Static SPA**: Hosted on GitHub Pages global CDN with instant loading and 100% uptime.
+- **Data Stays Local**: Your course selections, transcripts, and calculated credits are **stored exclusively in your browser's LocalStorage**. Zero server transmission, zero leakage risks.
+
+---
+
+## 🛠️ Testing & Quality Assurance
 
 ```bash
-# Run TypeScript typecheck
-npm run typecheck
-
-# Run unit and component test suites (Vitest)
-npm test
-
-# Generate test coverage report
-npm run test:coverage
-
-# Run documentation integrity verification
-npm run test:docs
-
-# Run commit and PR policy self-test
-npm run test:policy
-
-# Build production bundle
-npm run build
+npm run typecheck    # TypeScript strict check
+npm test             # Run Vitest unit tests (44+ tests passing)
+npm run test:docs    # Verify Markdown links and single-source rules
+npm run test:policy  # Self-test commit policy rules
+npm run build        # Production bundle build
 ```
 
 ---
 
 ## 🤝 Contributing
 
-Contributions and bug reports are welcome! Please review our contribution guidelines before opening a pull request:
-- [CONTRIBUTING.md](CONTRIBUTING.md) — Workflow and commit standards
-- [docs/engineering/commit-policy.md](docs/engineering/commit-policy.md) — Conventional Commits policy specification
+Contributions and feedback are welcome! Please review:
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Contribution workflow
+- [docs/engineering/commit-policy.md](docs/engineering/commit-policy.md) — Conventional Commits policy (**all commits and PRs must be in English**)
 - [docs/engineering/testing-policy.md](docs/engineering/testing-policy.md) — Testing strategy and acceptance criteria
+
 
