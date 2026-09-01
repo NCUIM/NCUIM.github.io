@@ -20,7 +20,7 @@ import {
   useIonToast,
 } from "@ionic/react";
 import { isCisLoggedIn, cisLogout } from "../services/cis-login";
-import { fetchCisSelectedCourses, type CisCourse } from "../services/cis-course-api";
+import { fetchCisSelectedCourses, parseBookmarkletPayload, type CisCourse } from "../services/cis-course-api";
 import {
   fetchImMasterCourses,
   buildTimetableMapFromMasterCourses,
@@ -44,6 +44,8 @@ export interface Course {
   readonly name: string;
   readonly teacher: string;
   readonly room?: string;
+  readonly myEnrolledTeacher?: string;
+  readonly myEnrolledRoom?: string;
   readonly courseType?: "REQUIRED" | "ELECTIVE";
   readonly requiredTag?: "碩一必修" | "碩二必修" | "必修" | null;
   readonly credit?: number;
@@ -184,11 +186,13 @@ const isCourseMatch = (master: MasterCourseItem, cis: Partial<CisCourse>): boole
 const matchCisCourse = (
   master: MasterCourseItem,
   myCourses: readonly CisCourse[],
-): { isMine: boolean; room?: string } => {
+): { isMine: boolean; room?: string; matchedTeacher?: string; matchedRoom?: string } => {
   const matched = myCourses.find((courseItem) => isCourseMatch(master, courseItem));
   return {
     isMine: Boolean(matched),
     room: matched?.room || master.room,
+    matchedTeacher: matched?.teacher,
+    matchedRoom: matched?.room || (matched?.classNo ? getCourseRoom(matched.classNo) : undefined),
   };
 };
 
@@ -196,7 +200,7 @@ const mapMasterCourseToCourse = (
   c: MasterCourseItem,
   myCourses: readonly CisCourse[],
 ): Course => {
-  const { isMine, room } = matchCisCourse(c, myCourses);
+  const { isMine, room, matchedTeacher, matchedRoom } = matchCisCourse(c, myCourses);
   const reqTag = c.requiredTag ?? getRequiredTag(c.classNo, c.title);
   return {
     id: String(c.serialNo),
@@ -204,6 +208,8 @@ const mapMasterCourseToCourse = (
     name: c.title,
     teacher: c.teachers.join(" / "),
     room: room || c.room,
+    myEnrolledTeacher: matchedTeacher,
+    myEnrolledRoom: matchedRoom,
     courseType: (reqTag || c.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
     requiredTag: reqTag,
     credit: c.credit,
@@ -599,7 +605,34 @@ const MobileTrackCard = ({
           wordBreak: "break-word",
         }}
       >
-        {course.teacher}{roomText}
+        {course.teacher.includes(" / ") ? (
+          course.teacher.split(" / ").map((t, idx) => {
+            const { name, room } = parseTeacherAndRoom(t);
+            const isThisMySection = Boolean(
+              course.isMyCourse &&
+              ((course.myEnrolledTeacher && (name.includes(course.myEnrolledTeacher) || course.myEnrolledTeacher.includes(name))) ||
+               (course.myEnrolledRoom && room && course.myEnrolledRoom === room))
+            );
+            return (
+              <span key={t}>
+                {idx > 0 && " / "}
+                <span
+                  style={{
+                    textDecoration: isThisMySection ? "underline" : "none",
+                    textDecorationColor: "var(--ncu-primary)",
+                    textUnderlineOffset: "3px",
+                    fontWeight: isThisMySection ? 700 : 400,
+                    color: isThisMySection ? "var(--ncu-ink)" : "var(--ncu-muted)",
+                  }}
+                >
+                  {name}{room ? ` (${room})` : ""}
+                </span>
+              </span>
+            );
+          })
+        ) : (
+          `${course.teacher}${roomText}`
+        )}
       </p>
     </div>
   );
@@ -923,9 +956,33 @@ const DesktopCourseCard = ({
         <div style={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
           {span.course.teacher.split(" / ").map((t) => {
             const { name, room } = parseTeacherAndRoom(t);
+            const isThisMySection = Boolean(
+              span.course.isMyCourse &&
+              ((span.course.myEnrolledTeacher && (name.includes(span.course.myEnrolledTeacher) || span.course.myEnrolledTeacher.includes(name))) ||
+               (span.course.myEnrolledRoom && room && span.course.myEnrolledRoom === room))
+            );
             return (
-              <div key={t} style={{ display: "inline-flex", alignItems: "center", gap: 4, flexWrap: "wrap", justifyContent: "center" }}>
-                <span style={{ fontSize: teacherFontSize, color: "var(--ncu-muted)", lineHeight: 1.25, fontWeight: 500 }}>
+              <div
+                key={t}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: teacherFontSize,
+                    color: isThisMySection ? "var(--ncu-ink)" : "var(--ncu-muted)",
+                    lineHeight: 1.25,
+                    fontWeight: isThisMySection ? 700 : 500,
+                    textDecoration: isThisMySection ? "underline" : "none",
+                    textDecorationColor: "var(--ncu-primary)",
+                    textUnderlineOffset: "3px",
+                  }}
+                >
                   {name}
                 </span>
                 {room && (
@@ -937,6 +994,8 @@ const DesktopCourseCard = ({
                       background: "rgba(49, 87, 200, 0.08)",
                       padding: "1px 6px",
                       borderRadius: 4,
+                      textDecoration: isThisMySection ? "underline" : "none",
+                      textUnderlineOffset: "2px",
                     }}
                   >
                     {room}
@@ -1237,17 +1296,10 @@ const TimetablePage = () => {
   useEffect(() => {
     const handleHashSync = () => {
       const hash = window.location.hash;
-      if (!hash?.includes("cis_data=")) return;
+      const payload = parseBookmarkletPayload(hash);
+      if (!payload) return;
       try {
-        const rawParam = hash.replace(/^#.*?cis_data=/, "");
-        const decoded = decodeURIComponent(rawParam);
-        const parsed = JSON.parse(decoded);
-        const currentCourses: CisCourse[] = Array.isArray(parsed)
-          ? parsed
-          : (parsed?.current || []);
-        const historyCourses: CisCourse[] = Array.isArray(parsed)
-          ? parsed
-          : (parsed?.history || parsed?.current || []);
+        const { currentCourses, historyCourses } = payload;
 
         if (currentCourses.length > 0) {
           setMyCisCourses(currentCourses);

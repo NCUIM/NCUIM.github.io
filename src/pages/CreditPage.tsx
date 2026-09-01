@@ -35,7 +35,7 @@ import {
   ribbonOutline,
   flashOutline,
 } from "ionicons/icons";
-import { type CisCourse } from "../services/cis-course-api";
+import { parseBookmarkletPayload, type CisCourse } from "../services/cis-course-api";
 import {
   TRACK_CONFIGS,
   GRADUATION_GATES,
@@ -735,17 +735,10 @@ const CreditPage: React.FC = () => {
   useEffect(() => {
     const handleHashSync = () => {
       const hash = window.location.hash;
-      if (!hash?.includes("cis_data=")) return;
+      const payload = parseBookmarkletPayload(hash);
+      if (!payload) return;
       try {
-        const rawParam = hash.replace(/^#.*?cis_data=/, "");
-        const decoded = decodeURIComponent(rawParam);
-        const parsed = JSON.parse(decoded);
-        const currentCourses: CisCourse[] = Array.isArray(parsed)
-          ? parsed
-          : (parsed?.current || []);
-        const historyCourses: CisCourse[] = Array.isArray(parsed)
-          ? parsed
-          : (parsed?.history || parsed?.current || []);
+        const { currentCourses, historyCourses } = payload;
 
         if (currentCourses.length > 0) {
           localStorage.setItem("ncu_my_cis_courses", JSON.stringify(currentCourses));
