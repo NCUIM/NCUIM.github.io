@@ -47,7 +47,7 @@ export interface Course {
   readonly myEnrolledTeacher?: string;
   readonly myEnrolledRoom?: string;
   readonly courseType?: "REQUIRED" | "ELECTIVE";
-  readonly requiredTag?: "碩一必修" | "碩二必修" | "必修" | null;
+  readonly requiredTag?: "碩一必修" | "碩二必修" | null;
   readonly credit?: number;
   readonly isMyCourse?: boolean;
 }
@@ -206,7 +206,7 @@ const mapMasterCourseToCourse = (
   myCourses: readonly CisCourse[],
 ): Course => {
   const { isMine, room, matchedTeacher, matchedRoom } = matchCisCourse(c, myCourses);
-  const reqTag = c.requiredTag ?? getRequiredTag(c.classNo, c.title);
+  const reqTag = c.requiredTag ?? getRequiredTag(c.classNo);
   return {
     id: String(c.serialNo),
     classNo: c.classNo,
@@ -314,7 +314,7 @@ const buildTimetableFromCisCourses = (
 
     const effectiveRoom = c.room || matchedMaster?.room || getCourseRoom(c.classNo || matchedMaster?.classNo);
     const effectiveTeacher = c.teacher || matchedMaster?.teachers.join(" / ") || "";
-    const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(c.classNo, c.name);
+    const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(c.classNo);
 
     const enrichedCourse: Course = {
       id: c.serialNo || (matchedMaster ? String(matchedMaster.serialNo) : undefined),
@@ -554,7 +554,6 @@ const MobileTrackCard = ({
   course: Course;
   maxTracks: number;
 }>) => {
-  const isRequired = course.courseType === "REQUIRED";
   const titleSize = maxTracks >= 3 ? 15.5 : 16;
   const descSize = maxTracks >= 3 ? 13.5 : 14;
   const roomText = course.room && !course.teacher.includes("(") ? ` · ${course.room}` : "";
@@ -582,13 +581,9 @@ const MobileTrackCard = ({
           />
         )}
         {course.name}
-        {course.requiredTag ? (
+        {course.requiredTag && (
           <span style={{ fontSize: 11, color: "var(--ncu-primary)", marginLeft: 4, fontWeight: 700 }}>
             [{course.requiredTag}]
-          </span>
-        ) : isRequired && (
-          <span style={{ fontSize: 11, color: "var(--ncu-primary)", marginLeft: 4, fontWeight: 700 }}>
-            [必修]
           </span>
         )}
       </h2>
@@ -896,7 +891,6 @@ const DesktopCourseCard = ({
   periodTops: readonly number[];
 }>) => {
   const isMine = Boolean(span.course.isMyCourse);
-  const isRequired = span.course.courseType === "REQUIRED";
   const startTop = periodTops[span.startIdx];
   const spanHeight = periodTops[span.endIdx + 1] - periodTops[span.startIdx];
   const leftPct = (span.colIndex / span.totalCols) * 100;
@@ -938,13 +932,9 @@ const DesktopCourseCard = ({
         <strong style={{ fontSize: titleFontSize, fontWeight: 800, lineHeight: 1.3, color: "var(--ncu-ink)" }}>
           {span.course.name}
         </strong>
-        {span.course.requiredTag ? (
+        {span.course.requiredTag && (
           <span style={{ fontSize: 11, color: "var(--ncu-primary)", fontWeight: 700 }}>
             [{span.course.requiredTag}]
-          </span>
-        ) : isRequired && (
-          <span style={{ fontSize: 11, color: "var(--ncu-primary)", fontWeight: 700 }}>
-            [必修]
           </span>
         )}
       </div>

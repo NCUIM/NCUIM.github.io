@@ -12,7 +12,7 @@ export interface MasterCourseItem {
   readonly teachers: readonly string[];
   readonly classTimes: readonly string[];
   readonly courseType: "REQUIRED" | "ELECTIVE";
-  readonly requiredTag?: "碩一必修" | "碩二必修" | "必修" | null;
+  readonly requiredTag?: "碩一必修" | "碩二必修" | null;
   readonly passwordCard?: string;
   readonly limitCnt?: number | null;
   readonly admitCnt?: number | null;
@@ -115,20 +115,24 @@ export const cleanCourseTitle = (rawTitle: string): string => {
   return rawTitle.trim();
 };
 
-export const getRequiredTag = (classNo: string = "", title: string = ""): "碩一必修" | "碩二必修" | "必修" | null => {
+export const getRequiredTag = (
+  classNo: string = "",
+  courseType?: string,
+): "碩一必修" | "碩二必修" | null => {
+  if (courseType !== "REQUIRED") return null;
+
   if (
-    classNo.startsWith("IM5019") || title.includes("管理溝通") ||
-    classNo.startsWith("IM7043") || classNo.startsWith("IM7044") || title.includes("書報研討")
+    classNo.startsWith("IM5019") ||
+    classNo.startsWith("IM7043") || classNo.startsWith("IM7044")
   ) {
     return "碩二必修";
   }
 
   if (
-    classNo.startsWith("IM5025") || title.includes("研究方法") ||
-    classNo.startsWith("IM6012") || title.includes("管理資訊系統") ||
-    classNo.startsWith("IM6053") || title.includes("多變量分析") ||
-    classNo.startsWith("IM6003") || title.includes("軟體工程") ||
-    classNo.startsWith("IM6055") || title.includes("電腦網路安全")
+    classNo.startsWith("IM5025") ||
+    classNo.startsWith("IM6012") ||
+    classNo.startsWith("IM6053") ||
+    classNo.startsWith("IM6003")
   ) {
     return "碩一必修";
   }
@@ -137,14 +141,11 @@ export const getRequiredTag = (classNo: string = "", title: string = ""): "碩�
 };
 
 const getCourseType = (c: RawCourse): "REQUIRED" | "ELECTIVE" => {
-  if (getRequiredTag(c.classNo, c.title)) {
-    return "REQUIRED";
-  }
   return c.courseType === "REQUIRED" ? "REQUIRED" : "ELECTIVE";
 };
 
 const mapRawCourse = (c: RawCourse): MasterCourseItem => {
-  const reqTag = getRequiredTag(c.classNo, c.title);
+  const reqTag = getRequiredTag(c.classNo, c.courseType);
   return {
     serialNo: c.serialNo,
     classNo: c.classNo,
