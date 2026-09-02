@@ -65,12 +65,12 @@ const modules: readonly ModuleCard[] = [
   },
   {
     title: "研究室座位表",
-    subtitle: "研究室座位與格局圖",
+    subtitle: "即將開放 · 敬請期待",
     icon: map,
     route: "/seats",
     color: "var(--ncu-muted)",
-    badge: "即將開放",
     disabled: true,
+    badge: "開發中",
   },
   {
     title: "抽籤大會",
@@ -287,7 +287,7 @@ const HeroHeader = ({
         color: "var(--ncu-ink)",
       }}
     >
-      歡迎加入資管所
+      CIM-Life 中央資管通
     </h1>
     <p
       style={{
@@ -296,7 +296,7 @@ const HeroHeader = ({
         margin: "var(--ncu-space-1) 0 0",
       }}
     >
-      CIM-Life 中央資管通
+      歡迎加入資管所
     </p>
   </div>
 );
