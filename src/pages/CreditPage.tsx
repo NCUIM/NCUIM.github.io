@@ -439,7 +439,9 @@ const PrereqItemRow = ({
         <strong style={{ fontSize: 15, fontWeight: 700, color: "var(--ncu-ink)" }}>
           {course.name}
         </strong>
-        <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>({course.requirement})</span>
+        {course.note && (
+          <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>{course.note}</span>
+        )}
       </div>
     </IonLabel>
     <IonNote

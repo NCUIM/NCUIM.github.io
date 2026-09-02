@@ -30,7 +30,7 @@ export interface PrereqCourse {
   readonly id: string;
   readonly category: "所先修" | "組先修";
   readonly name: string;
-  readonly requirement: string;
+  readonly note?: string;
 }
 
 export interface CurriculumSection {
@@ -73,13 +73,12 @@ export const COMMON_PREREQUISITES: readonly PrereqCourse[] = [
     id: "pre-db",
     category: "所先修",
     name: "資料庫管理",
-    requirement: "3 學分",
   },
   {
     id: "pre-sa",
     category: "所先修",
     name: "系統分析與設計",
-    requirement: "3 學分 (擋修軟體工程)",
+    note: "擋修軟體工程",
   },
 ];
 
@@ -98,19 +97,16 @@ export const MGMT_PREREQUISITES: readonly PrereqCourse[] = [
     id: "pre-econ",
     category: "組先修",
     name: "經濟學",
-    requirement: "3 學分",
   },
   {
     id: "pre-acct",
     category: "組先修",
     name: "會計學",
-    requirement: "3 學分",
   },
   {
     id: "pre-stat",
     category: "組先修",
     name: "統計學",
-    requirement: "3 學分",
   },
 ];
 
@@ -140,19 +136,16 @@ export const MGMT_TRACK_ELECTIVES: readonly CurriculumCourse[] = [
 ];
 
 // ── IS Track (資訊系統組 30 學分) ───────────────────────────────
-
 export const SYS_PREREQUISITES: readonly PrereqCourse[] = [
   {
     id: "pre-prog",
     category: "組先修",
     name: "程式語言設計相關課程",
-    requirement: "6 學分",
   },
   {
     id: "pre-ds",
     category: "組先修",
     name: "資料結構相關課程",
-    requirement: "3 學分",
   },
 ];
 
