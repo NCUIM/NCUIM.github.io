@@ -23,12 +23,14 @@ interface SeatCell {
   readonly type: "seat";
   readonly label: string;
   readonly colSpan?: number;
+  readonly rowSpan?: number;
 }
 
 interface SpecialCell {
   readonly type: "door" | "corridor" | "printer" | "pillar" | "empty";
   readonly label?: string;
   readonly colSpan?: number;
+  readonly rowSpan?: number;
 }
 
 type GridCell = SeatCell | SpecialCell;
@@ -68,12 +70,12 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     rows: [
       // Row 1: door spans A-B, rest empty
       [{ type: "door", label: "大門", colSpan: 2 }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }],
-      // Row 2: seats 1-1 to 5-1 (each 2 cols) + printer (2 cols)
-      [{ type: "seat", label: "1-1", colSpan: 2 }, { type: "seat", label: "2-1", colSpan: 2 }, { type: "seat", label: "3-1", colSpan: 2 }, { type: "seat", label: "4-1", colSpan: 2 }, { type: "seat", label: "5-1", colSpan: 2 }, { type: "printer", label: "印表機區", colSpan: 2 }],
-      // Row 3: seats 1-2 to 5-2 + printer continues
-      [{ type: "seat", label: "1-2", colSpan: 2 }, { type: "seat", label: "2-2", colSpan: 2 }, { type: "seat", label: "3-2", colSpan: 2 }, { type: "seat", label: "4-2", colSpan: 2 }, { type: "seat", label: "5-2", colSpan: 2 }, { type: "empty" }, { type: "empty" }],
-      // Row 4: seats 1-3 to 5-3 + printer ends
-      [{ type: "seat", label: "1-3", colSpan: 2 }, { type: "seat", label: "2-3", colSpan: 2 }, { type: "seat", label: "3-3", colSpan: 2 }, { type: "seat", label: "4-3", colSpan: 2 }, { type: "seat", label: "5-3", colSpan: 2 }, { type: "empty" }, { type: "empty" }],
+      // Row 2: seats 1-1 to 5-1 (each 2 cols) + printer (2 cols, spans 3 rows)
+      [{ type: "seat", label: "1-1", colSpan: 2 }, { type: "seat", label: "2-1", colSpan: 2 }, { type: "seat", label: "3-1", colSpan: 2 }, { type: "seat", label: "4-1", colSpan: 2 }, { type: "seat", label: "5-1", colSpan: 2 }, { type: "printer", label: "印表機區", colSpan: 2, rowSpan: 3 }],
+      // Row 3: seats 1-2 to 5-2 (printer continues via rowSpan)
+      [{ type: "seat", label: "1-2", colSpan: 2 }, { type: "seat", label: "2-2", colSpan: 2 }, { type: "seat", label: "3-2", colSpan: 2 }, { type: "seat", label: "4-2", colSpan: 2 }, { type: "seat", label: "5-2", colSpan: 2 }],
+      // Row 4: seats 1-3 to 5-3 (printer continues via rowSpan)
+      [{ type: "seat", label: "1-3", colSpan: 2 }, { type: "seat", label: "2-3", colSpan: 2 }, { type: "seat", label: "3-3", colSpan: 2 }, { type: "seat", label: "4-3", colSpan: 2 }, { type: "seat", label: "5-3", colSpan: 2 }],
       // Row 5: seats 1-4 to 5-4 + 6-1 (K col) + empty (L col)
       [{ type: "seat", label: "1-4", colSpan: 2 }, { type: "seat", label: "2-4", colSpan: 2 }, { type: "seat", label: "3-4", colSpan: 2 }, { type: "seat", label: "4-4", colSpan: 2 }, { type: "seat", label: "5-4", colSpan: 2 }, { type: "seat", label: "6-1" }, { type: "empty" }],
       // Row 6: seats 1-5 to 5-5 + 6-2 (K col) + empty (L col)
@@ -87,7 +89,7 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     name: "313 研究室",
     cols: 7,
     rows: [
-      // Row 1: door in col 7 (same as 4-x)
+      // Row 1: door in col 7 (same column as 4-x seats)
       [{ type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "empty" }, { type: "door", label: "大門" }],
       // Row 2: 3 seats + 4-1
       [{ type: "seat", label: "1-1" }, { type: "empty" }, { type: "seat", label: "2-1" }, { type: "empty" }, { type: "seat", label: "3-1" }, { type: "empty" }, { type: "seat", label: "4-1" }],
@@ -101,19 +103,18 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     ],
   },
 
-  // ── 919: 2×3 grid split by corridor, doors top & bottom ──────────
+  // ── 919: 2-col corridor layout, doors top & bottom ──────────────
   {
     id: "919",
     name: "919 研究室",
-    cols: 4,
+    cols: 2,
     rows: [
-      [{ type: "door", label: "大門" }, { type: "empty" }, { type: "empty" }, { type: "empty" }],
-      [{ type: "seat", label: "1-1" }, { type: "empty" }, { type: "empty" }, { type: "seat", label: "2-1" }],
-      [{ type: "seat", label: "1-2" }, { type: "empty" }, { type: "empty" }, { type: "seat", label: "2-2" }],
-      [{ type: "seat", label: "1-3" }, { type: "empty" }, { type: "empty" }, { type: "seat", label: "2-3" }],
-      [{ type: "corridor", label: "走道", colSpan: 4 }],
-      [{ type: "seat", label: "1-4" }, { type: "empty" }, { type: "empty" }, { type: "seat", label: "2-5" }],
-      [{ type: "door", label: "大門" }, { type: "empty" }, { type: "empty" }, { type: "empty" }],
+      [{ type: "door", label: "大門" }, { type: "seat", label: "2-1" }],
+      [{ type: "seat", label: "1-1" }, { type: "seat", label: "2-2" }],
+      [{ type: "seat", label: "1-2" }, { type: "seat", label: "2-3" }],
+      [{ type: "seat", label: "1-3" }, { type: "seat", label: "2-4" }],
+      [{ type: "corridor", label: "走道", colSpan: 2 }],
+      [{ type: "seat", label: "1-4" }, { type: "seat", label: "2-5" }],
     ],
   },
 ];
@@ -207,15 +208,15 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
   const rows = layout.rows.length;
 
   // Build positioned items with explicit grid coordinates
-  const items: { key: number; row: number; col: number; span: number; el: React.ReactNode }[] = [];
+  const items: { key: number; row: number; col: number; span: number; rowSpan: number; el: React.ReactNode }[] = [];
   let itemIdx = 0;
 
   for (let r = 0; r < rows; r++) {
     let col = 1;
     for (const cell of layout.rows[r]) {
-      const span = (cell.type === "seat" || cell.type === "door" || cell.type === "printer" || cell.type === "pillar")
-        ? ((cell as SeatCell | SpecialCell).colSpan ?? 1)
-        : 1;
+      const isStruct = cell.type === "seat" || cell.type === "door" || cell.type === "corridor" || cell.type === "printer" || cell.type === "pillar";
+      const span = isStruct ? ((cell as SeatCell | SpecialCell).colSpan ?? 1) : 1;
+      const rs = isStruct ? ((cell as SeatCell | SpecialCell).rowSpan ?? 1) : 1;
 
       let el: React.ReactNode;
       if (cell.type === "corridor") {
@@ -232,13 +233,13 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
         const base = SPECIAL_STYLES[cell.type];
         const w = cell.type === "door" ? sizes.door : undefined;
         el = (
-          <div style={{ ...base, ...(w ? { minWidth: w } : {}) }}>
+          <div style={{ ...base, ...(w ? { minWidth: w } : {}), ...(rs > 1 ? { height: "100%" } : {}) }}>
             {cell.label}
           </div>
         );
       }
 
-      items.push({ key: itemIdx++, row: r, col, span, el });
+      items.push({ key: itemIdx++, row: r, col, span, rowSpan: rs, el });
       col += span;
     }
   }
@@ -257,8 +258,9 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
           <div
             key={item.key}
             style={{
-              gridRow: item.row + 1,
+              gridRow: item.rowSpan > 1 ? `${item.row + 1} / span ${item.rowSpan}` : item.row + 1,
               gridColumn: item.span > 1 ? `${item.col} / span ${item.span}` : item.col,
+              ...(item.rowSpan > 1 ? { alignSelf: "stretch" } : {}),
             }}
           >
             {item.el}
