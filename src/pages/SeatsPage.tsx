@@ -203,46 +203,75 @@ const getSeatSizes = (cols: number) => {
   return { seat: 32, empty: 6, gap: 3, door: 32 };
 };
 
-const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
-  const sizes = getSeatSizes(layout.cols);
-  const rows = layout.rows.length;
+interface PositionedGridItem {
+  readonly key: number;
+  readonly row: number;
+  readonly col: number;
+  readonly span: number;
+  readonly rowSpan: number;
+  readonly el: React.ReactNode;
+}
 
-  // Build positioned items with explicit grid coordinates
-  const items: { key: number; row: number; col: number; span: number; rowSpan: number; el: React.ReactNode }[] = [];
+const getGridCellSpans = (cell: GridCell): { colSpan: number; rowSpan: number } => {
+  if (cell.type === "empty") return { colSpan: 1, rowSpan: 1 };
+  const c = cell as SeatCell | SpecialCell;
+  return { colSpan: c.colSpan ?? 1, rowSpan: c.rowSpan ?? 1 };
+};
+
+const renderGridCellElement = (
+  cell: GridCell,
+  sizes: ReturnType<typeof getSeatSizes>,
+  rowSpan: number,
+): React.ReactNode => {
+  if (cell.type === "corridor") {
+    return <div style={SPECIAL_STYLES.corridor}>{cell.label}</div>;
+  }
+  if (cell.type === "empty") {
+    return <div style={{ ...SPECIAL_STYLES.empty, minWidth: sizes.empty }} />;
+  }
+  if (cell.type === "seat") {
+    return <div style={{ ...SEAT_STYLE, minWidth: sizes.seat }}>{cell.label}</div>;
+  }
+
+  const base = SPECIAL_STYLES[cell.type];
+  const minWidth = cell.type === "door" ? sizes.door : undefined;
+  const height = rowSpan > 1 ? "100%" : undefined;
+  return (
+    <div style={{ ...base, ...(minWidth ? { minWidth } : {}), ...(height ? { height } : {}) }}>
+      {cell.label}
+    </div>
+  );
+};
+
+const buildGridItems = (
+  rows: readonly (readonly GridCell[])[],
+  sizes: ReturnType<typeof getSeatSizes>,
+): readonly PositionedGridItem[] => {
+  const items: PositionedGridItem[] = [];
   let itemIdx = 0;
 
-  for (let r = 0; r < rows; r++) {
+  for (let r = 0; r < rows.length; r++) {
     let col = 1;
-    for (const cell of layout.rows[r]) {
-      const isStruct = cell.type === "seat" || cell.type === "door" || cell.type === "corridor" || cell.type === "printer" || cell.type === "pillar";
-      const span = isStruct ? ((cell as SeatCell | SpecialCell).colSpan ?? 1) : 1;
-      const rs = isStruct ? ((cell as SeatCell | SpecialCell).rowSpan ?? 1) : 1;
-
-      let el: React.ReactNode;
-      if (cell.type === "corridor") {
-        el = <div style={SPECIAL_STYLES.corridor}>{cell.label}</div>;
-      } else if (cell.type === "empty") {
-        el = <div style={{ ...SPECIAL_STYLES.empty, minWidth: sizes.empty }} />;
-      } else if (cell.type === "seat") {
-        el = (
-          <div style={{ ...SEAT_STYLE, minWidth: sizes.seat }}>
-            {cell.label}
-          </div>
-        );
-      } else {
-        const base = SPECIAL_STYLES[cell.type];
-        const w = cell.type === "door" ? sizes.door : undefined;
-        el = (
-          <div style={{ ...base, ...(w ? { minWidth: w } : {}), ...(rs > 1 ? { height: "100%" } : {}) }}>
-            {cell.label}
-          </div>
-        );
-      }
-
-      items.push({ key: itemIdx++, row: r, col, span, rowSpan: rs, el });
-      col += span;
+    for (const cell of rows[r]) {
+      const { colSpan, rowSpan } = getGridCellSpans(cell);
+      const el = renderGridCellElement(cell, sizes, rowSpan);
+      items.push({ key: itemIdx++, row: r, col, span: colSpan, rowSpan, el });
+      col += colSpan;
     }
   }
+
+  return items;
+};
+
+const getGridItemStyle = (item: PositionedGridItem): React.CSSProperties => ({
+  gridRow: item.rowSpan > 1 ? `${item.row + 1} / span ${item.rowSpan}` : item.row + 1,
+  gridColumn: item.span > 1 ? `${item.col} / span ${item.span}` : item.col,
+  ...(item.rowSpan > 1 ? { alignSelf: "stretch" } : {}),
+});
+
+const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
+  const sizes = getSeatSizes(layout.cols);
+  const items = buildGridItems(layout.rows, sizes);
 
   return (
     <div style={{ display: "flex", justifyContent: "center", padding: "12px 0", overflowX: "auto" }}>
@@ -255,14 +284,7 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
         }}
       >
         {items.map((item) => (
-          <div
-            key={item.key}
-            style={{
-              gridRow: item.rowSpan > 1 ? `${item.row + 1} / span ${item.rowSpan}` : item.row + 1,
-              gridColumn: item.span > 1 ? `${item.col} / span ${item.span}` : item.col,
-              ...(item.rowSpan > 1 ? { alignSelf: "stretch" } : {}),
-            }}
-          >
+          <div key={item.key} style={getGridItemStyle(item)}>
             {item.el}
           </div>
         ))}
