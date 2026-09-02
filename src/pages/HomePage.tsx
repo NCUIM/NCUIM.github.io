@@ -70,7 +70,7 @@ const modules: readonly ModuleCard[] = [
     route: "/seats",
     color: "var(--ncu-muted)",
     disabled: true,
-    badge: "開發中",
+    badge: "等待抽籤結果",
   },
   {
     title: "抽籤大會",
