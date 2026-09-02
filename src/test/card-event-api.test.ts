@@ -31,6 +31,10 @@ describe("card-event-api", () => {
       } as Response);
 
       const res = await fetchLiveLeaderboard();
+      expect(fetch).toHaveBeenCalledWith(
+        "https://ncuim2026.thanatosjun.com/api/public/leaderboard?eventId=cmtk8wdsh000001s64nx67aky",
+        { headers: { Accept: "application/json" } },
+      );
       expect(res.event.name).toBe("NCUIM2026-Fresher");
       expect(res.totalRanked).toBe(69);
       expect(res.top).toHaveLength(2);
@@ -57,7 +61,7 @@ describe("card-event-api", () => {
         role: "PARTICIPANT",
         label: "新生 A",
         event: {
-          id: "cmtfm0mc20001x0vlhc0bw8b2",
+          id: "cmtk8wdsh000001s64nx67aky",
           name: "NCUIM2026-Fresher",
         },
       };
@@ -112,7 +116,7 @@ describe("card-event-api", () => {
         role: "PARTICIPANT",
         label: "新生 A",
         event: {
-          id: "cmtfm0mc20001x0vlhc0bw8b2",
+          id: "cmtk8wdsh000001s64nx67aky",
           name: "NCUIM2026-Fresher",
         },
       };
@@ -122,7 +126,7 @@ describe("card-event-api", () => {
       const saved = getSavedParticipantInfo();
       expect(saved).not.toBeNull();
       expect(saved?.entryCode).toBe("JOINNCU1");
-      expect(saved?.eventId).toBe("cmtfm0mc20001x0vlhc0bw8b2");
+      expect(saved?.eventId).toBe("cmtk8wdsh000001s64nx67aky");
       expect(saved?.label).toBe("新生 A");
       expect(saved?.eventName).toBe("NCUIM2026-Fresher");
 
