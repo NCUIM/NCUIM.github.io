@@ -1,12 +1,12 @@
 /**
  * Card Event API Service
  *
- * Integrates with the NCUIM event card & leaderboard server (https://www.thanatosjun.com).
+ * Integrates with the NCUIM event card & leaderboard server (https://ncuim2026.thanatosjun.com).
  */
 
 export const CARD_EVENT_CONFIG = {
-  baseUrl: "https://www.thanatosjun.com",
-  defaultEventId: "cmtfm0mc20001x0vlhc0bw8b2",
+  baseUrl: "https://ncuim2026.thanatosjun.com",
+  defaultEventId: "cmtk8wdsh000001s64nx67aky",
   storageKey: "ncuim_card_entry_info",
 } as const;
 
