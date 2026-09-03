@@ -221,7 +221,7 @@ const findNextMarkdownLink = (
 
     const token = tryParseMarkdownLink(text, i);
     if (token) return token;
-    if (text.indexOf("]", i + 1) === -1) return null; // no closing bracket remains → no further links
+    if (!text.includes("]", i + 1)) return null; // no closing bracket remains → no further links
   }
   return null;
 };
