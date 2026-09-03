@@ -47,7 +47,7 @@ src/data/seats.json          src/pages/SeatsPage.tsx
 
 ---
 
-## 3. 方位基準與實體格局規範 (Orientation & Layout Specifications)
+## 3. 方位基準與平面配置規範 (Orientation & Layout Specifications)
 
 ### 3.1 統一方位基準：「面朝志希館大門」
 所有研究室卡片標題右側均標註 **「面朝志希館大門」**。畫面上方（頂部）一律對齊志希館實體建築正門面向（朝南），讓新生對照空間方位時直觀無誤。
