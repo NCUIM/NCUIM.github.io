@@ -6,6 +6,7 @@ export interface ContentSegment {
   readonly content: string;
   readonly alt?: string;
   readonly width?: number;
+  readonly linkUrl?: string;
 }
 
 export interface InlineSegment {
@@ -153,75 +154,91 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
 
 interface ExtractedImage {
   readonly url: string;
+  readonly linkUrl?: string;
   readonly alt?: string;
   readonly width?: number;
 }
 
 const parseImageMatch = (match: RegExpExecArray): ExtractedImage => {
-  if (match[2]) {
+  if (match[2] && match[3]) {
+    // Linked markdown image: [![alt](imgUrl)](linkUrl)
     return {
       url: match[2],
+      linkUrl: match[3],
       alt: match[1],
     };
   }
-  const attrs = `${match[3] || ""} ${match[5] || ""}`;
+  if (match[4] && match[5]) {
+    // Linked HTML img: <a href="link"><img ...></a>
+    const linkUrl = match[4];
+    const imgTag = match[5];
+    const srcMatch = /src=["'](https?:\/\/[^"'\s>]+)["']/i.exec(imgTag);
+    const altMatch = /alt=["']([^"']*)["']/i.exec(imgTag);
+    const widthMatch = /width=["']?(\d+)["']?/i.exec(imgTag);
+    return {
+      url: srcMatch ? srcMatch[1] : "",
+      linkUrl,
+      alt: altMatch?.[1],
+      width: widthMatch ? Number.parseInt(widthMatch[1], 10) : undefined,
+    };
+  }
+  if (match[7]) {
+    // Standalone MD img: ![alt](imgUrl)
+    return {
+      url: match[7],
+      alt: match[6],
+    };
+  }
+  // Standalone HTML img: <img ...>
+  const attrs = `${match[8] || ""} ${match[10] || ""}`;
   const altMatch = /alt=["']([^"']*)["']/i.exec(attrs);
   const widthMatch = /width=["']?(\d+)["']?/i.exec(attrs);
   return {
-    url: match[4],
+    url: match[9] || "",
     alt: altMatch?.[1],
     width: widthMatch ? Number.parseInt(widthMatch[1], 10) : undefined,
   };
 };
 
 const IMAGE_REGEX =
-  /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|<img\s+([^>]*?)src=["'](https?:\/\/[^"'\s>]+)["']([^>]*?)\/?>/gi;
-
-/**
- * Normalizes raw issue markdown before segment parsing:
- * 1. Collapses <a href="..."><img .../></a> → keeps just <img .../>, discards anchor shell.
- * 2. Converts clickable-image syntax [![alt](img)](link) → ![alt](img), discarding outer link.
- */
-const normalizeContent = (raw: string): string =>
-  raw
-    // Strip <a ...> opening tags (may span multiple attributes)
-    .replace(/<a\s[^>]*>/gi, "")
-    // Strip </a> closing tags
-    .replace(/<\/a>/gi, "")
-    // Collapse [![alt](imgUrl)](linkUrl) → ![alt](imgUrl)
-    .replace(/\[(!)\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)\]\([^)]*\)/g, "![$2]($3)");
+  /\[!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)\]\((https?:\/\/[^\s)]+)\)|<a\s+[^>]*?href=["'](https?:\/\/[^"'\s>]+)["'][^>]*?>\s*(<img\s+[^>]*?>)\s*<\/a>|!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|<img\s+([^>]*?)src=["'](https?:\/\/[^"'\s>]+)["']([^>]*?)\/?>/gi;
 
 /**
  * Parses markdown text into structured text and image segments.
- * Supports markdown image syntax, clickable image links, and safe HTML img tags.
+ * Supports standalone and linked markdown images, safe HTML img tags, and stripping orphaned markup.
  */
 export const parseContentSegments = (text: string): readonly ContentSegment[] => {
   if (!text) return [];
 
-  const normalized = normalizeContent(text);
   const segments: ContentSegment[] = [];
   let lastIndex = 0;
-  let match: RegExpExecArray | null = IMAGE_REGEX.exec(normalized);
+  let match: RegExpExecArray | null = IMAGE_REGEX.exec(text);
 
   while (match !== null) {
     const [fullMatch] = match;
     const matchStart = match.index;
 
     if (matchStart > lastIndex) {
-      segments.push({
-        id: `text-${lastIndex}`,
-        type: "text",
-        content: normalized.slice(lastIndex, matchStart),
-      });
+      const rawSlice = text.slice(lastIndex, matchStart);
+      const cleanSlice = rawSlice.replace(/<a\s[^>]*>/gi, "").replace(/<\/a>/gi, "");
+      if (cleanSlice.length > 0) {
+        segments.push({
+          id: `text-${lastIndex}`,
+          type: "text",
+          content: cleanSlice,
+        });
+      }
     }
 
     const img = parseImageMatch(match);
 
     if (isSafeImageUrl(img.url)) {
+      const validLink = img.linkUrl && isSafeLinkUrl(img.linkUrl) ? img.linkUrl : undefined;
       segments.push({
         id: `img-${matchStart}`,
         type: "image",
         content: img.url,
+        linkUrl: validLink,
         alt: img.alt || "公告圖片",
         width: img.width,
       });
@@ -234,15 +251,19 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
     }
 
     lastIndex = matchStart + fullMatch.length;
-    match = IMAGE_REGEX.exec(normalized);
+    match = IMAGE_REGEX.exec(text);
   }
 
-  if (lastIndex < normalized.length) {
-    segments.push({
-      id: `text-${lastIndex}`,
-      type: "text",
-      content: normalized.slice(lastIndex),
-    });
+  if (lastIndex < text.length) {
+    const rawTail = text.slice(lastIndex);
+    const cleanTail = rawTail.replace(/<a\s[^>]*>/gi, "").replace(/<\/a>/gi, "");
+    if (cleanTail.length > 0) {
+      segments.push({
+        id: `text-${lastIndex}`,
+        type: "text",
+        content: cleanTail,
+      });
+    }
   }
 
   return segments;
@@ -299,30 +320,57 @@ export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) 
     <div style={{ margin: "0 0 14px", lineHeight: 1.7, fontSize: 14 }}>
       {segments.map((seg) => {
         if (seg.type === "image") {
+          const isQrOrInvite =
+            Boolean(seg.alt && /qr|條碼|群組/i.test(seg.alt)) ||
+            Boolean(seg.linkUrl && /line\.me/i.test(seg.linkUrl));
+
+          const displayWidth = seg.width ? `${seg.width}px` : isQrOrInvite ? "120px" : undefined;
+          const maxWidth = seg.width ? `${seg.width}px` : isQrOrInvite ? "120px" : "100%";
+
+          const imgNode = (
+            <img
+              src={seg.content}
+              alt={seg.alt}
+              loading="lazy"
+              style={{
+                width: displayWidth || "auto",
+                maxWidth,
+                maxHeight: 360,
+                height: "auto",
+                borderRadius: 8,
+                border: "1px solid var(--ncu-border)",
+                display: "block",
+                boxShadow: "var(--ncu-shadow-sm)",
+              }}
+            />
+          );
+
           return (
-            <div key={seg.id} style={{ margin: "10px 0" }}>
-              <a
-                href={seg.content}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: "inline-block", maxWidth: "100%", cursor: "zoom-in" }}
-              >
-                <img
-                  src={seg.content}
-                  alt={seg.alt}
-                  loading="lazy"
+            <div
+              key={seg.id}
+              style={{
+                margin: "12px 0",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              {seg.linkUrl ? (
+                <a
+                  href={seg.linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
-                    width: seg.width ? `${seg.width}px` : "auto",
-                    maxWidth: "100%",
-                    maxHeight: 480,
-                    height: "auto",
-                    borderRadius: 8,
-                    border: "1px solid var(--ncu-border)",
-                    display: "block",
-                    boxShadow: "var(--ncu-shadow-sm)",
+                    display: "inline-block",
+                    textDecoration: "none",
+                    cursor: "pointer",
                   }}
-                />
-              </a>
+                >
+                  {imgNode}
+                </a>
+              ) : (
+                imgNode
+              )}
               {seg.alt &&
                 seg.alt !== "公告圖片" &&
                 seg.alt.toLowerCase() !== "image" && (

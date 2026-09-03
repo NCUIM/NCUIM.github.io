@@ -161,7 +161,7 @@ describe("AnnouncementContent Security & Parsing", () => {
   });
 
   describe("AnnouncementContent React component", () => {
-    it("renders image with secure attributes (lazy, noopener, rel)", () => {
+    it("renders image with secure attributes (lazy loading, no raw asset link)", () => {
       const content = "歡迎參加：\n![活動資訊](https://github.com/user-attachments/assets/camp-flyer.png)";
       render(<AnnouncementContent content={content} />);
 
@@ -170,10 +170,8 @@ describe("AnnouncementContent Security & Parsing", () => {
       expect(img.getAttribute("src")).toBe("https://github.com/user-attachments/assets/camp-flyer.png");
       expect(img.getAttribute("loading")).toBe("lazy");
 
-      const link = img.closest("a");
-      expect(link).toBeTruthy();
-      expect(link?.getAttribute("target")).toBe("_blank");
-      expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
+      // Standalone images should not wrap in anchor tags pointing to raw asset
+      expect(img.closest("a")).toBeNull();
     });
 
     it("renders clickable hyperlinks for bare URLs and markdown links", () => {
@@ -248,7 +246,7 @@ describe("AnnouncementContent Security & Parsing", () => {
       );
     });
 
-    it("strips <a> wrapper and renders inner <img> without leaking html tag text", () => {
+    it("handles linked HTML img tag, jumping to target linkUrl instead of image asset", () => {
       const content =
         '<a href="https://line.me/ti/g/abc">\n<img width="100" alt="群組 QR Code" src="https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460" />\n</a>';
       render(<AnnouncementContent content={content} />);
@@ -258,11 +256,14 @@ describe("AnnouncementContent Security & Parsing", () => {
       expect(img.getAttribute("src")).toBe(
         "https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460",
       );
-      // raw <a …> and </a> must not leak as plain text
-      expect(screen.queryByText(/<\/a>/i)).toBeNull();
+
+      const link = img.closest("a");
+      expect(link).toBeTruthy();
+      expect(link?.getAttribute("href")).toBe("https://line.me/ti/g/abc");
+      expect(link?.getAttribute("target")).toBe("_blank");
     });
 
-    it("converts clickable image [![alt](img)](link) to plain image segment without bracket leakage", () => {
+    it("renders linked markdown image with destination link and smart QR sizing", () => {
       const content =
         "[![排球群組](https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460)](https://line.me/ti/g/tyMF8YycaA)";
       render(<AnnouncementContent content={content} />);
@@ -272,6 +273,21 @@ describe("AnnouncementContent Security & Parsing", () => {
       expect(img.getAttribute("src")).toBe(
         "https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460",
       );
+      // Smart QR/invite sizing capped at 120px instead of 100% full screen
+      expect(img.style.maxWidth).toBe("120px");
+
+      const link = img.closest("a");
+      expect(link).toBeTruthy();
+      expect(link?.getAttribute("href")).toBe("https://line.me/ti/g/tyMF8YycaA");
+    });
+
+    it("does not wrap unlinked images in anchor tags, avoiding raw image navigation", () => {
+      const content = "![普通海報](https://github.com/user-attachments/assets/poster.png)";
+      render(<AnnouncementContent content={content} />);
+
+      const img = screen.getByRole("img", { name: "普通海報" });
+      expect(img).toBeTruthy();
+      expect(img.closest("a")).toBeNull();
     });
   });
 });
