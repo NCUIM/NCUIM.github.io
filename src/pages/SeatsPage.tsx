@@ -835,8 +835,33 @@ const RoomCard = ({ layout }: Readonly<{ layout: RoomLayout }>) => (
       boxShadow: "var(--ncu-shadow-hard)",
     }}
   >
-    <IonCardHeader>
-      <IonCardTitle>{layout.name}</IonCardTitle>
+    <IonCardHeader style={{ paddingBottom: 8 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 8,
+        }}
+      >
+        <IonCardTitle>{layout.name}</IonCardTitle>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            fontSize: 12,
+            fontWeight: 600,
+            padding: "3px 10px",
+            borderRadius: 999,
+            background: "var(--ncu-surface)",
+            border: "1px solid var(--ncu-border)",
+            color: "var(--ncu-muted)",
+          }}
+        >
+          面朝志希館大門
+        </span>
+      </div>
     </IonCardHeader>
 
     <IonCardContent>
