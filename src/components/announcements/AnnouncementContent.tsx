@@ -16,6 +16,20 @@ export interface InlineSegment {
   readonly url?: string;
 }
 
+interface ExtractedImage {
+  readonly url: string;
+  readonly linkUrl?: string;
+  readonly alt?: string;
+  readonly width?: number;
+}
+
+interface FoundImageToken {
+  readonly index: number;
+  readonly length: number;
+  readonly raw: string;
+  readonly image: ExtractedImage;
+}
+
 const SAFE_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".bmp"];
 const TRUSTED_DOMAINS = [
   "github.com",
@@ -26,6 +40,31 @@ const TRUSTED_DOMAINS = [
   "thanatosjun.com",
   "ncu.edu.tw",
 ];
+
+const TRAILING_PUNCTUATION_CHARS = new Set([
+  ".",
+  ",",
+  ";",
+  ":",
+  "!",
+  "?",
+  "'",
+  '"',
+  ")",
+  "]",
+  ">",
+  "、",
+  "，",
+  "。",
+  "！",
+  "？",
+  "；",
+  "：",
+  "」",
+  "』",
+  "）",
+  "】",
+]);
 
 /**
  * Validates whether an image URL is secure and safe to render.
@@ -64,15 +103,50 @@ export const isSafeLinkUrl = (rawUrl: string): boolean => {
 };
 
 const cleanTrailingPunctuation = (raw: string): { url: string; trailing: string } => {
-  const trailingMatch = /[.,;:!?'")\]>、，。！？；：」』）】]+$/.exec(raw);
-  if (trailingMatch) {
-    return {
-      url: raw.slice(0, trailingMatch.index),
-      trailing: trailingMatch[0],
-    };
+  let end = raw.length;
+  while (end > 0 && TRAILING_PUNCTUATION_CHARS.has(raw[end - 1])) {
+    end -= 1;
   }
-  return { url: raw, trailing: "" };
+  return {
+    url: raw.slice(0, end),
+    trailing: raw.slice(end),
+  };
 };
+
+const appendMarkdownLink = (
+  segments: InlineSegment[],
+  baseId: string,
+  start: number,
+  mdText: string,
+  mdUrl: string,
+  raw: string,
+) => {
+  if (isSafeLinkUrl(mdUrl)) {
+    segments.push({ id: `${baseId}-l-${start}`, type: "link", text: mdText, url: mdUrl });
+  } else {
+    segments.push({ id: `${baseId}-t-${start}`, type: "text", text: raw });
+  }
+};
+
+const appendBareUrlLink = (
+  segments: InlineSegment[],
+  baseId: string,
+  start: number,
+  bareUrl: string,
+  raw: string,
+) => {
+  const { url: cleanUrl, trailing } = cleanTrailingPunctuation(bareUrl);
+  if (!isSafeLinkUrl(cleanUrl)) {
+    segments.push({ id: `${baseId}-t-${start}`, type: "text", text: raw });
+    return;
+  }
+  segments.push({ id: `${baseId}-l-${start}`, type: "link", text: cleanUrl, url: cleanUrl });
+  if (trailing) {
+    segments.push({ id: `${baseId}-t-${start + cleanUrl.length}`, type: "text", text: trailing });
+  }
+};
+
+const INLINE_LINK_REGEX = /\[([^\]\n]+)\]\((https?:\/\/[^\s)\n]+)\)|https?:\/\/[^\s<>()\n]+/g;
 
 /**
  * Parses inline text for markdown links [text](url) and bare URLs https://...
@@ -81,12 +155,11 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
   if (!text) return [];
 
   const segments: InlineSegment[] = [];
-  const regex = /(?:\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))|(https?:\/\/[^\s<>()]+)/g;
   let lastIndex = 0;
-  let match: RegExpExecArray | null = regex.exec(text);
+  let match: RegExpExecArray | null = INLINE_LINK_REGEX.exec(text);
 
   while (match !== null) {
-    const [fullMatch, mdText, mdUrl, bareUrl] = match;
+    const [fullMatch, mdText, mdUrl] = match;
     const matchStart = match.index;
 
     if (matchStart > lastIndex) {
@@ -98,47 +171,13 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
     }
 
     if (mdUrl && mdText) {
-      if (isSafeLinkUrl(mdUrl)) {
-        segments.push({
-          id: `${baseId}-l-${matchStart}`,
-          type: "link",
-          text: mdText,
-          url: mdUrl,
-        });
-      } else {
-        segments.push({
-          id: `${baseId}-t-${matchStart}`,
-          type: "text",
-          text: fullMatch,
-        });
-      }
-    } else if (bareUrl) {
-      const { url: cleanUrl, trailing } = cleanTrailingPunctuation(bareUrl);
-      if (isSafeLinkUrl(cleanUrl)) {
-        segments.push({
-          id: `${baseId}-l-${matchStart}`,
-          type: "link",
-          text: cleanUrl,
-          url: cleanUrl,
-        });
-        if (trailing) {
-          segments.push({
-            id: `${baseId}-t-${matchStart + cleanUrl.length}`,
-            type: "text",
-            text: trailing,
-          });
-        }
-      } else {
-        segments.push({
-          id: `${baseId}-t-${matchStart}`,
-          type: "text",
-          text: fullMatch,
-        });
-      }
+      appendMarkdownLink(segments, baseId, matchStart, mdText, mdUrl, fullMatch);
+    } else {
+      appendBareUrlLink(segments, baseId, matchStart, fullMatch, fullMatch);
     }
 
     lastIndex = matchStart + fullMatch.length;
-    match = regex.exec(text);
+    match = INLINE_LINK_REGEX.exec(text);
   }
 
   if (lastIndex < text.length) {
@@ -152,56 +191,108 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
   return segments;
 };
 
-interface ExtractedImage {
-  readonly url: string;
-  readonly linkUrl?: string;
-  readonly alt?: string;
-  readonly width?: number;
-}
+const trimEdgeNewlines = (str: string): string => {
+  let start = 0;
+  while (start < str.length && str[start] === "\n") {
+    start += 1;
+  }
+  let end = str.length;
+  while (end > start && str[end - 1] === "\n") {
+    end -= 1;
+  }
+  return str.slice(start, end);
+};
 
-const parseImageMatch = (match: RegExpExecArray): ExtractedImage => {
-  if (match[2] && match[3]) {
-    // Linked markdown image: [![alt](imgUrl)](linkUrl)
-    return {
-      url: match[2],
-      linkUrl: match[3],
-      alt: match[1],
-    };
-  }
-  if (match[4] && match[5]) {
-    // Linked HTML img: <a href="link"><img ...></a>
-    const linkUrl = match[4];
-    const imgTag = match[5];
-    const srcMatch = /src=["'](https?:\/\/[^"'\s>]+)["']/i.exec(imgTag);
-    const altMatch = /alt=["']([^"']*)["']/i.exec(imgTag);
-    const widthMatch = /width=["']?(\d+)["']?/i.exec(imgTag);
-    return {
-      url: srcMatch ? srcMatch[1] : "",
-      linkUrl,
-      alt: altMatch?.[1],
-      width: widthMatch ? Number.parseInt(widthMatch[1], 10) : undefined,
-    };
-  }
-  if (match[7]) {
-    // Standalone MD img: ![alt](imgUrl)
-    return {
-      url: match[7],
-      alt: match[6],
-    };
-  }
-  // Standalone HTML img: <img ...>
-  const attrs = `${match[8] || ""} ${match[10] || ""}`;
-  const altMatch = /alt=["']([^"']*)["']/i.exec(attrs);
-  const widthMatch = /width=["']?(\d+)["']?/i.exec(attrs);
+const cleanTextSlice = (raw: string): string => {
+  const noAnchors = raw.replace(/<a\b[^>]*>/gi, "").replace(/<\/a>/gi, "");
+  return trimEdgeNewlines(noAnchors);
+};
+
+const parseHtmlImageTag = (tag: string): { url: string; alt?: string; width?: number } => {
+  const srcMatch = /src=["'](https?:\/\/[^"'\s>]+)["']/i.exec(tag);
+  const altMatch = /alt=["']([^"']*)["']/i.exec(tag);
+  const widthMatch = /width=["']?(\d+)["']?/i.exec(tag);
   return {
-    url: match[9] || "",
+    url: srcMatch ? srcMatch[1] : "",
     alt: altMatch?.[1],
     width: widthMatch ? Number.parseInt(widthMatch[1], 10) : undefined,
   };
 };
 
-const IMAGE_REGEX =
-  /\[!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)\]\((https?:\/\/[^\s)]+)\)|<a\s+[^>]*?href=["'](https?:\/\/[^"'\s>]+)["'][^>]*?>\s*(<img\s+[^>]*?>)\s*<\/a>|!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|<img\s+([^>]*?)src=["'](https?:\/\/[^"'\s>]+)["']([^>]*?)\/?>/gi;
+const LINKED_MD_IMG_REGEX = /\[!\[([^\]\n]*)\]\((https?:\/\/[^\s)\n]+)\)\]\((https?:\/\/[^\s)\n]+)\)/;
+const STANDALONE_MD_IMG_REGEX = /!\[([^\]\n]*)\]\((https?:\/\/[^\s)\n]+)\)/;
+const LINKED_HTML_IMG_REGEX = /<a\b[^>]*?href=["'](https?:\/\/[^"'\s>]+)["'][^>]*>\s*(<img\b[^>]*>)\s*<\/a>/i;
+const STANDALONE_HTML_IMG_REGEX = /<img\b[^>]*\/?>/i;
+
+const findNextImageToken = (source: string, fromIndex: number): FoundImageToken | null => {
+  const sub = source.slice(fromIndex);
+  let best: FoundImageToken | null = null;
+
+  const check = (regex: RegExp, extractFn: (m: RegExpExecArray) => ExtractedImage) => {
+    const m = regex.exec(sub);
+    if (m) {
+      const idx = fromIndex + m.index;
+      if (!best || idx < best.index) {
+        best = {
+          index: idx,
+          length: m[0].length,
+          raw: m[0],
+          image: extractFn(m),
+        };
+      }
+    }
+  };
+
+  check(LINKED_MD_IMG_REGEX, (m) => ({ url: m[2], linkUrl: m[3], alt: m[1] }));
+  check(LINKED_HTML_IMG_REGEX, (m) => {
+    const htmlInfo = parseHtmlImageTag(m[2]);
+    return { ...htmlInfo, linkUrl: m[1] };
+  });
+  check(STANDALONE_MD_IMG_REGEX, (m) => ({ url: m[2], alt: m[1] }));
+  check(STANDALONE_HTML_IMG_REGEX, (m) => parseHtmlImageTag(m[0]));
+
+  return best;
+};
+
+const appendTextSegment = (
+  segments: ContentSegment[],
+  rawText: string,
+  startOffset: number,
+) => {
+  const clean = cleanTextSlice(rawText);
+  if (clean.length > 0) {
+    segments.push({
+      id: `text-${startOffset}`,
+      type: "text",
+      content: clean,
+    });
+  }
+};
+
+const appendImageSegment = (
+  segments: ContentSegment[],
+  img: ExtractedImage,
+  startOffset: number,
+  fallbackRaw: string,
+) => {
+  if (isSafeImageUrl(img.url)) {
+    const validLink = img.linkUrl && isSafeLinkUrl(img.linkUrl) ? img.linkUrl : undefined;
+    segments.push({
+      id: `img-${startOffset}`,
+      type: "image",
+      content: img.url,
+      linkUrl: validLink,
+      alt: img.alt || "公告圖片",
+      width: img.width,
+    });
+  } else {
+    segments.push({
+      id: `text-${startOffset}`,
+      type: "text",
+      content: fallbackRaw,
+    });
+  }
+};
 
 /**
  * Parses markdown text into structured text and image segments.
@@ -212,66 +303,23 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
 
   const segments: ContentSegment[] = [];
   let lastIndex = 0;
-  let match: RegExpExecArray | null = IMAGE_REGEX.exec(text);
 
-  while (match !== null) {
-    const [fullMatch] = match;
-    const matchStart = match.index;
-
-    if (matchStart > lastIndex) {
-      const rawSlice = text.slice(lastIndex, matchStart);
-      const cleanSlice = rawSlice
-        .replace(/<a\s[^>]*>/gi, "")
-        .replace(/<\/a>/gi, "")
-        .replace(/^\n+/, "")
-        .replace(/\n+$/, "");
-      if (cleanSlice.length > 0) {
-        segments.push({
-          id: `text-${lastIndex}`,
-          type: "text",
-          content: cleanSlice,
-        });
-      }
+  while (lastIndex < text.length) {
+    const token = findNextImageToken(text, lastIndex);
+    if (!token) {
+      break;
     }
 
-    const img = parseImageMatch(match);
-
-    if (isSafeImageUrl(img.url)) {
-      const validLink = img.linkUrl && isSafeLinkUrl(img.linkUrl) ? img.linkUrl : undefined;
-      segments.push({
-        id: `img-${matchStart}`,
-        type: "image",
-        content: img.url,
-        linkUrl: validLink,
-        alt: img.alt || "公告圖片",
-        width: img.width,
-      });
-    } else {
-      segments.push({
-        id: `text-${matchStart}`,
-        type: "text",
-        content: fullMatch,
-      });
+    if (token.index > lastIndex) {
+      appendTextSegment(segments, text.slice(lastIndex, token.index), lastIndex);
     }
 
-    lastIndex = matchStart + fullMatch.length;
-    match = IMAGE_REGEX.exec(text);
+    appendImageSegment(segments, token.image, token.index, token.raw);
+    lastIndex = token.index + token.length;
   }
 
   if (lastIndex < text.length) {
-    const rawTail = text.slice(lastIndex);
-    const cleanTail = rawTail
-      .replace(/<a\s[^>]*>/gi, "")
-      .replace(/<\/a>/gi, "")
-      .replace(/^\n+/, "")
-      .replace(/\n+$/, "");
-    if (cleanTail.length > 0) {
-      segments.push({
-        id: `text-${lastIndex}`,
-        type: "text",
-        content: cleanTail,
-      });
-    }
+    appendTextSegment(segments, text.slice(lastIndex), lastIndex);
   }
 
   return segments;
@@ -321,6 +369,20 @@ const TextParagraph = ({
   );
 };
 
+const resolveImageDimensions = (
+  seg: ContentSegment,
+  isQrOrInvite: boolean,
+): { width?: string; maxWidth: string } => {
+  if (seg.width) {
+    const px = `${seg.width}px`;
+    return { width: px, maxWidth: px };
+  }
+  if (isQrOrInvite) {
+    return { width: "120px", maxWidth: "120px" };
+  }
+  return { width: undefined, maxWidth: "100%" };
+};
+
 export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) => {
   const segments = parseContentSegments(content);
 
@@ -332,8 +394,7 @@ export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) 
             Boolean(seg.alt && /qr|條碼|群組/i.test(seg.alt)) ||
             Boolean(seg.linkUrl && /line\.me/i.test(seg.linkUrl));
 
-          const displayWidth = seg.width ? `${seg.width}px` : isQrOrInvite ? "120px" : undefined;
-          const maxWidth = seg.width ? `${seg.width}px` : isQrOrInvite ? "120px" : "100%";
+          const { width: displayWidth, maxWidth } = resolveImageDimensions(seg, isQrOrInvite);
 
           const imgNode = (
             <img
