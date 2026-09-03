@@ -7,9 +7,10 @@
 ## 分支流程 (Branch Flow)
 
 1. 自最新的 `main` 分支切出。
-2. 建立具備簡潔名稱的短期分支：
-   - `feature/<short-name>`：新功能開發
+2. 建立具備簡潔名稱的短期分支（前綴一律比照 Conventional Commit Type 縮寫）：
+   - `feat/<short-name>`：新功能開發
    - `fix/<short-name>`：Bug 修復
+   - `refactor/<short-name>`：架構重構或程式碼整理
    - `docs/<short-name>`：文件或流程改善
    - `style/<short-name>`：UI 樣式微調
    - `chore/<short-name>`：工具與維護工作
