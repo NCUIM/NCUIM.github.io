@@ -10,6 +10,7 @@ import {
 } from "./seat-styles";
 
 interface FlatCellItem {
+  readonly id: string;
   readonly cell: GridCell;
   readonly row: number;
   readonly col: number;
@@ -17,76 +18,110 @@ interface FlatCellItem {
   readonly colSpan: number;
 }
 
-export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
-  const baseSizes = getSeatSizes(layout.cols);
-  const seatW = layout.seatWidth ?? baseSizes.seat;
-  const seatH = layout.seatHeight ?? 52;
-  const font =
-    seatW >= 54 ? { name: 13, code: 9 } : seatW >= 44 ? { name: 12, code: 8 } : { name: 10, code: 8 };
-  const sizes: SeatSizes = { ...baseSizes, seat: seatW, height: seatH, name: font.name, code: font.code };
-  const rows = layout.rows;
-  const hasAisles = layout.gaps !== undefined;
-  const hasRowAisles = layout.rowGaps !== undefined;
-  const hasSideTrack =
-    layout.sideDoorRow !== undefined ||
-    layout.sidePrinterRow !== undefined ||
-    layout.sideWhiteboardRow !== undefined;
-  const hasSideDoor = layout.sideDoorRow !== undefined;
-  const hasLeftAisle = layout.leftAisle === true;
-  const hasRightAisle = layout.rightAisle === true;
-  const leadingTracks = (hasSideTrack ? 1 : 0) + (hasLeftAisle ? 1 : 0);
-  const leftAisleTrack = hasLeftAisle ? (hasSideTrack ? 2 : 1) : undefined;
+// ---------------------------------------------------------------------------
+// Pure helper functions (Zero cognitive complexity in main component)
+// ---------------------------------------------------------------------------
 
-  /** Physical CSS grid line for a logical seat column (0-based). */
-  const seatColumn = (logical: number): number => {
-    if (!hasAisles) return leadingTracks + logical + 1;
-    return leadingTracks + logical * 2 + 1;
-  };
+const resolveFont = (seatW: number) => {
+  if (seatW >= 54) return { name: 13, code: 9 };
+  if (seatW >= 44) return { name: 12, code: 8 };
+  return { name: 10, code: 8 };
+};
 
-  /** gridTemplateColumns: seat tracks (auto) with aisle spacer tracks between. */
-  const buildTemplateColumns = (): string[] => {
-    const tracks: string[] = [];
-    if (hasSideTrack) tracks.push("auto");
-    if (hasLeftAisle) tracks.push("minmax(24px, auto)");
-    if (hasAisles) {
-      tracks.push(
-        ...Array.from({ length: layout.cols }, (_, c) => [
-          "auto",
-          ...(c < layout.cols - 1 ? [`${layout.gaps![c]}px`] : []),
-        ]).flat(),
-      );
-    } else {
-      const trackCount = Math.max(layout.cols, ...rows.map((r) => r.length));
-      tracks.push(...Array.from({ length: trackCount }, () => "auto"));
+const resolveLeftAisleTrack = (hasLeftAisle: boolean, hasSideTrack: boolean): number | undefined => {
+  if (!hasLeftAisle) return undefined;
+  return hasSideTrack ? 2 : 1;
+};
+
+const resolveRowOffset = (doorColumn?: number, hasDoorWalkway?: boolean): number => {
+  if (doorColumn === undefined) return 0;
+  return hasDoorWalkway ? 2 : 1;
+};
+
+const resolveSeatColumn = (logical: number, hasAisles: boolean, leadingTracks: number): number => {
+  if (!hasAisles) return leadingTracks + logical + 1;
+  return leadingTracks + logical * 2 + 1;
+};
+
+const resolvePhysicalSpan = (
+  isSoloCorridor: boolean,
+  hasAisles: boolean,
+  logical: number,
+  colSpan: number,
+  seatColumn: (col: number) => number,
+  totalCols: number,
+): number => {
+  if (isSoloCorridor) {
+    return seatColumn(totalCols - 1) + 1 - seatColumn(0);
+  }
+  if (hasAisles) {
+    return seatColumn(logical + colSpan - 1) - seatColumn(logical) + 1;
+  }
+  return colSpan;
+};
+
+const buildTemplateColumns = (
+  layout: RoomLayout,
+  hasSideTrack: boolean,
+  hasLeftAisle: boolean,
+  hasAisles: boolean,
+  hasRightAisle: boolean,
+): string[] => {
+  const tracks: string[] = [];
+  if (hasSideTrack) tracks.push("auto");
+  if (hasLeftAisle) tracks.push("minmax(24px, auto)");
+
+  if (hasAisles && layout.gaps) {
+    for (let c = 0; c < layout.cols; c++) {
+      tracks.push("auto");
+      if (c < layout.cols - 1) {
+        tracks.push(`${layout.gaps[c]}px`);
+      }
     }
-    if (hasRightAisle) tracks.push("24px");
-    return tracks;
-  };
+  } else {
+    const trackCount = Math.max(layout.cols, ...layout.rows.map((r) => r.length));
+    for (let c = 0; c < trackCount; c++) {
+      tracks.push("auto");
+    }
+  }
 
-  const templateColumns = buildTemplateColumns();
-  const rightAisleTrack = hasRightAisle ? templateColumns.length : undefined;
-  const hasDoorWalkway = layout.doorWalkway === true;
+  if (hasRightAisle) tracks.push("24px");
+  return tracks;
+};
 
-  const rowOffset = layout.doorColumn !== undefined ? (hasDoorWalkway ? 2 : 1) : 0;
-
+const buildFlatItems = (
+  layout: RoomLayout,
+  hasAisles: boolean,
+  hasRowAisles: boolean,
+  rowOffset: number,
+  seatColumn: (col: number) => number,
+): FlatCellItem[] => {
   const flat: FlatCellItem[] = [];
-  let key = 0;
+  const rows = layout.rows;
+
   for (let r = 0; r < rows.length; r++) {
     const isSoloRow = rows[r].length === 1;
     let logical = 0;
-    for (const cell of rows[r]) {
+
+    for (let cIdx = 0; cIdx < rows[r].length; cIdx++) {
+      const cell = rows[r][cIdx];
       const isSoloCorridor =
         cell.type === "corridor" && isSoloRow && (cell as SpecialCell).colSpan === undefined;
       const rowSpan = cell.type === "printer" ? (cell.rowSpan ?? 1) : 1;
       const colSpan = (cell as SpecialCell).colSpan ?? 1;
       const startCol = isSoloCorridor ? seatColumn(0) : seatColumn(logical);
-      const physicalSpan = isSoloCorridor
-        ? seatColumn(layout.cols - 1) + 1 - startCol
-        : hasAisles
-        ? seatColumn(logical + colSpan - 1) - startCol + 1
-        : colSpan;
+      const physicalSpan = resolvePhysicalSpan(
+        isSoloCorridor,
+        hasAisles,
+        logical,
+        colSpan,
+        seatColumn,
+        layout.cols,
+      );
 
+      const cellId = cell.type === "seat" ? `seat-${cell.label}` : `special-${r}-${cIdx}-${cell.type}`;
       flat.push({
+        id: cellId,
         cell,
         row: (hasRowAisles ? r * 2 : r) + rowOffset,
         col: startCol,
@@ -97,18 +132,11 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
     }
   }
 
-  const doorCol = layout.doorColumn !== undefined ? seatColumn(layout.doorColumn - 1) : undefined;
+  return flat;
+};
 
-  const rowSpacers =
-    layout.rowGaps === undefined
-      ? []
-      : layout.rowGaps.map((h, r) => ({
-          gridRow: r * 2 + 2 + rowOffset,
-          gridColumn: "1 / -1",
-          height: h,
-        }));
-
-  const totalGridRows = Math.max(
+const resolveTotalGridRows = (flat: readonly FlatCellItem[], layout: RoomLayout): number => {
+  return Math.max(
     ...flat.map((f) => f.row + f.rowSpan),
     layout.doorColumn !== undefined ? 1 : 0,
     layout.topWhiteboardCols !== undefined ? 1 : 0,
@@ -116,6 +144,233 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
     layout.sideDoorRow ?? 0,
     layout.sideWhiteboardRow ?? 0,
   );
+};
+
+const resolveDoorJustify = (side: "down" | "left" | "right") => {
+  if (side === "right") return "flex-end";
+  if (side === "left") return "flex-start";
+  return "center";
+};
+
+// ---------------------------------------------------------------------------
+// Dedicated Cell Renderers
+// ---------------------------------------------------------------------------
+
+const SeatCellElement = ({
+  cell,
+  sizes,
+  layoutId,
+  itemStyle,
+}: Readonly<{
+  cell: Extract<GridCell, { type: "seat" }>;
+  sizes: SeatSizes;
+  layoutId: string;
+  itemStyle: React.CSSProperties;
+}>) => {
+  const occupant =
+    (seatAssignments as Record<string, Record<string, string>>)[layoutId]?.[cell.label] ??
+    cell.occupant;
+  const vacant = !occupant;
+
+  return (
+    <div style={{ ...itemStyle, ...getSeatStyle(sizes, vacant) }}>
+      <span style={{ fontSize: sizes.code, fontWeight: 800, opacity: 0.65, lineHeight: 1 }}>
+        {cell.label}
+      </span>
+      <span>{vacant ? "空" : occupant}</span>
+    </div>
+  );
+};
+
+const DoorCellElement = ({
+  cell,
+  sizes,
+  doorOpen,
+  hasRowAisles,
+  itemStyle,
+}: Readonly<{
+  cell: SpecialCell;
+  sizes: SeatSizes;
+  doorOpen?: "down" | "left" | "right";
+  hasRowAisles: boolean;
+  itemStyle: React.CSSProperties;
+}>) => {
+  const side = doorOpen ?? "down";
+  const isHorizontal = side === "down";
+
+  return (
+    <div
+      style={{
+        ...itemStyle,
+        display: "flex",
+        flexDirection: isHorizontal ? "column" : "row",
+        alignItems: "flex-end",
+        justifyContent: resolveDoorJustify(side),
+        gap: 0,
+        marginBottom: -(hasRowAisles ? 0 : sizes.gap),
+      }}
+    >
+      <span
+        style={{
+          ...DOOR_STYLE,
+          width: "100%",
+          minWidth: sizes.seat,
+          minHeight: 44,
+          boxSizing: "border-box",
+          justifyContent: "center",
+          ...(side === "right" ? { borderRight: "4px solid var(--ncu-ink)" } : {}),
+          ...(side === "left" ? { borderLeft: "4px solid var(--ncu-ink)" } : {}),
+          ...(side === "down" ? { borderBottom: "4px solid var(--ncu-ink)" } : {}),
+        }}
+      >
+        {cell.label ?? "門"}
+      </span>
+    </div>
+  );
+};
+
+const GridCellElement = ({
+  item,
+  sizes,
+  layout,
+  hasRowAisles,
+}: Readonly<{
+  item: FlatCellItem;
+  sizes: SeatSizes;
+  layout: RoomLayout;
+  hasRowAisles: boolean;
+}>) => {
+  const { cell, row, col, rowSpan, colSpan } = item;
+  const itemStyle: React.CSSProperties = {
+    gridRow: rowSpan > 1 ? `${row + 1} / span ${rowSpan}` : row + 1,
+    gridColumn: colSpan > 1 ? `${col} / span ${colSpan}` : col,
+    ...(rowSpan > 1 ? { alignSelf: "stretch" } : {}),
+  };
+
+  if (cell.type === "empty") {
+    return null;
+  }
+
+  if (cell.type === "seat") {
+    return <SeatCellElement cell={cell} sizes={sizes} layoutId={layout.id} itemStyle={itemStyle} />;
+  }
+
+  if (cell.type === "door") {
+    return (
+      <DoorCellElement
+        cell={cell}
+        sizes={sizes}
+        doorOpen={layout.doorOpen}
+        hasRowAisles={hasRowAisles}
+        itemStyle={itemStyle}
+      />
+    );
+  }
+
+  if (cell.type === "printer") {
+    return (
+      <div
+        style={{
+          ...itemStyle,
+          ...SPECIAL_STYLES.printer,
+          ...(rowSpan > 1 ? { writingMode: "vertical-rl", letterSpacing: 3, minHeight: 52 } : {}),
+          marginBottom: -(hasRowAisles ? 0 : sizes.gap),
+        }}
+      >
+        {cell.label}
+      </div>
+    );
+  }
+
+  if (cell.type === "sofa") {
+    return (
+      <div
+        style={{
+          ...itemStyle,
+          ...SPECIAL_STYLES.sofa,
+          marginBottom: -(hasRowAisles ? 0 : sizes.gap),
+        }}
+      >
+        {cell.label}
+      </div>
+    );
+  }
+
+  if (cell.type === "whiteboard") {
+    return (
+      <div
+        style={{
+          ...itemStyle,
+          ...SPECIAL_STYLES.whiteboard,
+          minHeight: 44,
+          boxSizing: "border-box",
+          marginBottom: -(hasRowAisles ? 0 : sizes.gap),
+        }}
+      >
+        {cell.label}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ ...itemStyle, ...SPECIAL_STYLES[cell.type] }}>
+      {cell.label}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
+  const baseSizes = getSeatSizes(layout.cols);
+  const seatW = layout.seatWidth ?? baseSizes.seat;
+  const seatH = layout.seatHeight ?? 52;
+  const font = resolveFont(seatW);
+  const sizes: SeatSizes = { ...baseSizes, seat: seatW, height: seatH, name: font.name, code: font.code };
+
+  const hasAisles = layout.gaps !== undefined;
+  const hasRowAisles = layout.rowGaps !== undefined;
+  const hasSideTrack =
+    layout.sideDoorRow !== undefined ||
+    layout.sidePrinterRow !== undefined ||
+    layout.sideWhiteboardRow !== undefined;
+  const hasSideDoor = layout.sideDoorRow !== undefined;
+  const hasLeftAisle = layout.leftAisle === true;
+  const hasRightAisle = layout.rightAisle === true;
+  const leadingTracks = (hasSideTrack ? 1 : 0) + (hasLeftAisle ? 1 : 0);
+  const leftAisleTrack = resolveLeftAisleTrack(hasLeftAisle, hasSideTrack);
+
+  const seatColumn = (logical: number): number =>
+    resolveSeatColumn(logical, hasAisles, leadingTracks);
+
+  const templateColumns = buildTemplateColumns(
+    layout,
+    hasSideTrack,
+    hasLeftAisle,
+    hasAisles,
+    hasRightAisle,
+  );
+
+  const rightAisleTrack = hasRightAisle ? templateColumns.length : undefined;
+  const hasDoorWalkway = layout.doorWalkway === true;
+  const rowOffset = resolveRowOffset(layout.doorColumn, hasDoorWalkway);
+
+  const flat = buildFlatItems(layout, hasAisles, hasRowAisles, rowOffset, seatColumn);
+  const doorCol = layout.doorColumn !== undefined ? seatColumn(layout.doorColumn - 1) : undefined;
+
+  const rowSpacers = (layout.rowGaps ?? []).map((h, r) => ({
+    keyId: `spacer-row-${r * 2 + 2 + rowOffset}`,
+    gridRow: r * 2 + 2 + rowOffset,
+    height: h,
+  }));
+
+  const totalGridRows = resolveTotalGridRows(flat, layout);
+
+  const verticalAisleLines = (layout.gaps ?? [])
+    .map((g, i) => (g >= 12 ? leadingTracks + i * 2 + 2 : -1))
+    .filter((l) => l > 0);
 
   return (
     <div
@@ -213,10 +468,10 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
             走道
           </div>
         )}
-        {rowSpacers.map((s, i) =>
+        {rowSpacers.map((s) =>
           s.height >= 12 ? (
             <div
-              key={`spacer-${i}`}
+              key={s.keyId}
               style={{
                 gridRow: s.gridRow,
                 gridColumn: "1 / -1",
@@ -236,43 +491,40 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
             </div>
           ) : (
             <div
-              key={`spacer-${i}`}
+              key={s.keyId}
               style={{ gridRow: s.gridRow, gridColumn: "1 / -1", height: s.height }}
             />
           ),
         )}
         {/* Vertical aisle dividers (209/310/313): dashed frame lines along desk-separation walkways */}
         {hasAisles &&
-          layout
-            .gaps!.map((g, i) => (g >= 12 ? leadingTracks + i * 2 + 2 : -1))
-            .filter((l) => l > 0)
-            .map((line) => (
-              <div
-                key={`aisle-${line}`}
+          verticalAisleLines.map((colTrack) => (
+            <div
+              key={`aisle-col-${colTrack}`}
+              style={{
+                gridColumn: colTrack,
+                gridRow: `${rowOffset + 1} / ${totalGridRows + 1}`,
+                borderLeft: "1px dashed var(--ncu-border)",
+                borderRight: "1px dashed var(--ncu-border)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                userSelect: "none",
+              }}
+            >
+              <span
                 style={{
-                  gridColumn: line,
-                  gridRow: `${rowOffset + 1} / ${totalGridRows + 1}`,
-                  borderLeft: "1px dashed var(--ncu-border)",
-                  borderRight: "1px dashed var(--ncu-border)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  userSelect: "none",
+                  writingMode: "vertical-rl",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: 6,
+                  color: "var(--ncu-muted)",
                 }}
               >
-                <span
-                  style={{
-                    writingMode: "vertical-rl",
-                    fontSize: 10,
-                    fontWeight: 600,
-                    letterSpacing: 6,
-                    color: "var(--ncu-muted)",
-                  }}
-                >
-                  走道
-                </span>
-              </div>
-            ))}
+                走道
+              </span>
+            </div>
+          ))}
         {/* Outer Left vertical aisle (310) */}
         {leftAisleTrack !== undefined && (
           <div
@@ -395,123 +647,15 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
             印表機
           </div>
         )}
-        {flat.map(({ cell, row, col, rowSpan, colSpan }) => {
-          const base: React.CSSProperties = {
-            gridRow: rowSpan > 1 ? `${row + 1} / span ${rowSpan}` : row + 1,
-            gridColumn: colSpan > 1 ? `${col} / span ${colSpan}` : col,
-            ...(rowSpan > 1 ? { alignSelf: "stretch" } : {}),
-          };
-
-          const itemStyle = base;
-
-          if (cell.type === "printer") {
-            return (
-              <div
-                key={key++}
-                style={{
-                  ...itemStyle,
-                  ...SPECIAL_STYLES.printer,
-                  ...(rowSpan > 1 ? { writingMode: "vertical-rl", letterSpacing: 3, minHeight: 52 } : {}),
-                  marginBottom: -(hasRowAisles ? 0 : sizes.gap),
-                }}
-              >
-                {cell.label}
-              </div>
-            );
-          }
-
-          if (cell.type === "sofa") {
-            return (
-              <div
-                key={key++}
-                style={{
-                  ...itemStyle,
-                  ...SPECIAL_STYLES.sofa,
-                  marginBottom: -(hasRowAisles ? 0 : sizes.gap),
-                }}
-              >
-                {cell.label}
-              </div>
-            );
-          }
-
-          if (cell.type === "whiteboard") {
-            return (
-              <div
-                key={key++}
-                style={{
-                  ...itemStyle,
-                  ...SPECIAL_STYLES.whiteboard,
-                  minHeight: 44,
-                  boxSizing: "border-box",
-                  marginBottom: -(hasRowAisles ? 0 : sizes.gap),
-                }}
-              >
-                {cell.label}
-              </div>
-            );
-          }
-
-          if (cell.type === "seat") {
-            const occupant =
-              (seatAssignments as Record<string, Record<string, string>>)[layout.id]?.[cell.label] ??
-              cell.occupant;
-            const vacant = !occupant;
-            return (
-              <div key={key++} style={{ ...itemStyle, ...getSeatStyle(sizes, vacant) }}>
-                <span style={{ fontSize: sizes.code, fontWeight: 800, opacity: 0.65, lineHeight: 1 }}>
-                  {cell.label}
-                </span>
-                <span>{vacant ? "空" : occupant}</span>
-              </div>
-            );
-          }
-
-          if (cell.type === "empty") {
-            return null;
-          }
-
-          if (cell.type === "door") {
-            const side = layout.doorOpen ?? "down";
-            const isHorizontal = side === "down";
-            return (
-              <div
-                key={key++}
-                style={{
-                  ...itemStyle,
-                  display: "flex",
-                  flexDirection: isHorizontal ? "column" : "row",
-                  alignItems: "flex-end",
-                  justifyContent: side === "right" ? "flex-end" : side === "left" ? "flex-start" : "center",
-                  gap: 0,
-                  marginBottom: -(hasRowAisles ? 0 : sizes.gap),
-                }}
-              >
-                <span
-                  style={{
-                    ...DOOR_STYLE,
-                    width: "100%",
-                    minWidth: sizes.seat,
-                    minHeight: 44,
-                    boxSizing: "border-box",
-                    justifyContent: "center",
-                    ...(side === "right" ? { borderRight: "4px solid var(--ncu-ink)" } : {}),
-                    ...(side === "left" ? { borderLeft: "4px solid var(--ncu-ink)" } : {}),
-                    ...(side === "down" ? { borderBottom: "4px solid var(--ncu-ink)" } : {}),
-                  }}
-                >
-                  門
-                </span>
-              </div>
-            );
-          }
-
-          return (
-            <div key={key++} style={{ ...itemStyle, ...SPECIAL_STYLES[cell.type] }}>
-              {cell.label}
-            </div>
-          );
-        })}
+        {flat.map((item) => (
+          <GridCellElement
+            key={item.id}
+            item={item}
+            sizes={sizes}
+            layout={layout}
+            hasRowAisles={hasRowAisles}
+          />
+        ))}
       </div>
     </div>
   );
