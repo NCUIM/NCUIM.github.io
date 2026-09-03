@@ -19,7 +19,7 @@ interface FlatCellItem {
 }
 
 // ---------------------------------------------------------------------------
-// Pure helper functions (Zero cognitive complexity in main component)
+// Pure helper functions (Cognitive complexity <= 5)
 // ---------------------------------------------------------------------------
 
 const resolveFont = (seatW: number) => {
@@ -89,6 +89,50 @@ const buildTemplateColumns = (
   return tracks;
 };
 
+const buildRowFlatItems = (
+  row: readonly GridCell[],
+  rowIndex: number,
+  layout: RoomLayout,
+  hasAisles: boolean,
+  hasRowAisles: boolean,
+  rowOffset: number,
+  seatColumn: (col: number) => number,
+): FlatCellItem[] => {
+  const items: FlatCellItem[] = [];
+  const isSoloRow = row.length === 1;
+  let logical = 0;
+
+  for (let cIdx = 0; cIdx < row.length; cIdx++) {
+    const cell = row[cIdx];
+    const isSoloCorridor =
+      cell.type === "corridor" && isSoloRow && (cell as SpecialCell).colSpan === undefined;
+    const rowSpan = cell.type === "printer" ? (cell.rowSpan ?? 1) : 1;
+    const colSpan = (cell as SpecialCell).colSpan ?? 1;
+    const startCol = isSoloCorridor ? seatColumn(0) : seatColumn(logical);
+    const physicalSpan = resolvePhysicalSpan(
+      isSoloCorridor,
+      hasAisles,
+      logical,
+      colSpan,
+      seatColumn,
+      layout.cols,
+    );
+
+    const cellId = cell.type === "seat" ? `seat-${cell.label}` : `special-${rowIndex}-${cIdx}-${cell.type}`;
+    items.push({
+      id: cellId,
+      cell,
+      row: (hasRowAisles ? rowIndex * 2 : rowIndex) + rowOffset,
+      col: startCol,
+      rowSpan,
+      colSpan: physicalSpan,
+    });
+    logical += colSpan;
+  }
+
+  return items;
+};
+
 const buildFlatItems = (
   layout: RoomLayout,
   hasAisles: boolean,
@@ -97,41 +141,18 @@ const buildFlatItems = (
   seatColumn: (col: number) => number,
 ): FlatCellItem[] => {
   const flat: FlatCellItem[] = [];
-  const rows = layout.rows;
-
-  for (let r = 0; r < rows.length; r++) {
-    const isSoloRow = rows[r].length === 1;
-    let logical = 0;
-
-    for (let cIdx = 0; cIdx < rows[r].length; cIdx++) {
-      const cell = rows[r][cIdx];
-      const isSoloCorridor =
-        cell.type === "corridor" && isSoloRow && (cell as SpecialCell).colSpan === undefined;
-      const rowSpan = cell.type === "printer" ? (cell.rowSpan ?? 1) : 1;
-      const colSpan = (cell as SpecialCell).colSpan ?? 1;
-      const startCol = isSoloCorridor ? seatColumn(0) : seatColumn(logical);
-      const physicalSpan = resolvePhysicalSpan(
-        isSoloCorridor,
-        hasAisles,
-        logical,
-        colSpan,
-        seatColumn,
-        layout.cols,
-      );
-
-      const cellId = cell.type === "seat" ? `seat-${cell.label}` : `special-${r}-${cIdx}-${cell.type}`;
-      flat.push({
-        id: cellId,
-        cell,
-        row: (hasRowAisles ? r * 2 : r) + rowOffset,
-        col: startCol,
-        rowSpan,
-        colSpan: physicalSpan,
-      });
-      logical += colSpan;
-    }
+  for (let r = 0; r < layout.rows.length; r++) {
+    const rowItems = buildRowFlatItems(
+      layout.rows[r],
+      r,
+      layout,
+      hasAisles,
+      hasRowAisles,
+      rowOffset,
+      seatColumn,
+    );
+    flat.push(...rowItems);
   }
-
   return flat;
 };
 
@@ -229,6 +250,56 @@ const DoorCellElement = ({
   );
 };
 
+const PrinterCellElement = ({
+  cell,
+  rowSpan,
+  sizes,
+  hasRowAisles,
+  itemStyle,
+}: Readonly<{
+  cell: SpecialCell;
+  rowSpan: number;
+  sizes: SeatSizes;
+  hasRowAisles: boolean;
+  itemStyle: React.CSSProperties;
+}>) => (
+  <div
+    style={{
+      ...itemStyle,
+      ...SPECIAL_STYLES.printer,
+      ...(rowSpan > 1 ? { writingMode: "vertical-rl", letterSpacing: 3, minHeight: 52 } : {}),
+      marginBottom: -(hasRowAisles ? 0 : sizes.gap),
+    }}
+  >
+    {cell.label}
+  </div>
+);
+
+const SpecialBlockCell = ({
+  type,
+  label,
+  sizes,
+  hasRowAisles,
+  itemStyle,
+}: Readonly<{
+  type: "sofa" | "whiteboard";
+  label?: string;
+  sizes: SeatSizes;
+  hasRowAisles: boolean;
+  itemStyle: React.CSSProperties;
+}>) => (
+  <div
+    style={{
+      ...itemStyle,
+      ...SPECIAL_STYLES[type],
+      ...(type === "whiteboard" ? { minHeight: 44, boxSizing: "border-box" } : {}),
+      marginBottom: -(hasRowAisles ? 0 : sizes.gap),
+    }}
+  >
+    {label}
+  </div>
+);
+
 const GridCellElement = ({
   item,
   sizes,
@@ -247,76 +318,49 @@ const GridCellElement = ({
     ...(rowSpan > 1 ? { alignSelf: "stretch" } : {}),
   };
 
-  if (cell.type === "empty") {
-    return null;
+  switch (cell.type) {
+    case "empty":
+      return null;
+    case "seat":
+      return <SeatCellElement cell={cell} sizes={sizes} layoutId={layout.id} itemStyle={itemStyle} />;
+    case "door":
+      return (
+        <DoorCellElement
+          cell={cell}
+          sizes={sizes}
+          doorOpen={layout.doorOpen}
+          hasRowAisles={hasRowAisles}
+          itemStyle={itemStyle}
+        />
+      );
+    case "printer":
+      return (
+        <PrinterCellElement
+          cell={cell}
+          rowSpan={rowSpan}
+          sizes={sizes}
+          hasRowAisles={hasRowAisles}
+          itemStyle={itemStyle}
+        />
+      );
+    case "sofa":
+    case "whiteboard":
+      return (
+        <SpecialBlockCell
+          type={cell.type}
+          label={cell.label}
+          sizes={sizes}
+          hasRowAisles={hasRowAisles}
+          itemStyle={itemStyle}
+        />
+      );
+    default:
+      return (
+        <div style={{ ...itemStyle, ...SPECIAL_STYLES[cell.type] }}>
+          {cell.label}
+        </div>
+      );
   }
-
-  if (cell.type === "seat") {
-    return <SeatCellElement cell={cell} sizes={sizes} layoutId={layout.id} itemStyle={itemStyle} />;
-  }
-
-  if (cell.type === "door") {
-    return (
-      <DoorCellElement
-        cell={cell}
-        sizes={sizes}
-        doorOpen={layout.doorOpen}
-        hasRowAisles={hasRowAisles}
-        itemStyle={itemStyle}
-      />
-    );
-  }
-
-  if (cell.type === "printer") {
-    return (
-      <div
-        style={{
-          ...itemStyle,
-          ...SPECIAL_STYLES.printer,
-          ...(rowSpan > 1 ? { writingMode: "vertical-rl", letterSpacing: 3, minHeight: 52 } : {}),
-          marginBottom: -(hasRowAisles ? 0 : sizes.gap),
-        }}
-      >
-        {cell.label}
-      </div>
-    );
-  }
-
-  if (cell.type === "sofa") {
-    return (
-      <div
-        style={{
-          ...itemStyle,
-          ...SPECIAL_STYLES.sofa,
-          marginBottom: -(hasRowAisles ? 0 : sizes.gap),
-        }}
-      >
-        {cell.label}
-      </div>
-    );
-  }
-
-  if (cell.type === "whiteboard") {
-    return (
-      <div
-        style={{
-          ...itemStyle,
-          ...SPECIAL_STYLES.whiteboard,
-          minHeight: 44,
-          boxSizing: "border-box",
-          marginBottom: -(hasRowAisles ? 0 : sizes.gap),
-        }}
-      >
-        {cell.label}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ ...itemStyle, ...SPECIAL_STYLES[cell.type] }}>
-      {cell.label}
-    </div>
-  );
 };
 
 // ---------------------------------------------------------------------------
