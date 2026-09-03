@@ -65,12 +65,10 @@ const modules: readonly ModuleCard[] = [
   },
   {
     title: "研究室座位表",
-    subtitle: "即將開放 · 敬請期待",
+    subtitle: "209 · 310 · 313 · 919 實體格局",
     icon: map,
     route: "/seats",
-    color: "var(--ncu-muted)",
-    disabled: true,
-    badge: "等待抽籤結果",
+    color: "var(--ncu-star)",
   },
   {
     title: "抽籤大會",
