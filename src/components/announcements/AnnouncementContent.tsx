@@ -146,7 +146,44 @@ const appendBareUrlLink = (
   }
 };
 
-const INLINE_LINK_REGEX = /\[([^\]\n]+)\]\((https?:\/\/[^\s)\n]+)\)|https?:\/\/[^\s<>()\n]+/g;
+const INLINE_MD_LINK_REGEX = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/;
+const INLINE_BARE_URL_REGEX = /https?:\/\/[^\s<>()]+/;
+
+interface FoundInlineToken {
+  readonly fullMatch: string;
+  readonly mdText: string | undefined;
+  readonly mdUrl: string | undefined;
+  readonly index: number;
+}
+
+const findNextInlineToken = (text: string, fromIndex: number): FoundInlineToken | null => {
+  const sub = text.slice(fromIndex);
+  const mdMatch = INLINE_MD_LINK_REGEX.exec(sub);
+  const bareMatch = INLINE_BARE_URL_REGEX.exec(sub);
+
+  if (!mdMatch && !bareMatch) return null;
+
+  const mdIndex = mdMatch ? mdMatch.index : Infinity;
+  const bareIndex = bareMatch ? bareMatch.index : Infinity;
+
+  if (mdIndex <= bareIndex && mdMatch) {
+    return {
+      fullMatch: mdMatch[0],
+      mdText: mdMatch[1],
+      mdUrl: mdMatch[2],
+      index: fromIndex + mdMatch.index,
+    };
+  }
+  if (bareMatch) {
+    return {
+      fullMatch: bareMatch[0],
+      mdText: undefined,
+      mdUrl: undefined,
+      index: fromIndex + bareMatch.index,
+    };
+  }
+  return null;
+};
 
 /**
  * Parses inline text for markdown links [text](url) and bare URLs https://...
@@ -156,11 +193,12 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
 
   const segments: InlineSegment[] = [];
   let lastIndex = 0;
-  let match: RegExpExecArray | null = INLINE_LINK_REGEX.exec(text);
 
-  while (match !== null) {
-    const [fullMatch, mdText, mdUrl] = match;
-    const matchStart = match.index;
+  for (;;) {
+    const token = findNextInlineToken(text, lastIndex);
+    if (!token) break;
+
+    const { fullMatch, mdText, mdUrl, index: matchStart } = token;
 
     if (matchStart > lastIndex) {
       segments.push({
@@ -177,7 +215,6 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
     }
 
     lastIndex = matchStart + fullMatch.length;
-    match = INLINE_LINK_REGEX.exec(text);
   }
 
   if (lastIndex < text.length) {
@@ -219,8 +256,8 @@ const parseHtmlImageTag = (tag: string): { url: string; alt?: string; width?: nu
   };
 };
 
-const LINKED_MD_IMG_REGEX = /\[!\[([^\]\n]*)\]\((https?:\/\/[^\s)\n]+)\)\]\((https?:\/\/[^\s)\n]+)\)/;
-const STANDALONE_MD_IMG_REGEX = /!\[([^\]\n]*)\]\((https?:\/\/[^\s)\n]+)\)/;
+const LINKED_MD_IMG_REGEX = /\[!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)\]\((https?:\/\/[^\s)]+)\)/;
+const STANDALONE_MD_IMG_REGEX = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/;
 const LINKED_HTML_IMG_REGEX = /<a\b[^>]*?href=["'](https?:\/\/[^"'\s>]+)["'][^>]*>\s*(<img\b[^>]*>)\s*<\/a>/i;
 const STANDALONE_HTML_IMG_REGEX = /<img\b[^>]*\/?>/i;
 
