@@ -159,27 +159,42 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     ],
   },
 
-    // ── 919: 2-col desks with left aisle from door & printer and right aisle to wall ──
+  // ── 919: Rotated 90° clockwise (facing North) ──
   {
     id: "919",
     name: "919 研究室",
-    cols: 2,
+    cols: 5,
     seatWidth: 54,
-    sideDoorRow: 1,
-    sideWhiteboardRow: 2,
-    sidePrinterRow: 4,
-    sidePrinterRowSpan: 3,
-    doorOpen: "right",
-    leftAisle: true,
-    rightAisle: true,
-    gaps: [4],
+    doorOpen: "down",
+    gaps: [4, 4, 24, 4],
     rows: [
-      [{ type: "seat", label: "1-1" }, { type: "seat", label: "2-1" }],
-      [{ type: "seat", label: "1-2" }, { type: "seat", label: "2-2" }],
-      [{ type: "corridor", label: "走道" }],
-      [{ type: "seat", label: "1-3" }, { type: "seat", label: "2-3" }],
-      [{ type: "seat", label: "1-4" }, { type: "seat", label: "2-4" }],
-      [{ type: "seat", label: "1-5" }, { type: "seat", label: "2-5" }],
+      [
+        { type: "printer", label: "印表機", colSpan: 3 },
+        { type: "whiteboard", label: "白板" },
+        { type: "door", label: "門" },
+      ],
+      [
+        { type: "corridor", label: "走道", colSpan: 3 },
+        { type: "corridor", label: "走道", colSpan: 2 },
+      ],
+      [
+        { type: "seat", label: "1-5" },
+        { type: "seat", label: "1-4" },
+        { type: "seat", label: "1-3" },
+        { type: "seat", label: "1-2" },
+        { type: "seat", label: "1-1" },
+      ],
+      [
+        { type: "seat", label: "2-5" },
+        { type: "seat", label: "2-4" },
+        { type: "seat", label: "2-3" },
+        { type: "seat", label: "2-2" },
+        { type: "seat", label: "2-1" },
+      ],
+      [
+        { type: "corridor", label: "走道", colSpan: 3 },
+        { type: "corridor", label: "走道", colSpan: 2 },
+      ],
     ],
   },
 ];
