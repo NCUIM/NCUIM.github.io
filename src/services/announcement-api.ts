@@ -23,7 +23,7 @@ export interface AnnouncementItem {
   readonly date: string;
   readonly category: AnnouncementCategory;
   readonly priority: AnnouncementPriority;
-  readonly actionUrl?: string;
+  readonly actionUrls?: readonly string[];
   readonly milestone?: {
     readonly title: string;
     readonly dueOn?: string;
@@ -176,10 +176,15 @@ export const parseGitHubIssue = (issue: GitHubIssue): AnnouncementItem => {
   const content = parsedContent || rawBody;
 
   const actionUrlRaw = extractFormField(rawBody, /###\s+(?:相關連結|Action\s*URL)[^\n]*/i);
-  const actionUrl =
-    actionUrlRaw && actionUrlRaw.startsWith("http") && actionUrlRaw !== "_No response_"
+  const actionUrls =
+    actionUrlRaw && actionUrlRaw !== "_No response_"
       ? actionUrlRaw
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.startsWith("https://") || line.startsWith("http://"))
       : undefined;
+
+  const resolvedActionUrls = actionUrls && actionUrls.length > 0 ? actionUrls : undefined;
 
   const dateStr = formatAnnouncementDate(issue.created_at);
 
@@ -196,7 +201,7 @@ export const parseGitHubIssue = (issue: GitHubIssue): AnnouncementItem => {
     date: dateStr,
     category,
     priority,
-    actionUrl,
+    actionUrls: resolvedActionUrls,
     milestone: issue.milestone
       ? {
           title: issue.milestone.title,

@@ -1,6 +1,6 @@
 name: 📢 發布資管通公告 (Announcement)
 description: 發布最新公告、選課消息、迎新活動或系統通知至資管通 App
-title: "📢 [公告] "
+title: "[公告] "
 labels: ["announcement"]
 body:
   - type: markdown
@@ -16,12 +16,12 @@ body:
       label: 公告類別 (Category)
       description: 選擇此公告的主要分類
       options:
-        - 📚 選課與學分 (category:course)
-        - 🎪 迎新與活動 (category:event)
-        - 🏛️ 系所與行政 (category:department)
-        - 💼 獎助與職涯 (category:career)
-        - 🛠️ 系統與維護 (category:system)
-        - 📢 一般公告 (category:general)
+        - 選課與學分 (category:course)
+        - 迎新與活動 (category:event)
+        - 系所與行政 (category:department)
+        - 獎助與職涯 (category:career)
+        - 系統與維護 (category:system)
+        - 一般公告 (category:general)
     validations:
       required: true
 
@@ -31,10 +31,10 @@ body:
       label: 重要程度 (Priority)
       description: 優先級將決定排序與首頁跑馬燈警示色彩
       options:
-        - 🚨 緊急置頂 (priority:urgent)
-        - 🔴 重要提醒 (priority:high)
-        - 🟡 一般通知 (priority:normal)
-        - 🟢 參考資訊 (priority:low)
+        - 緊急置頂 (priority:urgent)
+        - 重要提醒 (priority:high)
+        - 一般通知 (priority:normal)
+        - 參考資訊 (priority:low)
     validations:
       required: true
 

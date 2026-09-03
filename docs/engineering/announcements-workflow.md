@@ -21,22 +21,22 @@
 3. 選擇 **「📢 發布資管通公告 (Announcement)」** 表單。
 4. 填寫以下欄位：
    * **標題 (Title)**：輸入公告主標題（例如：`115學年度第1學期新生選課注意事項`）。
-   * **公告類別 (Category)**：
-     * 📚 `選課與學分 (category:course)`
-     * 🎪 `迎新與活動 (category:event)`
-     * 🏛️ `系所與行政 (category:department)`
-     * 💼 `獎助與職涯 (category:career)`
-     * 🛠️ `系統與維護 (category:system)`
-     * 📢 `一般公告 (category:general)`
+   * **公告類別 (Category)**（儲存與編輯均為純文字，App 前端會自動補齊對應圖示）：
+     * `選課與學分 (category:course)`
+     * `迎新與活動 (category:event)`
+     * `系所與行政 (category:department)`
+     * `獎助與職涯 (category:career)`
+     * `系統與維護 (category:system)`
+     * `一般公告 (category:general)`
    * **重要程度 (Priority)**：
-     * 🚨 `緊急置頂 (priority:urgent)`：紅色高亮標籤，強制置頂於首頁跑馬燈。
-     * 🔴 `重要提醒 (priority:high)`：橘色標籤，次高優先級。
-     * 🟡 `一般通知 (priority:normal)`：藍色標籤，標準排序。
-     * 🟢 `參考資訊 (priority:low)`：灰色標籤，一般參考消息。
+     * `緊急置頂 (priority:urgent)`：紅色高亮標籤，強制置頂於首頁跑馬燈。
+     * `重要提醒 (priority:high)`：橘色標籤，次高優先級。
+     * `一般通知 (priority:normal)`：藍色標籤，標準排序。
+     * `參考資訊 (priority:low)`：灰色標籤，一般參考消息。
    * **發布單位與署名 (Author & Role)**：格式為 `單位/職稱 · 姓名`（例如：`資管所所代 · 阿駿`、`系辦公室`、`迎新活動籌備組`）。
-   * **公告內文 (Content)**：支援完整 Markdown 語法（段落、粗體、列表、分行），並支援安全插入圖片（`![圖說](https://...)`）。可直接拖曳或剪貼簿貼上多張圖片，系統將自動解析為自適應圖片並支援點擊查看高解析原圖。
+   * **公告內文 (Content)**：支援完整 Markdown 語法（段落、粗體、列表、分行），並支援安全插入圖片（`![圖說](https://...)` 或 `<img src="..." width="..." />`）。可直接拖曳或剪貼簿貼上多張圖片（如 LINE 群組 QR Code），系統將自動解析為自適應圖片並支援點擊查看高解析原圖。
    * **相關連結 (Action URL，選填)**：若有外部表單（如 Google 表單報名、系網 PDF 或學校系統），填入完整網址 `https://...`；若無外部動作則留空。
-5. 點擊 **"Submit new issue"**，系統將在 60 秒內自動讀取並上架。
+ 5. 點擊 **"Submit new issue"**，系統將在 60 秒內自動讀取並上架。
 
 ---
 
@@ -46,7 +46,8 @@
 
 * **修改內文或署名**：直接在編輯框中修改文字即可。
 * **修改分類或優先級**：
-  * 直接修改文字（例如將 `priority:normal` 改為 `priority:urgent`），或於右側欄位 **Labels** 勾選對應標籤。
+  * 直接修改文字即可（例如將 `一般通知` 改為 `緊急置頂`，或將 `category:general` 改為 `category:course`）。**完全不需手動尋找或輸入任何 Emoji 圖示**，資管通 App 會在渲染時自動補上對應的專屬圖示與高亮色彩。
+  * 亦可於右側欄位 **Labels** 勾選對應標籤（例如勾選 `priority:urgent`）。
 * **新增／移除外部動作連結**：
   * **新增連結**：在內文末端新增 `### 相關連結 (Action URL)` 並換行填寫 `https://...`。
   * **移除連結**：直接將 `### 相關連結 (Action URL)` 整段包含網址刪除，儲存後首頁的「開啟相關連結 ↗」按鈕將自動消失。
