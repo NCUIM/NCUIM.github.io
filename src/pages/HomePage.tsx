@@ -66,7 +66,7 @@ const modules: readonly ModuleCard[] = [
   },
   {
     title: "研究室座位表",
-    subtitle: "209 · 310 · 313 · 919 實體格局",
+    subtitle: "209 · 310 · 313 · 919",
     icon: map,
     route: "/seats",
     color: "var(--ncu-star)",
