@@ -36,6 +36,7 @@ import {
   BUILTIN_ANNOUNCEMENTS,
   fetchAnnouncements,
 } from "../services/announcement-api";
+import AnnouncementContent from "../components/announcements/AnnouncementContent";
 
 interface ModuleCard {
   readonly title: string;
@@ -65,7 +66,7 @@ const modules: readonly ModuleCard[] = [
   },
   {
     title: "研究室座位表",
-    subtitle: "209 · 310 · 313 · 919 實體格局",
+    subtitle: "209 · 310 · 313 · 919",
     icon: map,
     route: "/seats",
     color: "var(--ncu-star)",
@@ -764,7 +765,7 @@ const AnnouncementModal = ({
                       lineHeight: 1.7,
                     }}
                   >
-                    <p style={{ margin: "0 0 14px", whiteSpace: "pre-line" }}>{item.content}</p>
+                    <AnnouncementContent content={item.content} />
 
                     {item.actionUrl && (
                       <div style={{ marginBottom: 14 }}>
