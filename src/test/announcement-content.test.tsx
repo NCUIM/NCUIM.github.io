@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import {
   isSafeImageUrl,
+  isSafeLinkUrl,
+  parseInlineSegments,
   parseContentSegments,
   AnnouncementContent,
 } from "../components/announcements/AnnouncementContent";
@@ -46,6 +48,62 @@ describe("AnnouncementContent Security & Parsing", () => {
     it("handles malformed URLs safely without throwing", () => {
       expect(isSafeImageUrl("not-a-url")).toBe(false);
       expect(isSafeImageUrl("")).toBe(false);
+    });
+  });
+
+  describe("isSafeLinkUrl validation", () => {
+    it("allows https: and http: URLs", () => {
+      expect(isSafeLinkUrl("https://drive.google.com/folder")).toBe(true);
+      expect(isSafeLinkUrl("http://portal.ncu.edu.tw")).toBe(true);
+    });
+
+    it("blocks javascript:, data:, and malformed schemes", () => {
+      expect(isSafeLinkUrl("javascript:alert(1)")).toBe(false);
+      expect(isSafeLinkUrl("data:text/html,bad")).toBe(false);
+      expect(isSafeLinkUrl("not-a-url")).toBe(false);
+    });
+  });
+
+  describe("parseInlineSegments", () => {
+    it("parses bare URL like Issue #25 Google Drive folder link", () => {
+      const url = "https://drive.google.com/drive/folders/1UjGO9JeJuUVcN2PXq0a9vT0sRaskHbgr?usp=sharing";
+      const segments = parseInlineSegments(url, "test-seg");
+      expect(segments).toEqual([
+        {
+          id: "test-seg-l-0",
+          type: "link",
+          text: url,
+          url,
+        },
+      ]);
+    });
+
+    it("parses markdown links [text](url)", () => {
+      const text = "請至 [茶會簡報雲端](https://drive.google.com/folder) 下載。";
+      const segments = parseInlineSegments(text, "test-seg");
+      expect(segments).toEqual([
+        { id: "test-seg-t-0", type: "text", text: "請至 " },
+        { id: "test-seg-l-3", type: "link", text: "茶會簡報雲端", url: "https://drive.google.com/folder" },
+        { id: "test-seg-t-44", type: "text", text: " 下載。" },
+      ]);
+    });
+
+    it("strips trailing punctuation from bare URLs", () => {
+      const text = "系網請見 https://im.ncu.edu.tw。 謝謝！";
+      const segments = parseInlineSegments(text, "test-seg");
+      expect(segments).toEqual([
+        { id: "test-seg-t-0", type: "text", text: "系網請見 " },
+        { id: "test-seg-l-5", type: "link", text: "https://im.ncu.edu.tw", url: "https://im.ncu.edu.tw" },
+        { id: "test-seg-t-26", type: "text", text: "。 謝謝！" },
+      ]);
+    });
+
+    it("blocks javascript: links and leaves them as plain text", () => {
+      const text = "惡意 [點我領獎](javascript:alert(1))";
+      const segments = parseInlineSegments(text, "test-seg");
+      expect(segments).toEqual([
+        { id: "test-seg-t-0", type: "text", text: "惡意 [點我領獎](javascript:alert(1))" },
+      ]);
     });
   });
 
@@ -115,6 +173,23 @@ describe("AnnouncementContent Security & Parsing", () => {
       expect(link).toBeTruthy();
       expect(link?.getAttribute("target")).toBe("_blank");
       expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
+    });
+
+    it("renders clickable hyperlinks for bare URLs and markdown links", () => {
+      const content = "請點選：[簡報連結](https://drive.google.com/deck) 或直接造訪 https://drive.google.com/folder";
+      render(<AnnouncementContent content={content} />);
+
+      const mdLink = screen.getByRole("link", { name: /簡報連結/ });
+      expect(mdLink).toBeTruthy();
+      expect(mdLink.getAttribute("href")).toBe("https://drive.google.com/deck");
+      expect(mdLink.getAttribute("target")).toBe("_blank");
+      expect(mdLink.getAttribute("rel")).toBe("noopener noreferrer");
+
+      const bareLink = screen.getByRole("link", { name: /https:\/\/drive\.google\.com\/folder/ });
+      expect(bareLink).toBeTruthy();
+      expect(bareLink.getAttribute("href")).toBe("https://drive.google.com/folder");
+      expect(bareLink.getAttribute("target")).toBe("_blank");
+      expect(bareLink.getAttribute("rel")).toBe("noopener noreferrer");
     });
 
     it("does not render img tag when payload is an unsafe scheme", () => {
