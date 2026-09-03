@@ -90,6 +90,7 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     doorColumn: 1,
     doorOpen: "down",
     doorWalkway: true,
+    topWhiteboardCols: [2, 4],
     gaps: [26, 4, 26],
     seatWidth: 54,
     rows: [
@@ -109,6 +110,7 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     doorColumn: 1,
     doorOpen: "down",
     doorWalkway: true,
+    topWhiteboardCols: [3, 6],
     leftAisle: true,
     gaps: [4, 18, 4, 18, 4],
     seatWidth: 42,
@@ -162,6 +164,7 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     cols: 2,
     seatWidth: 54,
     sideDoorRow: 1,
+    sideWhiteboardRow: 2,
     sidePrinterRow: 4,
     sidePrinterRowSpan: 3,
     doorOpen: "right",
