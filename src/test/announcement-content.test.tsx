@@ -94,7 +94,8 @@ describe("AnnouncementContent Security & Parsing", () => {
       expect(segments).toEqual([
         { id: "test-seg-t-0", type: "text", text: "系網請見 " },
         { id: "test-seg-l-5", type: "link", text: "https://im.ncu.edu.tw", url: "https://im.ncu.edu.tw" },
-        { id: "test-seg-t-26", type: "text", text: "。 謝謝！" },
+        { id: "test-seg-t-26", type: "text", text: "。" },
+        { id: "test-seg-t-27", type: "text", text: " 謝謝！" },
       ]);
     });
 
@@ -192,12 +193,59 @@ describe("AnnouncementContent Security & Parsing", () => {
       expect(bareLink.getAttribute("rel")).toBe("noopener noreferrer");
     });
 
+    it("extracts HTML img tags with width and alt attributes", () => {
+      const text =
+        '排球群組：\n<img width="100" height="100" alt="Image" src="https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460" />\n歡迎加入！';
+      const segments = parseContentSegments(text);
+
+      expect(segments).toHaveLength(3);
+      expect(segments[0]).toEqual({ id: "text-0", type: "text", content: "排球群組：\n" });
+      expect(segments[1]).toEqual({
+        id: "img-6",
+        type: "image",
+        content: "https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460",
+        alt: "Image",
+        width: 100,
+      });
+      expect(segments[2]).toEqual({ id: "text-136", type: "text", content: "\n歡迎加入！" });
+    });
+
     it("does not render img tag when payload is an unsafe scheme", () => {
       const content = "![攻擊](javascript:alert(document.cookie))";
       render(<AnnouncementContent content={content} />);
 
       expect(screen.queryByRole("img")).toBeNull();
       expect(screen.getByText("![攻擊](javascript:alert(document.cookie))")).toBeTruthy();
+    });
+
+    it("renders HTML img tags with specified width attribute safely", () => {
+      const content =
+        '👇 排球群組 👇\nhttps://line.me/ti/g/tyMF8YycaA\n<img width="100" height="100" alt="Image" src="https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460" />';
+      render(<AnnouncementContent content={content} />);
+
+      const img = screen.getByRole("img", { name: "Image" });
+      expect(img).toBeTruthy();
+      expect(img.getAttribute("src")).toBe(
+        "https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460",
+      );
+      expect(img.style.width).toBe("100px");
+
+      const lineLink = screen.getByRole("link", { name: /https:\/\/line\.me\/ti\/g\/tyMF8YycaA/ });
+      expect(lineLink).toBeTruthy();
+      expect(lineLink.getAttribute("href")).toBe("https://line.me/ti/g/tyMF8YycaA");
+    });
+
+    it("discards onerror or script injection inside HTML img tags", () => {
+      const content =
+        '<img src="https://github.com/user-attachments/assets/valid-pic.png" onerror="alert(1)" />';
+      render(<AnnouncementContent content={content} />);
+
+      const img = screen.getByRole("img");
+      expect(img).toBeTruthy();
+      expect(img.getAttribute("onerror")).toBeNull();
+      expect(img.getAttribute("src")).toBe(
+        "https://github.com/user-attachments/assets/valid-pic.png",
+      );
     });
   });
 });

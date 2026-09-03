@@ -5,6 +5,7 @@ export interface ContentSegment {
   readonly type: "text" | "image";
   readonly content: string;
   readonly alt?: string;
+  readonly width?: number;
 }
 
 export interface InlineSegment {
@@ -110,10 +111,8 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
           text: fullMatch,
         });
       }
-      lastIndex = matchStart + fullMatch.length;
-      regex.lastIndex = lastIndex;
     } else if (bareUrl) {
-      const { url: cleanUrl } = cleanTrailingPunctuation(bareUrl);
+      const { url: cleanUrl, trailing } = cleanTrailingPunctuation(bareUrl);
       if (isSafeLinkUrl(cleanUrl)) {
         segments.push({
           id: `${baseId}-l-${matchStart}`,
@@ -121,17 +120,23 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
           text: cleanUrl,
           url: cleanUrl,
         });
-        lastIndex = matchStart + cleanUrl.length;
+        if (trailing) {
+          segments.push({
+            id: `${baseId}-t-${matchStart + cleanUrl.length}`,
+            type: "text",
+            text: trailing,
+          });
+        }
       } else {
         segments.push({
           id: `${baseId}-t-${matchStart}`,
           type: "text",
           text: fullMatch,
         });
-        lastIndex = matchStart + fullMatch.length;
       }
-      regex.lastIndex = lastIndex;
     }
+
+    lastIndex = matchStart + fullMatch.length;
     match = regex.exec(text);
   }
 
@@ -146,20 +151,45 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
   return segments;
 };
 
+interface ExtractedImage {
+  readonly url: string;
+  readonly alt?: string;
+  readonly width?: number;
+}
+
+const parseImageMatch = (match: RegExpExecArray): ExtractedImage => {
+  if (match[2]) {
+    return {
+      url: match[2],
+      alt: match[1],
+    };
+  }
+  const attrs = `${match[3] || ""} ${match[5] || ""}`;
+  const altMatch = /alt=["']([^"']*)["']/i.exec(attrs);
+  const widthMatch = /width=["']?(\d+)["']?/i.exec(attrs);
+  return {
+    url: match[4],
+    alt: altMatch?.[1],
+    width: widthMatch ? Number.parseInt(widthMatch[1], 10) : undefined,
+  };
+};
+
+const IMAGE_REGEX =
+  /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|<img\s+([^>]*?)src=["'](https?:\/\/[^"'\s>]+)["']([^>]*?)\/?>/gi;
+
 /**
  * Parses markdown text into structured text and image segments.
- * Only matches valid https:// image markdown syntax; others remain untouched plain text.
+ * Supports both markdown image syntax and safe HTML img tags.
  */
 export const parseContentSegments = (text: string): readonly ContentSegment[] => {
   if (!text) return [];
 
   const segments: ContentSegment[] = [];
-  const regex = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
   let lastIndex = 0;
-  let match: RegExpExecArray | null = regex.exec(text);
+  let match: RegExpExecArray | null = IMAGE_REGEX.exec(text);
 
   while (match !== null) {
-    const [fullMatch, alt, url] = match;
+    const [fullMatch] = match;
     const matchStart = match.index;
 
     if (matchStart > lastIndex) {
@@ -170,12 +200,15 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
       });
     }
 
-    if (isSafeImageUrl(url)) {
+    const img = parseImageMatch(match);
+
+    if (isSafeImageUrl(img.url)) {
       segments.push({
         id: `img-${matchStart}`,
         type: "image",
-        content: url,
-        alt: alt || "公告圖片",
+        content: img.url,
+        alt: img.alt || "公告圖片",
+        width: img.width,
       });
     } else {
       segments.push({
@@ -186,7 +219,7 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
     }
 
     lastIndex = matchStart + fullMatch.length;
-    match = regex.exec(text);
+    match = IMAGE_REGEX.exec(text);
   }
 
   if (lastIndex < text.length) {
@@ -264,6 +297,7 @@ export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) 
                   alt={seg.alt}
                   loading="lazy"
                   style={{
+                    width: seg.width ? `${seg.width}px` : "auto",
                     maxWidth: "100%",
                     maxHeight: 480,
                     height: "auto",
@@ -274,19 +308,21 @@ export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) 
                   }}
                 />
               </a>
-              {seg.alt && seg.alt !== "公告圖片" && (
-                <span
-                  style={{
-                    display: "block",
-                    fontSize: 11.5,
-                    color: "var(--ncu-muted)",
-                    marginTop: 4,
-                    textAlign: "center",
-                  }}
-                >
-                  {seg.alt}
-                </span>
-              )}
+              {seg.alt &&
+                seg.alt !== "公告圖片" &&
+                seg.alt.toLowerCase() !== "image" && (
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 11.5,
+                      color: "var(--ncu-muted)",
+                      marginTop: 4,
+                      textAlign: "center",
+                    }}
+                  >
+                    {seg.alt}
+                  </span>
+                )}
             </div>
           );
         }
