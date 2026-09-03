@@ -36,6 +36,7 @@ import {
   BUILTIN_ANNOUNCEMENTS,
   fetchAnnouncements,
 } from "../services/announcement-api";
+import AnnouncementContent from "../components/announcements/AnnouncementContent";
 
 interface ModuleCard {
   readonly title: string;
@@ -764,7 +765,7 @@ const AnnouncementModal = ({
                       lineHeight: 1.7,
                     }}
                   >
-                    <p style={{ margin: "0 0 14px", whiteSpace: "pre-line" }}>{item.content}</p>
+                    <AnnouncementContent content={item.content} />
 
                     {item.actionUrl && (
                       <div style={{ marginBottom: 14 }}>
