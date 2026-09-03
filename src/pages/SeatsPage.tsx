@@ -113,7 +113,8 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
     topWhiteboardCols: [3, 6],
     leftAisle: true,
     gaps: [4, 18, 4, 18, 4],
-    seatWidth: 42,
+    seatWidth: 46,
+    seatHeight: 48,
     doorGap: 18,
     rows: [
       [{ type: "seat", label: "1-1" }, { type: "seat", label: "2-1" }, { type: "seat", label: "3-1" }, { type: "seat", label: "4-1" }, { type: "seat", label: "5-1" }, { type: "printer", label: "印表機", rowSpan: 3 }],
@@ -141,7 +142,7 @@ const ROOM_LAYOUTS: readonly RoomLayout[] = [
       [
         { type: "printer", label: "印表機" },
         { type: "sofa", label: "沙發", colSpan: 2 },
-        { type: "door", label: "大門" },
+        { type: "door", label: "門" },
       ],
       [
         { type: "corridor", label: "走道" },
@@ -450,7 +451,9 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
                 ...(layout.doorOpen === "left" ? { borderLeft: "4px solid var(--ncu-ink)" } : {}),
                 ...(layout.doorOpen === "right" ? { borderRight: "4px solid var(--ncu-ink)" } : {}),
               }}
-            >大門</span>
+            >
+              門
+            </span>
           </div>
         )}
         {layout.topWhiteboardCols !== undefined && (
@@ -637,7 +640,9 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
                 justifyContent: "center",
                 borderRight: "4px solid var(--ncu-ink)",
               }}
-            >大門</span>
+            >
+              門
+            </span>
           </div>
         )}
         {/* Side wall whiteboard (e.g. 919 to the left of 1-2's walkway) */}
@@ -781,7 +786,9 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
                     ...(side === "left" ? { borderLeft: "4px solid var(--ncu-ink)" } : {}),
                     ...(side === "down" ? { borderBottom: "4px solid var(--ncu-ink)" } : {}),
                   }}
-                >大門</span>
+                >
+                  門
+                </span>
               </div>
             );
           }
