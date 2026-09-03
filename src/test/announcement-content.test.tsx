@@ -247,5 +247,31 @@ describe("AnnouncementContent Security & Parsing", () => {
         "https://github.com/user-attachments/assets/valid-pic.png",
       );
     });
+
+    it("strips <a> wrapper and renders inner <img> without leaking html tag text", () => {
+      const content =
+        '<a href="https://line.me/ti/g/abc">\n<img width="100" alt="群組 QR Code" src="https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460" />\n</a>';
+      render(<AnnouncementContent content={content} />);
+
+      const img = screen.getByRole("img", { name: "群組 QR Code" });
+      expect(img).toBeTruthy();
+      expect(img.getAttribute("src")).toBe(
+        "https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460",
+      );
+      // raw <a …> and </a> must not leak as plain text
+      expect(screen.queryByText(/<\/a>/i)).toBeNull();
+    });
+
+    it("converts clickable image [![alt](img)](link) to plain image segment without bracket leakage", () => {
+      const content =
+        "[![排球群組](https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460)](https://line.me/ti/g/tyMF8YycaA)";
+      render(<AnnouncementContent content={content} />);
+
+      const img = screen.getByRole("img", { name: "排球群組" });
+      expect(img).toBeTruthy();
+      expect(img.getAttribute("src")).toBe(
+        "https://github.com/user-attachments/assets/68dd1bb7-f9ab-44b2-9f49-fdce5e810460",
+      );
+    });
   });
 });

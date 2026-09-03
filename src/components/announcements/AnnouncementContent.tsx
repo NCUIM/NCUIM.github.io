@@ -178,15 +178,30 @@ const IMAGE_REGEX =
   /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)|<img\s+([^>]*?)src=["'](https?:\/\/[^"'\s>]+)["']([^>]*?)\/?>/gi;
 
 /**
+ * Normalizes raw issue markdown before segment parsing:
+ * 1. Collapses <a href="..."><img .../></a> → keeps just <img .../>, discards anchor shell.
+ * 2. Converts clickable-image syntax [![alt](img)](link) → ![alt](img), discarding outer link.
+ */
+const normalizeContent = (raw: string): string =>
+  raw
+    // Strip <a ...> opening tags (may span multiple attributes)
+    .replace(/<a\s[^>]*>/gi, "")
+    // Strip </a> closing tags
+    .replace(/<\/a>/gi, "")
+    // Collapse [![alt](imgUrl)](linkUrl) → ![alt](imgUrl)
+    .replace(/\[(!)\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)\]\([^)]*\)/g, "![$2]($3)");
+
+/**
  * Parses markdown text into structured text and image segments.
- * Supports both markdown image syntax and safe HTML img tags.
+ * Supports markdown image syntax, clickable image links, and safe HTML img tags.
  */
 export const parseContentSegments = (text: string): readonly ContentSegment[] => {
   if (!text) return [];
 
+  const normalized = normalizeContent(text);
   const segments: ContentSegment[] = [];
   let lastIndex = 0;
-  let match: RegExpExecArray | null = IMAGE_REGEX.exec(text);
+  let match: RegExpExecArray | null = IMAGE_REGEX.exec(normalized);
 
   while (match !== null) {
     const [fullMatch] = match;
@@ -196,7 +211,7 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
       segments.push({
         id: `text-${lastIndex}`,
         type: "text",
-        content: text.slice(lastIndex, matchStart),
+        content: normalized.slice(lastIndex, matchStart),
       });
     }
 
@@ -219,14 +234,14 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
     }
 
     lastIndex = matchStart + fullMatch.length;
-    match = IMAGE_REGEX.exec(text);
+    match = IMAGE_REGEX.exec(normalized);
   }
 
-  if (lastIndex < text.length) {
+  if (lastIndex < normalized.length) {
     segments.push({
       id: `text-${lastIndex}`,
       type: "text",
-      content: text.slice(lastIndex),
+      content: normalized.slice(lastIndex),
     });
   }
 
