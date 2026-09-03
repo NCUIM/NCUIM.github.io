@@ -146,7 +146,6 @@ const appendBareUrlLink = (
   }
 };
 
-const INLINE_MD_LINK_REGEX = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/;
 const INLINE_BARE_URL_REGEX = /https?:\/\/[^\s<>()]+/;
 
 interface FoundInlineToken {
@@ -156,24 +155,71 @@ interface FoundInlineToken {
   readonly index: number;
 }
 
-const findNextInlineToken = (text: string, fromIndex: number): FoundInlineToken | null => {
-  const sub = text.slice(fromIndex);
-  const mdMatch = INLINE_MD_LINK_REGEX.exec(sub);
-  const bareMatch = INLINE_BARE_URL_REGEX.exec(sub);
+const isInlineWhitespace = (ch: string): boolean =>
+  ch === " " ||
+  ch === "\t" ||
+  ch === "\n" ||
+  ch === "\r" ||
+  ch === "\v" ||
+  ch === "\f" ||
+  ch === "\u00a0" ||
+  ch === "\ufeff";
 
-  if (!mdMatch && !bareMatch) return null;
+/**
+ * Linear scan for the next `[text](https?://url)` markdown link.
+ * Replaces the old regex whose `[^\]]+` + `\]` pair caused super-linear
+ * backtracking on unclosed bracket input (SonarCloud performance issue).
+ */
+const findNextMarkdownLink = (
+  text: string,
+  fromIndex: number,
+): FoundInlineToken | null => {
+  for (let i = fromIndex; i < text.length; i++) {
+    if (text[i] !== "[") continue;
 
-  const mdIndex = mdMatch ? mdMatch.index : Infinity;
-  const bareIndex = bareMatch ? bareMatch.index : Infinity;
+    const closeBracket = text.indexOf("]", i + 1);
+    if (closeBracket === -1) return null; // no closing bracket remains → no further links
+    if (text[closeBracket + 1] !== "(") continue;
 
-  if (mdIndex <= bareIndex && mdMatch) {
+    const urlStart = closeBracket + 2;
+    const schemeLen = text.startsWith("https://", urlStart)
+      ? 8
+      : text.startsWith("http://", urlStart)
+        ? 7
+        : 0;
+    if (schemeLen === 0) continue;
+
+    let urlEnd = urlStart + schemeLen;
+    while (
+      urlEnd < text.length &&
+      !isInlineWhitespace(text[urlEnd]) &&
+      text[urlEnd] !== ")"
+    ) {
+      urlEnd += 1;
+    }
+    if (urlEnd >= text.length || text[urlEnd] !== ")") continue;
+    if (urlEnd === urlStart + schemeLen) continue; // URL must have content after the scheme
+
     return {
-      fullMatch: mdMatch[0],
-      mdText: mdMatch[1],
-      mdUrl: mdMatch[2],
-      index: fromIndex + mdMatch.index,
+      fullMatch: text.slice(i, urlEnd + 1),
+      mdText: text.slice(i + 1, closeBracket),
+      mdUrl: text.slice(urlStart, urlEnd),
+      index: i,
     };
   }
+  return null;
+};
+
+const findNextInlineToken = (text: string, fromIndex: number): FoundInlineToken | null => {
+  const mdLink = findNextMarkdownLink(text, fromIndex);
+  const bareMatch = INLINE_BARE_URL_REGEX.exec(text.slice(fromIndex));
+
+  if (!mdLink && !bareMatch) return null;
+
+  const mdIndex = mdLink ? mdLink.index : Infinity;
+  const bareIndex = bareMatch ? fromIndex + bareMatch.index : Infinity;
+
+  if (mdIndex <= bareIndex && mdLink) return mdLink;
   if (bareMatch) {
     return {
       fullMatch: bareMatch[0],
