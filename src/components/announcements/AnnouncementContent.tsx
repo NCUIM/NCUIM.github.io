@@ -220,7 +220,11 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
 
     if (matchStart > lastIndex) {
       const rawSlice = text.slice(lastIndex, matchStart);
-      const cleanSlice = rawSlice.replace(/<a\s[^>]*>/gi, "").replace(/<\/a>/gi, "");
+      const cleanSlice = rawSlice
+        .replace(/<a\s[^>]*>/gi, "")
+        .replace(/<\/a>/gi, "")
+        .replace(/^\n+/, "")
+        .replace(/\n+$/, "");
       if (cleanSlice.length > 0) {
         segments.push({
           id: `text-${lastIndex}`,
@@ -256,7 +260,11 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
 
   if (lastIndex < text.length) {
     const rawTail = text.slice(lastIndex);
-    const cleanTail = rawTail.replace(/<a\s[^>]*>/gi, "").replace(/<\/a>/gi, "");
+    const cleanTail = rawTail
+      .replace(/<a\s[^>]*>/gi, "")
+      .replace(/<\/a>/gi, "")
+      .replace(/^\n+/, "")
+      .replace(/\n+$/, "");
     if (cleanTail.length > 0) {
       segments.push({
         id: `text-${lastIndex}`,
@@ -349,7 +357,7 @@ export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) 
             <div
               key={seg.id}
               style={{
-                margin: "12px 0",
+                margin: "8px 0 10px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",

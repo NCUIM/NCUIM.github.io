@@ -124,14 +124,14 @@ describe("AnnouncementContent Security & Parsing", () => {
       const segments = parseContentSegments(text);
 
       expect(segments).toHaveLength(3);
-      expect(segments[0]).toEqual({ id: "text-0", type: "text", content: "請看迎新海報：\n" });
+      expect(segments[0]).toEqual({ id: "text-0", type: "text", content: "請看迎新海報：" });
       expect(segments[1]).toEqual({
         id: "img-8",
         type: "image",
         content: "https://github.com/user-attachments/assets/xyz",
         alt: "迎新海報",
       });
-      expect(segments[2]).toEqual({ id: "text-63", type: "text", content: "\n歡迎踴躍報名！" });
+      expect(segments[2]).toEqual({ id: "text-63", type: "text", content: "歡迎踴躍報名！" });
     });
 
     it("treats malicious javascript: syntax as pure text without image extraction", () => {
@@ -197,7 +197,7 @@ describe("AnnouncementContent Security & Parsing", () => {
       const segments = parseContentSegments(text);
 
       expect(segments).toHaveLength(3);
-      expect(segments[0]).toEqual({ id: "text-0", type: "text", content: "排球群組：\n" });
+      expect(segments[0]).toEqual({ id: "text-0", type: "text", content: "排球群組：" });
       expect(segments[1]).toEqual({
         id: "img-6",
         type: "image",
@@ -205,7 +205,7 @@ describe("AnnouncementContent Security & Parsing", () => {
         alt: "Image",
         width: 100,
       });
-      expect(segments[2]).toEqual({ id: "text-136", type: "text", content: "\n歡迎加入！" });
+      expect(segments[2]).toEqual({ id: "text-136", type: "text", content: "歡迎加入！" });
     });
 
     it("does not render img tag when payload is an unsafe scheme", () => {
