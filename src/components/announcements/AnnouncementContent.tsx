@@ -1,6 +1,7 @@
 import type React from "react";
 
 export interface ContentSegment {
+  readonly id: string;
   readonly type: "text" | "image";
   readonly content: string;
   readonly alt?: string;
@@ -58,6 +59,7 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
 
     if (matchStart > lastIndex) {
       segments.push({
+        id: `text-${lastIndex}`,
         type: "text",
         content: text.slice(lastIndex, matchStart),
       });
@@ -65,12 +67,14 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
 
     if (isSafeImageUrl(url)) {
       segments.push({
+        id: `img-${matchStart}`,
         type: "image",
         content: url,
         alt: alt || "公告圖片",
       });
     } else {
       segments.push({
+        id: `text-${matchStart}`,
         type: "text",
         content: fullMatch,
       });
@@ -82,6 +86,7 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
 
   if (lastIndex < text.length) {
     segments.push({
+      id: `text-${lastIndex}`,
       type: "text",
       content: text.slice(lastIndex),
     });
@@ -95,10 +100,10 @@ export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) 
 
   return (
     <div style={{ margin: "0 0 14px", lineHeight: 1.7, fontSize: 14 }}>
-      {segments.map((seg, idx) => {
+      {segments.map((seg) => {
         if (seg.type === "image") {
           return (
-            <div key={`img-segment-${seg.content}-${idx}`} style={{ margin: "10px 0" }}>
+            <div key={seg.id} style={{ margin: "10px 0" }}>
               <a
                 href={seg.content}
                 target="_blank"
@@ -139,7 +144,7 @@ export const AnnouncementContent = ({ content }: Readonly<{ content: string }>) 
 
         return (
           <p
-            key={`text-segment-${idx}`}
+            key={seg.id}
             style={{
               margin: "0 0 8px",
               whiteSpace: "pre-line",

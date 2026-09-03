@@ -57,7 +57,7 @@ describe("AnnouncementContent Security & Parsing", () => {
     it("parses pure plain text as a single text segment", () => {
       const text = "這是普通公告內容，無圖片。";
       const segments = parseContentSegments(text);
-      expect(segments).toEqual([{ type: "text", content: text }]);
+      expect(segments).toEqual([{ id: "text-0", type: "text", content: text }]);
     });
 
     it("extracts safe markdown images and surrounding text", () => {
@@ -65,13 +65,14 @@ describe("AnnouncementContent Security & Parsing", () => {
       const segments = parseContentSegments(text);
 
       expect(segments).toHaveLength(3);
-      expect(segments[0]).toEqual({ type: "text", content: "請看迎新海報：\n" });
+      expect(segments[0]).toEqual({ id: "text-0", type: "text", content: "請看迎新海報：\n" });
       expect(segments[1]).toEqual({
+        id: "img-8",
         type: "image",
         content: "https://github.com/user-attachments/assets/xyz",
         alt: "迎新海報",
       });
-      expect(segments[2]).toEqual({ type: "text", content: "\n歡迎踴躍報名！" });
+      expect(segments[2]).toEqual({ id: "text-63", type: "text", content: "\n歡迎踴躍報名！" });
     });
 
     it("treats malicious javascript: syntax as pure text without image extraction", () => {
@@ -80,6 +81,7 @@ describe("AnnouncementContent Security & Parsing", () => {
 
       expect(segments).toHaveLength(1);
       expect(segments[0]).toEqual({
+        id: "text-0",
         type: "text",
         content: "惡意攻擊：![點我看獎勵](javascript:alert(1))",
       });
@@ -90,8 +92,9 @@ describe("AnnouncementContent Security & Parsing", () => {
       const segments = parseContentSegments(text);
 
       expect(segments).toHaveLength(2);
-      expect(segments[0]).toEqual({ type: "text", content: "非圖片連結：" });
+      expect(segments[0]).toEqual({ id: "text-0", type: "text", content: "非圖片連結：" });
       expect(segments[1]).toEqual({
+        id: "text-6",
         type: "text",
         content: "![檔案](https://malicious.com/payload.exe)",
       });
