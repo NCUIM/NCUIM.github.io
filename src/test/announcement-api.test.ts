@@ -77,9 +77,69 @@ https://cis.ncu.edu.tw/`,
     expect(parsed.role).toBe("系辦公室");
     expect(parsed.author).toBe("助教小華");
     expect(parsed.content).toBe("初選將於明日開放登記，請準時填寫志願。");
-    expect(parsed.actionUrl).toBe("https://cis.ncu.edu.tw/");
+    expect(parsed.actionUrls).toEqual(["https://cis.ncu.edu.tw/"]);
     expect(parsed.milestone?.title).toBe("115-1 新生入學階段");
     expect(parsed.milestone?.dueOn).toBe("2026/09/06");
+  });
+
+  it("parses multiple action URLs into actionUrls array", () => {
+    const mockIssue = {
+      id: 99,
+      number: 99,
+      title: "[公告] 群組連結",
+      html_url: "https://github.com/NCUIM/NCUIM.github.io/issues/99",
+      created_at: "2026-09-04T00:00:00Z",
+      updated_at: "2026-09-04T00:00:00Z",
+      labels: [{ name: "announcement" }],
+      body: `### 公告類別 (Category)
+
+一般公告 (category:general)
+
+### 重要程度 (Priority)
+
+一般通知 (priority:normal)
+
+### 發布單位與署名 (Author & Role)
+
+系隊體育組 · 阿駿
+
+### 公告內文 (Content)
+
+群組連結如下。
+
+### 相關連結 (Action URL)
+https://line.me/ti/g/tyMF8YycaA
+https://line.me/ti/g/3JUhapzyzR
+https://line.me/ti/g/3YLSkeyp8E`,
+    };
+
+    const parsed = parseGitHubIssue(mockIssue);
+    expect(parsed.actionUrls).toEqual([
+      "https://line.me/ti/g/tyMF8YycaA",
+      "https://line.me/ti/g/3JUhapzyzR",
+      "https://line.me/ti/g/3YLSkeyp8E",
+    ]);
+  });
+
+  it("returns undefined actionUrls for _No response_", () => {
+    const mockIssue = {
+      id: 100,
+      number: 100,
+      title: "[公告] 空連結測試",
+      html_url: "https://github.com/NCUIM/NCUIM.github.io/issues/100",
+      created_at: "2026-09-04T00:00:00Z",
+      updated_at: "2026-09-04T00:00:00Z",
+      labels: [{ name: "announcement" }],
+      body: `### 公告內文 (Content)
+
+無連結公告。
+
+### 相關連結 (Action URL)
+_No response_`,
+    };
+
+    const parsed = parseGitHubIssue(mockIssue);
+    expect(parsed.actionUrls).toBeUndefined();
   });
 
   it("sorts announcements by priority and date", () => {

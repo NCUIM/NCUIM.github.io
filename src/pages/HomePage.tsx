@@ -767,29 +767,32 @@ const AnnouncementModal = ({
                   >
                     <AnnouncementContent content={item.content} />
 
-                    {item.actionUrl && (
-                      <div style={{ marginBottom: 14 }}>
-                        <button
-                          type="button"
-                          onClick={() => window.open(item.actionUrl, "_blank", "noopener,noreferrer")}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            padding: "6px 14px",
-                            borderRadius: 8,
-                            border: "1.5px solid var(--ncu-ink)",
-                            background: "var(--ncu-surface)",
-                            color: "var(--ncu-ink)",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            boxShadow: "var(--ncu-shadow-sm)",
-                          }}
-                        >
-                          <IonIcon icon={openOutline} style={{ fontSize: 14 }} />
-                          <span>開啟相關連結 ↗</span>
-                        </button>
+                    {item.actionUrls && item.actionUrls.length > 0 && (
+                      <div style={{ marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {item.actionUrls.map((url, idx) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                              padding: "6px 14px",
+                              borderRadius: 8,
+                              border: "1.5px solid var(--ncu-ink)",
+                              background: "var(--ncu-surface)",
+                              color: "var(--ncu-ink)",
+                              fontSize: 13,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              boxShadow: "var(--ncu-shadow-sm)",
+                            }}
+                          >
+                            <IonIcon icon={openOutline} style={{ fontSize: 14 }} />
+                            <span>{item.actionUrls!.length > 1 ? `開啟連結 ${idx + 1} ↗` : "開啟相關連結 ↗"}</span>
+                          </button>
+                        ))}
                       </div>
                     )}
 
