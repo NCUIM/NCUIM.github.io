@@ -165,6 +165,48 @@ const isInlineWhitespace = (ch: string): boolean =>
   ch === "\u00a0" ||
   ch === "\ufeff";
 
+const getUrlSchemeLength = (text: string, start: number): number => {
+  if (text.startsWith("https://", start)) return 8;
+  if (text.startsWith("http://", start)) return 7;
+  return 0;
+};
+
+const findUrlEnd = (text: string, urlStart: number, schemeLen: number): number => {
+  let urlEnd = urlStart + schemeLen;
+  while (
+    urlEnd < text.length &&
+    !isInlineWhitespace(text[urlEnd]) &&
+    text[urlEnd] !== ")"
+  ) {
+    urlEnd += 1;
+  }
+  return urlEnd;
+};
+
+const tryParseMarkdownLink = (
+  text: string,
+  openIndex: number,
+): FoundInlineToken | null => {
+  const closeBracket = text.indexOf("]", openIndex + 1);
+  if (closeBracket === -1) return null;
+  if (text[closeBracket + 1] !== "(") return null;
+
+  const urlStart = closeBracket + 2;
+  const schemeLen = getUrlSchemeLength(text, urlStart);
+  if (schemeLen === 0) return null;
+
+  const urlEnd = findUrlEnd(text, urlStart, schemeLen);
+  if (urlEnd >= text.length || text[urlEnd] !== ")") return null;
+  if (urlEnd === urlStart + schemeLen) return null; // URL must have content after the scheme
+
+  return {
+    fullMatch: text.slice(openIndex, urlEnd + 1),
+    mdText: text.slice(openIndex + 1, closeBracket),
+    mdUrl: text.slice(urlStart, urlEnd),
+    index: openIndex,
+  };
+};
+
 /**
  * Linear scan for the next `[text](https?://url)` markdown link.
  * Replaces the old regex whose `[^\]]+` + `\]` pair caused super-linear
@@ -177,35 +219,9 @@ const findNextMarkdownLink = (
   for (let i = fromIndex; i < text.length; i++) {
     if (text[i] !== "[") continue;
 
-    const closeBracket = text.indexOf("]", i + 1);
-    if (closeBracket === -1) return null; // no closing bracket remains → no further links
-    if (text[closeBracket + 1] !== "(") continue;
-
-    const urlStart = closeBracket + 2;
-    const schemeLen = text.startsWith("https://", urlStart)
-      ? 8
-      : text.startsWith("http://", urlStart)
-        ? 7
-        : 0;
-    if (schemeLen === 0) continue;
-
-    let urlEnd = urlStart + schemeLen;
-    while (
-      urlEnd < text.length &&
-      !isInlineWhitespace(text[urlEnd]) &&
-      text[urlEnd] !== ")"
-    ) {
-      urlEnd += 1;
-    }
-    if (urlEnd >= text.length || text[urlEnd] !== ")") continue;
-    if (urlEnd === urlStart + schemeLen) continue; // URL must have content after the scheme
-
-    return {
-      fullMatch: text.slice(i, urlEnd + 1),
-      mdText: text.slice(i + 1, closeBracket),
-      mdUrl: text.slice(urlStart, urlEnd),
-      index: i,
-    };
+    const token = tryParseMarkdownLink(text, i);
+    if (token) return token;
+    if (text.indexOf("]", i + 1) === -1) return null; // no closing bracket remains → no further links
   }
   return null;
 };
