@@ -14,6 +14,7 @@ import {
   IonSegmentButton,
 } from "@ionic/react";
 import { useState } from "react";
+import seatAssignments from "../data/seats.json";
 
 // ---------------------------------------------------------------------------
 // Layout data types
@@ -743,13 +744,16 @@ const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
           }
 
           if (cell.type === "seat") {
-            const vacant = !cell.occupant;
+            const occupant =
+              (seatAssignments as Record<string, Record<string, string>>)[layout.id]?.[cell.label] ??
+              cell.occupant;
+            const vacant = !occupant;
             return (
               <div key={key++} style={{ ...itemStyle, ...getSeatStyle(sizes, vacant) }}>
                 <span style={{ fontSize: sizes.code, fontWeight: 800, opacity: 0.65, lineHeight: 1 }}>
                   {cell.label}
                 </span>
-                <span>{vacant ? "空" : cell.occupant}</span>
+                <span>{vacant ? "空" : occupant}</span>
               </div>
             );
           }
