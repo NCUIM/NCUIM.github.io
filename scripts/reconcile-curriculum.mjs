@@ -76,6 +76,38 @@ async function fetchText(url, opts) {
   return res.text();
 }
 
+/** Collapse whitespace runs to a single space and trim. */
+const collapseSpaces = (s) => s.replace(/\s+/g, " ").trim();
+
+/**
+ * Strip HTML tags with a single linear scan (no regex backtracking, unlike
+ * `<[^>]+>` which degrades quadratically on input without a closing `>`).
+ * `<br>` variants become " | " so multi-line cells stay readable; every other
+ * tag becomes a single space. A dangling `<` without a closing `>` is kept
+ * verbatim (same behavior as the old tag-stripping regexes).
+ */
+const stripTags = (raw) => {
+  let out = "";
+  let i = 0;
+  while (i < raw.length) {
+    const lt = raw.indexOf("<", i);
+    if (lt === -1) {
+      out += raw.slice(i);
+      break;
+    }
+    out += raw.slice(i, lt);
+    const gt = raw.indexOf(">", lt + 1);
+    if (gt === -1) {
+      out += raw.slice(lt);
+      break;
+    }
+    const tag = raw.slice(lt + 1, gt).trim().toLowerCase();
+    out += tag.startsWith("br") ? " | " : " ";
+    i = gt + 1;
+  }
+  return out;
+};
+
 /** Take just the Chinese course title from an all.json title. */
 function cleanTitle(rawTitle) {
   if (!rawTitle) return "";
@@ -96,10 +128,11 @@ async function fetchAllCourses() {
 function parseKeywordRow(rowHtml) {
   const cells = [...rowHtml.matchAll(/<td>(.*?)<\/td>/gs)].map((m) => m[1]);
   if (cells.length < 6) return null;
-  const clean = (x) =>
-    x.replace(/<br\s*\/?>/g, " | ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const clean = (x) => collapseSpaces(stripTags(x));
   const first = clean(cells[0]);
-  const m = first.match(/^(\d+)\s*\|\s*([A-Z]{2,}\d+[A-Z0-9*-]*)$/);
+  // `[A-Z]{2,}\d` — a single required digit avoids the ambiguous `\d+` /
+  // `[A-Z0-9*-]*` split that made this regex backtrack quadratically.
+  const m = first.match(/^(\d+)\s*\|\s*([A-Z]{2,}\d[A-Z0-9*-]*)$/);
   if (!m) return null;
   const timeRoom = clean(cells[4]);
   // 時間/教室 e.g. "三678/I1-404 (管理二館-404)" — extract the room token after '/'
@@ -145,8 +178,8 @@ async function fetchDistributionLimit(serialNo) {
   // rows: <td>1</td><td>系所:限…。…</td>
   const rows = [...html.matchAll(/<td[^>]*>([\s\S]*?)<\/td>\s*<td[^>]*>([\s\S]*?)<\/td>/g)]
     .map((m) => ({
-      priority: m[1].replace(/<[^>]+>/g, "").replace(/\s+/g, ""),
-      condition: m[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+      priority: stripTags(m[1]).replace(/\s+/g, ""),
+      condition: collapseSpaces(stripTags(m[2])),
     }))
     .filter((r) => /^\d+$/.test(r.priority) && r.condition.length > 0);
   const isOpen = /課程沒有限制/.test(html);
@@ -281,7 +314,9 @@ function checkDrift(committedPath, fresh) {
   return notes;
 }
 
-main().catch((err) => {
+try {
+  await main();
+} catch (err) {
   console.error(err);
   process.exit(1);
-});
+}
