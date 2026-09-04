@@ -70,7 +70,7 @@ const CreditPageHeader = ({
       <IonButtons slot="start">
         <IonBackButton defaultHref="/" text="" />
       </IonButtons>
-      <IonTitle>115 碩士班學分試算</IonTitle>
+      <IonTitle>學分試算</IonTitle>
       <IonButtons slot="end">
         <IonButton
           size="small"

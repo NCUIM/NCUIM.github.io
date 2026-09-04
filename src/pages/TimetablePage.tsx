@@ -1190,7 +1190,7 @@ const TimetableHeader = ({
       <IonButtons slot="start">
         <IonBackButton defaultHref="/" text="" />
       </IonButtons>
-      <IonTitle>{viewScope === "mine" ? "我的課表" : "碩士班課表"}</IonTitle>
+      <IonTitle>{viewScope === "mine" ? "我的課表" : "全部課表"}</IonTitle>
       <IonButtons slot="end">
         <IonButton
           size="small"
@@ -1398,7 +1398,7 @@ const TimetablePage = () => {
         setMasterCourses(courses);
       }
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : "載入碩士班課程資料失敗");
+      setApiError(err instanceof Error ? err.message : "載入課程資料失敗");
     } finally {
       setLoading(false);
     }
