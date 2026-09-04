@@ -3,6 +3,7 @@
  */
 
 import fallbackMasterCourses from "../data/im-master-courses.json";
+import masterSnapshot from "../data/im-master-snapshot.json";
 import { getRequiredFact, requiredFactLabel, type RequiredTagLabel } from "../data/im-curriculum";
 
 export interface MasterCourseItem {
@@ -93,7 +94,42 @@ const isExcludedMasterCourse = (c: RawCourse): boolean =>
   EXCLUDED_CLASS_NOS.some((no) => c.classNo?.startsWith(no)) ||
   EXCLUDED_MASTER_KEYWORDS.some((kw) => c.title?.includes(kw));
 
+/** One per-course entry of the committed CIS snapshot (see im-master-snapshot.json). */
+interface SnapshotCourseMeta {
+  classNo?: string;
+  title?: string;
+  room?: string;
+  courseType?: string;
+  allowMaster?: boolean;
+}
+
+/** The committed snapshot: CIS-derived facts keyed by serialNo (see scripts/reconcile-curriculum.mjs). */
+const MASTER_SNAPSHOT: Record<string, SnapshotCourseMeta> =
+  (masterSnapshot as { courses?: Record<string, SnapshotCourseMeta> }).courses ?? {};
+
+/**
+ * Look up a live course in the committed snapshot by serialNo first, then by
+ * exact classNo (IM5019-A), then by its generic code section (IM5019-*).
+ */
+const findSnapshotMeta = (c: RawCourse): SnapshotCourseMeta | undefined => {
+  const bySerial = MASTER_SNAPSHOT[String(c.serialNo)];
+  if (bySerial) return bySerial;
+  if (MASTER_SNAPSHOT[c.classNo]) return MASTER_SNAPSHOT[c.classNo];
+  const prefix = c.classNo.split("-")[0];
+  return MASTER_SNAPSHOT[`${prefix}-*`];
+};
+
+/**
+ * A course belongs to the IM master's list when the committed snapshot marks
+ * it allowMaster — i.e. its CIS 分發條件 admits the regular master's cohort.
+ * This replaces the numeric 5xxx–7xxx band, which let doctoral courses such as
+ * IM7043 書報研討 leak into the master's timetable. Courses CIS opened after
+ * the last reconcile (absent from the snapshot) fall back to the band so they
+ * are not silently dropped.
+ */
 const isMasterLevelCourse = (c: RawCourse): boolean => {
+  const meta = findSnapshotMeta(c);
+  if (meta) return meta.allowMaster === true;
   const match = /IM(\d{4})/.exec(c.classNo || "");
   if (!match) return false;
   const num = Number.parseInt(match[1], 10);
@@ -129,6 +165,7 @@ const getCourseType = (c: RawCourse): "REQUIRED" | "ELECTIVE" => {
 
 const mapRawCourse = (c: RawCourse): MasterCourseItem => {
   const reqTag = getRequiredTag(c.classNo);
+  const meta = findSnapshotMeta(c);
   return {
     serialNo: c.serialNo,
     classNo: c.classNo,
@@ -141,14 +178,16 @@ const mapRawCourse = (c: RawCourse): MasterCourseItem => {
     passwordCard: c.passwordCard || undefined,
     limitCnt: c.limitCnt,
     admitCnt: c.admitCnt,
-    room: getCourseRoom(c.classNo),
+    // CIS-verified room from the snapshot wins; legacy map is last resort.
+    room: meta?.room ?? getCourseRoom(c.classNo),
   };
 };
 
 /**
  * Fetch all NCU courses from S3 and filter for IM Master courses.
- * Excludes individual research (IM7000 碩士論文) and doctoral courses (IM8xxx).
- * Falls back to bundled static json if network fails or offline.
+ * Membership is gated by the committed CIS snapshot (allowMaster), which
+ * excludes individual research (IM7000), doctoral courses and 在職專班 courses;
+ * falls back to the bundled static list if the network fails or is offline.
  */
 export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
   try {

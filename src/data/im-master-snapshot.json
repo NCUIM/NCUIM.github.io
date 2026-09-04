@@ -1,0 +1,526 @@
+{
+  "semester": "1151",
+  "generatedAt": "2026-09-04T21:27:38.596Z",
+  "courses": {
+    "43001": {
+      "serialNo": "43001",
+      "classNo": "IM1001-*",
+      "title": "計算機概論Ｉ",
+      "credit": 3,
+      "room": "I1-017",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 4
+    },
+    "43002": {
+      "serialNo": "43002",
+      "classNo": "IM1013-A",
+      "title": "初階程式設計",
+      "credit": 3,
+      "room": "I1-405-1",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43003": {
+      "serialNo": "43003",
+      "classNo": "IM1013-D",
+      "title": "初階程式設計",
+      "credit": 3,
+      "room": "I1-405-1",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43004": {
+      "serialNo": "43004",
+      "classNo": "IM1024-*",
+      "title": "商事法",
+      "credit": 3,
+      "room": "I1-107",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 1
+    },
+    "43005": {
+      "serialNo": "43005",
+      "classNo": "IM2011-*",
+      "title": "資料與檔案結構",
+      "credit": 3,
+      "room": "I1-017",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 6
+    },
+    "43006": {
+      "serialNo": "43006",
+      "classNo": "IM2029-*",
+      "title": "管理會計",
+      "credit": 3,
+      "room": "I1-107",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 1
+    },
+    "43007": {
+      "serialNo": "43007",
+      "classNo": "IM2030-*",
+      "title": "財務管理",
+      "credit": 3,
+      "room": "I1-105",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43008": {
+      "serialNo": "43008",
+      "classNo": "IM2038-*",
+      "title": "Python",
+      "credit": 3,
+      "room": "I1-405-1",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 4
+    },
+    "43009": {
+      "serialNo": "43009",
+      "classNo": "IM2046-*",
+      "title": "作業系統",
+      "credit": 3,
+      "room": "I-204",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 4
+    },
+    "43010": {
+      "serialNo": "43010",
+      "classNo": "IM3003-*",
+      "title": "作業研究 Ⅰ",
+      "credit": 3,
+      "room": "I-204",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 5
+    },
+    "43011": {
+      "serialNo": "43011",
+      "classNo": "IM3059-*",
+      "title": "行銷學",
+      "credit": 3,
+      "room": "I1-017",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 4
+    },
+    "43012": {
+      "serialNo": "43012",
+      "classNo": "IM3069-*",
+      "title": "系統分析與設計",
+      "credit": 3,
+      "room": "I1-017",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43013": {
+      "serialNo": "43013",
+      "classNo": "IM3070-*",
+      "title": "組織行為",
+      "credit": 3,
+      "room": "I1-017",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 4
+    },
+    "43014": {
+      "serialNo": "43014",
+      "classNo": "IM4001-A",
+      "title": "資訊系統發展專題Ⅱ",
+      "credit": 3,
+      "room": "I-314",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43015": {
+      "serialNo": "43015",
+      "classNo": "IM4001-B",
+      "title": "資訊系統發展專題Ⅱ",
+      "credit": 3,
+      "room": "I-315",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43016": {
+      "serialNo": "43016",
+      "classNo": "IM4001-C",
+      "title": "資訊系統發展專題Ⅱ",
+      "credit": 3,
+      "room": "I-315",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43017": {
+      "serialNo": "43017",
+      "classNo": "IM4001-D",
+      "title": "資訊系統發展專題Ⅱ",
+      "credit": 3,
+      "room": "I1-107",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43018": {
+      "serialNo": "43018",
+      "classNo": "IM4001-E",
+      "title": "資訊系統發展專題Ⅱ",
+      "credit": 3,
+      "room": "I1-105",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43019": {
+      "serialNo": "43019",
+      "classNo": "IM4001-F",
+      "title": "資訊系統發展專題Ⅱ",
+      "credit": 3,
+      "room": "I-314",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43020": {
+      "serialNo": "43020",
+      "classNo": "IM4001-G",
+      "title": "資訊系統發展專題Ⅱ",
+      "credit": 3,
+      "room": "I1-105",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 3
+    },
+    "43021": {
+      "serialNo": "43021",
+      "classNo": "IM4048-*",
+      "title": "管理資訊系統",
+      "credit": 3,
+      "room": "I1-017",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 4
+    },
+    "43022": {
+      "serialNo": "43022",
+      "classNo": "IM5001-*",
+      "title": "社會網路分析",
+      "credit": 3,
+      "room": "I1-002",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 1
+    },
+    "43023": {
+      "serialNo": "43023",
+      "classNo": "IM5007-*",
+      "title": "資訊檢索",
+      "credit": 3,
+      "room": "I1-002",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 3
+    },
+    "43024": {
+      "serialNo": "43024",
+      "classNo": "IM5008-*",
+      "title": "商業智慧",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 3
+    },
+    "43025": {
+      "serialNo": "43025",
+      "classNo": "IM5019-A",
+      "title": "管理溝通",
+      "credit": 2,
+      "room": "I1-002",
+      "courseType": "REQUIRED",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43026": {
+      "serialNo": "43026",
+      "classNo": "IM5019-B",
+      "title": "管理溝通",
+      "credit": 2,
+      "room": "I1-404",
+      "courseType": "REQUIRED",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43027": {
+      "serialNo": "43027",
+      "classNo": "IM5022-*",
+      "title": "多媒體資料庫",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 1
+    },
+    "43028": {
+      "serialNo": "43028",
+      "classNo": "IM5032-*",
+      "title": "物聯網實務應用",
+      "credit": 3,
+      "room": "I1-405-1",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 3
+    },
+    "43029": {
+      "serialNo": "43029",
+      "classNo": "IM5038-*",
+      "title": "進階區塊鏈應用與隱私防護",
+      "credit": 3,
+      "room": "I1-114",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43030": {
+      "serialNo": "43030",
+      "classNo": "IM5041-*",
+      "title": "現代與後量子密碼學導論",
+      "credit": 3,
+      "room": "I1-107",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43031": {
+      "serialNo": "43031",
+      "classNo": "IM6002-*",
+      "title": "資訊系統專案管理",
+      "credit": 3,
+      "room": "I-315",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43032": {
+      "serialNo": "43032",
+      "classNo": "IM6003-*",
+      "title": "軟體工程Ⅰ",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "REQUIRED",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43033": {
+      "serialNo": "43033",
+      "classNo": "IM6012-*",
+      "title": "管理資訊系統",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "REQUIRED",
+      "allowMaster": true,
+      "limitConditions": 3
+    },
+    "43034": {
+      "serialNo": "43034",
+      "classNo": "IM6041-*",
+      "title": "生產與作業管理",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43035": {
+      "serialNo": "43035",
+      "classNo": "IM6053-*",
+      "title": "多變量分析",
+      "credit": 3,
+      "room": "I-315",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43036": {
+      "serialNo": "43036",
+      "classNo": "IM6055-*",
+      "title": "電腦網路安全",
+      "credit": 3,
+      "room": "I1-107",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 3
+    },
+    "43037": {
+      "serialNo": "43037",
+      "classNo": "IM6082-*",
+      "title": "行銷管理",
+      "credit": 3,
+      "room": "I1-114",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43038": {
+      "serialNo": "43038",
+      "classNo": "IM6103-*",
+      "title": "網路經濟與賽局智慧",
+      "credit": 3,
+      "room": "I1-002",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43039": {
+      "serialNo": "43039",
+      "classNo": "IM7043-*",
+      "title": "書報研討Ⅰ",
+      "credit": 1,
+      "room": "I-315",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 1
+    },
+    "43040": {
+      "serialNo": "43040",
+      "classNo": "IM7071-*",
+      "title": "企業電腦網路",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43041": {
+      "serialNo": "43041",
+      "classNo": "IM7082-*",
+      "title": "智慧型資訊系統",
+      "credit": 3,
+      "room": "I1-002",
+      "courseType": "ELECTIVE",
+      "allowMaster": true,
+      "limitConditions": 2
+    },
+    "43042": {
+      "serialNo": "43042",
+      "classNo": "IM8011-*",
+      "title": "資訊管理研究Ⅰ",
+      "credit": 3,
+      "room": "I-315",
+      "courseType": "ELECTIVE",
+      "allowMaster": false,
+      "limitConditions": 1
+    },
+    "43043": {
+      "serialNo": "43043",
+      "classNo": "IMA002-*",
+      "title": "電子商務管理",
+      "credit": 3,
+      "room": "I1-002",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 2
+    },
+    "43044": {
+      "serialNo": "43044",
+      "classNo": "IMA003-*",
+      "title": "電子商務網際網路技術",
+      "credit": 3,
+      "room": "I1-002",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 2
+    },
+    "43045": {
+      "serialNo": "43045",
+      "classNo": "IMA004-*",
+      "title": "電子商務供應鏈管理",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 2
+    },
+    "43046": {
+      "serialNo": "43046",
+      "classNo": "IMA005-*",
+      "title": "電子商務行銷管理",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 2
+    },
+    "43047": {
+      "serialNo": "43047",
+      "classNo": "IMA008-*",
+      "title": "企業網路規劃與管理",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 2
+    },
+    "43048": {
+      "serialNo": "43048",
+      "classNo": "IMA009-*",
+      "title": "電子商務資料管理",
+      "credit": 3,
+      "room": "I1-002",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 2
+    },
+    "43049": {
+      "serialNo": "43049",
+      "classNo": "IMA011-*",
+      "title": "電子商務人力資源管理",
+      "credit": 3,
+      "room": "I1-404",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 1
+    },
+    "43050": {
+      "serialNo": "43050",
+      "classNo": "IMA021-*",
+      "title": "當代資訊管理課題",
+      "credit": 0,
+      "room": "I1-002",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 2
+    },
+    "43051": {
+      "serialNo": "43051",
+      "classNo": "IMA022-*",
+      "title": "電子商務智慧技術應用課題",
+      "credit": 3,
+      "room": "I1-223",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 1
+    },
+    "43052": {
+      "serialNo": "43052",
+      "classNo": "IMA023-*",
+      "title": "物聯網與大數據",
+      "credit": 3,
+      "room": "I1-405-1",
+      "courseType": "REQUIRED",
+      "allowMaster": false,
+      "limitConditions": 1
+    }
+  }
+}
