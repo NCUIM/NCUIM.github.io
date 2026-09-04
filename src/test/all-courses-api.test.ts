@@ -14,36 +14,36 @@ describe("all-courses-api service", () => {
     const mockCourses: MasterCourseItem[] = [
       {
         serialNo: 43025,
-        classNo: "IM5025-A",
-        title: "研究方法",
-        credit: 3,
-        teachers: ["劉子源"],
-        classTimes: ["5-2", "5-3"],
+        classNo: "IM5019-A",
+        title: "管理溝通",
+        credit: 2,
+        teachers: ["黃子菱"],
+        classTimes: ["4-2", "4-3"],
         courseType: "REQUIRED",
-        requiredTag: "碩一必修",
-        room: "I1-405-1",
+        requiredTag: "碩二必修",
+        room: "I1-002",
       },
       {
         serialNo: 43026,
-        classNo: "IM5025-B",
-        title: "研究方法",
-        credit: 3,
-        teachers: ["許智誠"],
-        classTimes: ["5-2", "5-3"],
+        classNo: "IM5019-B",
+        title: "管理溝通",
+        credit: 2,
+        teachers: ["何迪亞"],
+        classTimes: ["4-2", "4-3"],
         courseType: "REQUIRED",
-        requiredTag: "碩一必修",
+        requiredTag: "碩二必修",
         room: "I1-404",
       },
     ];
 
     const map = buildTimetableMapFromMasterCourses(mockCourses);
 
-    // Friday (day 5 -> index 4) period 2 should have 1 merged card with paired teachers & classrooms
-    expect(map["2-4"]).toBeDefined();
-    expect(map["2-4"]).toHaveLength(1);
-    expect(map["2-4"][0].title).toBe("研究方法");
-    expect(map["2-4"][0].teachers).toEqual(["劉子源 (I1-405-1)", "許智誠 (I1-404)"]);
-    expect(map["2-4"][0].requiredTag).toBe("碩一必修");
+    // Thursday (day 4 -> index 3) period 2 should have 1 merged card with paired teachers & classrooms
+    expect(map["2-3"]).toBeDefined();
+    expect(map["2-3"]).toHaveLength(1);
+    expect(map["2-3"][0].title).toBe("管理溝通");
+    expect(map["2-3"][0].teachers).toEqual(["黃子菱 (I1-002)", "何迪亞 (I1-404)"]);
+    expect(map["2-3"][0].requiredTag).toBe("碩二必修");
   });
 
   it("fetchImMasterCourses falls back to bundled JSON when network request fails", async () => {
@@ -110,5 +110,53 @@ describe("all-courses-api service", () => {
     expect(courses.map((c) => c.title)).toContain("管理溝通");
     const mComm = courses.find((c) => c.title === "管理溝通");
     expect(mComm?.requiredTag).toBe("碩二必修");
+  });
+
+  it("tags 組必修 courses even though CIS marks them ELECTIVE (no courseType gate)", async () => {
+    const mockApiResponse = {
+      courses: [
+        {
+          serialNo: 43035,
+          classNo: "IM6053-*",
+          title: "多變量分析",
+          credit: 3,
+          teachers: ["某教授"],
+          classTimes: ["3-2", "3-3", "3-4"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
+        {
+          serialNo: 43040,
+          classNo: "IM7071-*",
+          title: "企業電腦網路",
+          credit: 3,
+          teachers: ["某教授"],
+          classTimes: ["2-6", "2-7", "2-8"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
+        {
+          serialNo: 43039,
+          classNo: "IM7043-*",
+          title: "書報研討Ⅰ",
+          credit: 1,
+          teachers: ["王存國"],
+          classTimes: ["2-5", "2-6", "2-7"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockApiResponse),
+    } as Response);
+
+    const courses = await fetchImMasterCourses();
+    const multi = courses.find((c) => c.classNo === "IM6053-*");
+    const net = courses.find((c) => c.classNo === "IM7071-*");
+    expect(multi?.requiredTag).toBe("管必");
+    expect(net?.requiredTag).toBe("系必");
   });
 });
