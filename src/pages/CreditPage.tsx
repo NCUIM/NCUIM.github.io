@@ -35,7 +35,7 @@ import {
   ribbonOutline,
   flashOutline,
 } from "ionicons/icons";
-import { parseBookmarkletPayload, type CisCourse } from "../services/cis-course-api";
+import { parseBookmarkletPayload } from "../services/cis-course-api";
 import {
   TRACK_CONFIGS,
   GRADUATION_GATES,
