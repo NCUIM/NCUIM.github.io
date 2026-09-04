@@ -180,6 +180,77 @@ export const SYS_TRACK_FREE_ELECTIVES: readonly CurriculumCourse[] = [
 export const isSystemTrackFreeElectiveCode = (code: string): boolean =>
   /^IM[5-7]\d{3}[A-Z*]?$/.test(code) || /^MT601[1-9][A-Z*]?$/.test(code);
 
+// ── Required-Course Facts (必修事實表) ────────────────────────
+// Single source of truth for which courses are required and when
+// (common scope) or for which track (mgmt/sys). Derived from the
+// curriculum arrays above so it can never drift from the source.
+
+export type RequiredScope = "common" | "mgmt" | "sys";
+
+export interface RequiredCourseFact {
+  /** Curriculum course code, e.g. "IM6003". */
+  readonly code: string;
+  readonly scope: RequiredScope;
+  /** 1 = 碩一, 2 = 碩二. Only set for common (所必修) courses. */
+  readonly year?: 1 | 2;
+}
+
+/** Common-required entries carry an explicit 一上/一下/二上/二下 semester. */
+const semesterToYear = (semester: CurriculumCourse["semester"]): 1 | 2 | undefined =>
+  semester.startsWith("一") ? 1 : semester.startsWith("二") ? 2 : undefined;
+
+/**
+ * True for the track-required course itself (note like "必修" / "必修 (3學分)"),
+ * false for the 六選三 / 四選一 pools that share the same array.
+ */
+const isTrackRequiredCourse = (c: CurriculumCourse): boolean =>
+  !!c.note && c.note.includes("必修") && !c.note.includes("選");
+
+const toCommonFact = (c: CurriculumCourse): RequiredCourseFact => ({
+  code: c.code,
+  scope: "common",
+  year: semesterToYear(c.semester),
+});
+
+const toTrackFact =
+  (scope: "mgmt" | "sys") =>
+  (c: CurriculumCourse): RequiredCourseFact => ({
+    code: c.code,
+    scope,
+  });
+
+/** Every 所必修 + 組必修 course, derived from the curriculum arrays. */
+export const REQUIRED_COURSE_FACTS: readonly RequiredCourseFact[] = [
+  ...COMMON_REQUIRED_COURSES.map(toCommonFact),
+  ...MGMT_TRACK_REQUIRED.filter(isTrackRequiredCourse).map(toTrackFact("mgmt")),
+  ...SYS_TRACK_REQUIRED.filter(isTrackRequiredCourse).map(toTrackFact("sys")),
+];
+
+/**
+ * Look up a course (by classNo like "IM6003-*" / "IM5019-A" or bare code
+ * like "IM6053") in the required facts. Returns null for electives and
+ * for codes the curriculum does not list as required.
+ */
+export const getRequiredFact = (classNoOrCode: string): RequiredCourseFact | null => {
+  const m = /^(IM\d{4})/.exec(classNoOrCode);
+  if (!m) return null;
+  return REQUIRED_COURSE_FACTS.find((f) => f.code === m[1]) ?? null;
+};
+
+/** Badge label for a required fact: 碩一/碩二必修 for common, 管必/系必 for tracks. */
+export type RequiredTagLabel = "碩一必修" | "碩二必修" | "管必" | "系必";
+
+export const requiredFactLabel = (fact: RequiredCourseFact): RequiredTagLabel => {
+  switch (fact.scope) {
+    case "common":
+      return fact.year === 2 ? "碩二必修" : "碩一必修";
+    case "mgmt":
+      return "管必";
+    case "sys":
+      return "系必";
+  }
+};
+
 // ── Graduation Gates (畢業門檻) ────────────────────────────────
 
 export interface GraduationGate {
