@@ -27,7 +27,9 @@ jobs:
       # reconcile-curriculum.mjs uses only Node built-ins plus global fetch, so
       # no npm ci is needed here. The job fails (nonzero) when the committed
       # src/data/im-master-snapshot.json no longer matches live CIS; the log
-      # then lists every new/dropped/changed course. See the script header for
-      # how to regenerate the snapshot.
+      # then lists every new/dropped/changed course.
+      #
+      # See docs/engineering/curriculum-data.md for the semester-turnover SOP
+      # (how to regenerate the snapshot and update the snapshot tests).
       - name: Run drift check
         run: node scripts/reconcile-curriculum.mjs --check

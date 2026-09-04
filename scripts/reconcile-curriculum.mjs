@@ -22,6 +22,8 @@
  *   node scripts/reconcile-curriculum.mjs --check
  *
  * Point at another semester with NCU_SEMESTER=1152 (or any env var).
+ *
+ * See docs/engineering/curriculum-data.md for the semester-turnover SOP.
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
