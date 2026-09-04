@@ -196,8 +196,11 @@ export interface RequiredCourseFact {
 }
 
 /** Common-required entries carry an explicit 一上/一下/二上/二下 semester. */
-const semesterToYear = (semester: CurriculumCourse["semester"]): 1 | 2 | undefined =>
-  semester.startsWith("一") ? 1 : semester.startsWith("二") ? 2 : undefined;
+const semesterToYear = (semester: CurriculumCourse["semester"]): 1 | 2 | undefined => {
+  if (semester.startsWith("一")) return 1;
+  if (semester.startsWith("二")) return 2;
+  return undefined;
+};
 
 /**
  * True for the track-required course itself (note like "必修" / "必修 (3學分)"),
