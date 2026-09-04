@@ -12,8 +12,9 @@
  * src/data/im-curriculum.ts (REQUIRED_COURSE_FACTS) and are applied at
  * runtime by the app, so the tool never needs to import TS curriculum code.
  *
- * Output: a snapshot JSON (see output below) used at runtime to filter
- * the master list and attach rooms. Run from repo root:
+ * Output: src/data/im-master-snapshot.json — a committed snapshot used at
+ * runtime to filter the master list and attach rooms. Regenerate it whenever
+ * the semester turns over:
  *   node scripts/reconcile-curriculum.mjs
  */
 
@@ -28,8 +29,10 @@ const ALL_COURSES_URL = "https://ncucf-data.s3.amazonaws.com/data/dynamic/all.js
 const CIS_QUERY_URL = "https://cis.ncu.edu.tw/Course/main/query/byKeywords";
 const IM_DEPT_ID = "deptI1I4003I0";
 
-/** The master list courses whose room/tag/eligibility we want to pin down. */
-const SEMESTER = process.env.NCU_SEMESTER || ""; // e.g. "1151"; empty = CIS default
+/** Current semester used by the keyword query; override via NCU_SEMESTER. */
+const SEMESTER = process.env.NCU_SEMESTER || "1151";
+const SEM_YEAR = SEMESTER.slice(0, 3); // "115"
+const SEM_FOREIGN = SEMESTER.slice(3); // "1" = 上學期
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -86,7 +89,12 @@ function parseKeywordRow(rowHtml) {
  * CIS returns a page with the matching courses; we collect every result row.
  */
 async function fetchKeywordRows(keyword) {
-  const body = new URLSearchParams({ keyword, query: "true", year: "115", foreign_semester: "1" });
+  const body = new URLSearchParams({
+    keyword,
+    query: "true",
+    year: SEM_YEAR,
+    foreign_semester: SEM_FOREIGN,
+  });
   const html = await fetchText(CIS_QUERY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -123,12 +131,6 @@ function allowsMaster(limit) {
   // department-scoped: 資訊管理學系碩士班 (exactly master's, not 在職/博士-only)
   return /系所:限[^。]*資訊管理學系碩士班/.test(all);
 }
-
-/** -- only skeleton for now; real facts imported from im-curriculum.ts in the full PR -- */
-/*
- * -- master-eligibility + room snapshot only; 必修 facts applied in-app from
- *    im-curriculum.ts REQUIRED_COURSE_FACTS (see header note) --
- */
 
 async function main() {
   console.log("Fetching all.json…");
@@ -174,11 +176,12 @@ async function main() {
   }
 
   const out = {
-    semester: SEMESTER || null,
+    semester: SEMESTER,
     generatedAt: new Date().toISOString(),
     courses: Object.fromEntries(courses.map((c) => [c.serialNo, c])),
   };
-  const outPath = process.env.SNAPSHOT_OUT || path.join(REPO_ROOT, "im-master-snapshot.json");
+  const outPath =
+    process.env.SNAPSHOT_OUT || path.join(REPO_ROOT, "src", "data", "im-master-snapshot.json");
   writeFileSync(outPath, JSON.stringify(out, null, 2), "utf8");
   console.log(`\nSnapshot written: ${outPath}`);
 }
