@@ -51,6 +51,11 @@ describe("all-courses-api service", () => {
     const courses = await fetchImMasterCourses();
     expect(courses.length).toBeGreaterThan(0);
     expect(courses.some((c) => c.title === "商業智慧")).toBe(true);
+    // The bundled fallback is regenerated from the same CIS run as the
+    // snapshot and enriched like the online path — 管理溝通 keeps its tag.
+    expect(
+      courses.some((c) => c.title === "管理溝通" && c.requiredTag === "碩二必修"),
+    ).toBe(true);
   });
 
   it("fetchImMasterCourses successfully filters IM master courses and marks requiredTag", async () => {

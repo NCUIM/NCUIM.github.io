@@ -30,7 +30,6 @@ import {
   medal,
   ribbon,
   refreshOutline,
-  peopleOutline,
   logoGithub,
 } from "ionicons/icons";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -345,9 +344,7 @@ const LeaderboardCard = ({
   onRefresh: () => void;
   onScrollToCheckin?: () => void;
 }>) => {
-  const myRankEntry = data?.top.find(
-    (p) => savedUser && p.nickname === savedUser.label,
-  );
+  const myRankEntry = data?.top.find((p) => p.nickname === savedUser?.label);
 
   return (
     <IonCard style={{ margin: "0 0 16px" }}>

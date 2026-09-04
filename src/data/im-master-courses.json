@@ -12,11 +12,11 @@
       "5-3",
       "5-4"
     ],
-    "room": "I1-405-1",
+    "room": "I1-002",
     "courseType": "ELECTIVE",
     "passwordCard": "OPTIONAL",
     "limitCnt": 20,
-    "admitCnt": 2
+    "admitCnt": 9
   },
   {
     "serialNo": 43023,
@@ -31,11 +31,11 @@
       "2-7",
       "2-8"
     ],
-    "room": "I1-405-1",
+    "room": "I1-002",
     "courseType": "ELECTIVE",
     "passwordCard": "NONE",
     "limitCnt": null,
-    "admitCnt": 6
+    "admitCnt": 8
   },
   {
     "serialNo": 43024,
@@ -54,7 +54,45 @@
     "courseType": "ELECTIVE",
     "passwordCard": "OPTIONAL",
     "limitCnt": 40,
-    "admitCnt": 27
+    "admitCnt": 39
+  },
+  {
+    "serialNo": 43025,
+    "classNo": "IM5019-A",
+    "title": "管理溝通",
+    "credit": 2,
+    "teachers": [
+      "黃子菱"
+    ],
+    "classTimes": [
+      "4-2",
+      "4-3",
+      "4-4"
+    ],
+    "room": "I1-002",
+    "courseType": "REQUIRED",
+    "passwordCard": "NONE",
+    "limitCnt": 60,
+    "admitCnt": 43
+  },
+  {
+    "serialNo": 43026,
+    "classNo": "IM5019-B",
+    "title": "管理溝通",
+    "credit": 2,
+    "teachers": [
+      "何迪亞"
+    ],
+    "classTimes": [
+      "4-2",
+      "4-3",
+      "4-4"
+    ],
+    "room": "I1-404",
+    "courseType": "REQUIRED",
+    "passwordCard": "NONE",
+    "limitCnt": 60,
+    "admitCnt": 32
   },
   {
     "serialNo": 43027,
@@ -69,11 +107,11 @@
       "4-7",
       "4-8"
     ],
-    "room": "I1-405-1",
+    "room": "I1-404",
     "courseType": "ELECTIVE",
     "passwordCard": "NONE",
     "limitCnt": null,
-    "admitCnt": 7
+    "admitCnt": 48
   },
   {
     "serialNo": 43028,
@@ -90,9 +128,9 @@
     ],
     "room": "I1-405-1",
     "courseType": "ELECTIVE",
-    "passwordCard": "NONE",
-    "limitCnt": null,
-    "admitCnt": 10
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 30,
+    "admitCnt": 28
   },
   {
     "serialNo": 43029,
@@ -107,11 +145,11 @@
       "3-3",
       "3-4"
     ],
-    "room": "I1-404",
+    "room": "I1-114",
     "courseType": "ELECTIVE",
-    "passwordCard": "OPTIONAL",
-    "limitCnt": 20,
-    "admitCnt": 2
+    "passwordCard": "ALL",
+    "limitCnt": 30,
+    "admitCnt": 14
   },
   {
     "serialNo": 43030,
@@ -126,11 +164,11 @@
       "5-3",
       "5-4"
     ],
-    "room": "I1-405-1",
+    "room": "I1-107",
     "courseType": "ELECTIVE",
-    "passwordCard": "NONE",
-    "limitCnt": null,
-    "admitCnt": 4
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 80,
+    "admitCnt": 73
   },
   {
     "serialNo": 43031,
@@ -145,11 +183,11 @@
       "4-6",
       "4-7"
     ],
-    "room": "I1-404",
+    "room": "I-315",
     "courseType": "ELECTIVE",
     "passwordCard": "NONE",
     "limitCnt": null,
-    "admitCnt": 13
+    "admitCnt": 21
   },
   {
     "serialNo": 43032,
@@ -166,9 +204,9 @@
     ],
     "room": "I1-404",
     "courseType": "REQUIRED",
-    "passwordCard": "OPTIONAL",
-    "limitCnt": 50,
-    "admitCnt": 17
+    "passwordCard": "NONE",
+    "limitCnt": null,
+    "admitCnt": 83
   },
   {
     "serialNo": 43033,
@@ -185,9 +223,9 @@
     ],
     "room": "I1-404",
     "courseType": "REQUIRED",
-    "passwordCard": "OPTIONAL",
-    "limitCnt": 50,
-    "admitCnt": 18
+    "passwordCard": "NONE",
+    "limitCnt": 80,
+    "admitCnt": 80
   },
   {
     "serialNo": 43034,
@@ -204,9 +242,9 @@
     ],
     "room": "I1-404",
     "courseType": "ELECTIVE",
-    "passwordCard": "NONE",
+    "passwordCard": "OPTIONAL",
     "limitCnt": null,
-    "admitCnt": 2
+    "admitCnt": 49
   },
   {
     "serialNo": 43035,
@@ -221,11 +259,11 @@
       "3-3",
       "3-4"
     ],
-    "room": "I1-404",
+    "room": "I-315",
     "courseType": "ELECTIVE",
-    "passwordCard": "NONE",
-    "limitCnt": null,
-    "admitCnt": 12
+    "passwordCard": "OPTIONAL",
+    "limitCnt": 40,
+    "admitCnt": 39
   },
   {
     "serialNo": 43036,
@@ -240,11 +278,11 @@
       "5-7",
       "5-8"
     ],
-    "room": "I1-405-1",
+    "room": "I1-107",
     "courseType": "ELECTIVE",
     "passwordCard": "NONE",
-    "limitCnt": null,
-    "admitCnt": 6
+    "limitCnt": 80,
+    "admitCnt": 28
   },
   {
     "serialNo": 43037,
@@ -259,11 +297,11 @@
       "4-3",
       "4-4"
     ],
-    "room": "I1-404",
+    "room": "I1-114",
     "courseType": "ELECTIVE",
-    "passwordCard": "NONE",
+    "passwordCard": "OPTIONAL",
     "limitCnt": null,
-    "admitCnt": 11
+    "admitCnt": 44
   },
   {
     "serialNo": 43038,
@@ -278,11 +316,11 @@
       "4-6",
       "4-7"
     ],
-    "room": "I1-405-1",
+    "room": "I1-002",
     "courseType": "ELECTIVE",
     "passwordCard": "OPTIONAL",
-    "limitCnt": 20,
-    "admitCnt": 1
+    "limitCnt": 50,
+    "admitCnt": 49
   },
   {
     "serialNo": 43040,
@@ -297,11 +335,11 @@
       "2-7",
       "2-8"
     ],
-    "room": "I1-405-1",
+    "room": "I1-404",
     "courseType": "ELECTIVE",
     "passwordCard": "NONE",
     "limitCnt": null,
-    "admitCnt": 9
+    "admitCnt": 64
   },
   {
     "serialNo": 43041,
@@ -316,10 +354,10 @@
       "3-3",
       "3-4"
     ],
-    "room": "I1-404",
+    "room": "I1-002",
     "courseType": "ELECTIVE",
     "passwordCard": "NONE",
-    "limitCnt": null,
-    "admitCnt": 13
+    "limitCnt": 50,
+    "admitCnt": 33
   }
 ]

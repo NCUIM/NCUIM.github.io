@@ -72,9 +72,15 @@ const CreditPageHeader = ({
       </IonButtons>
       <IonTitle>115 碩士班學分試算</IonTitle>
       <IonButtons slot="end">
-        <IonButton size="small" fill="outline" onClick={onOpenCisModal} style={{ fontWeight: 700, fontSize: 12 }}>
+        <IonButton
+          size="small"
+          fill="outline"
+          onClick={onOpenCisModal}
+          style={{ fontWeight: 700, fontSize: 12 }}
+          aria-label="同步課務"
+        >
           <IonIcon slot="start" icon={flashOutline} />
-          同步課務
+          <span className="responsive-label">同步課務</span>
         </IonButton>
         <IonButton fill="clear" size="small" color="medium" onClick={onResetAll} aria-label="重設全部">
           <IonIcon icon={refreshOutline} />

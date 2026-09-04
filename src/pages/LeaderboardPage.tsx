@@ -114,9 +114,7 @@ const LeaderboardSummaryCard = ({
   data: LeaderboardResponse | null;
   savedUser: SavedParticipantInfo | null;
 }>) => {
-  const myRankEntry = data?.top.find(
-    (p) => savedUser && p.nickname === savedUser.label,
-  );
+  const myRankEntry = data?.top.find((p) => p.nickname === savedUser?.label);
 
   return (
     <IonCard

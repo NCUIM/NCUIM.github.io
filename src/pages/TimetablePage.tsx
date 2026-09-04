@@ -29,7 +29,14 @@ import {
   getCourseRoom,
   type MasterCourseItem,
 } from "../services/all-courses-api";
-import { star, swapHorizontalOutline, linkOutline, calendarOutline } from "ionicons/icons";
+import {
+  star,
+  swapHorizontalOutline,
+  linkOutline,
+  calendarOutline,
+  refreshOutline,
+  logOutOutline,
+} from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
 import { TRACK_CONFIGS, matchCisToCurriculum, type TrackType, type RequiredTagLabel } from "../data/im-curriculum";
 
@@ -1191,9 +1198,10 @@ const TimetableHeader = ({
           href="https://course.ncu.edu.tw/static/file/14/1014/img/371/COUR_S.pdf"
           target="_blank"
           rel="noopener noreferrer"
+          aria-label="課務日程"
         >
           <IonIcon slot="start" icon={calendarOutline} />
-          課務日程
+          <span className="responsive-label">課務日程</span>
         </IonButton>
         {cisAuthenticated ? (
           <>
@@ -1202,21 +1210,42 @@ const TimetableHeader = ({
               size="small"
               onClick={onToggleViewScope}
               style={{ fontSize: 12 }}
+              aria-label={viewScope === "mine" ? `我的 (${enrolledCount})` : "全所開課"}
             >
               <IonIcon slot="start" icon={swapHorizontalOutline} />
-              {viewScope === "mine" ? `我的 (${enrolledCount})` : "全所開課"}
+              <span className="responsive-label">
+                {viewScope === "mine" ? `我的 (${enrolledCount})` : "全所開課"}
+              </span>
             </IonButton>
-            <IonButton size="small" fill="clear" onClick={onOpenCisModal}>
-              重新連結
+            <IonButton
+              size="small"
+              fill="clear"
+              onClick={onOpenCisModal}
+              aria-label="重新連結"
+            >
+              <IonIcon slot="start" icon={refreshOutline} />
+              <span className="responsive-label">重新連結</span>
             </IonButton>
-            <IonButton size="small" fill="clear" onClick={onLogout} color="medium">
-              登出
+            <IonButton
+              size="small"
+              fill="clear"
+              onClick={onLogout}
+              color="medium"
+              aria-label="登出"
+            >
+              <IonIcon slot="start" icon={logOutOutline} />
+              <span className="responsive-label">登出</span>
             </IonButton>
           </>
         ) : (
-          <IonButton size="small" fill="outline" onClick={onOpenCisModal}>
+          <IonButton
+            size="small"
+            fill="outline"
+            onClick={onOpenCisModal}
+            aria-label="連結課表"
+          >
             <IonIcon slot="start" icon={linkOutline} />
-            連結課表
+            <span className="responsive-label">連結課表</span>
           </IonButton>
         )}
       </IonButtons>

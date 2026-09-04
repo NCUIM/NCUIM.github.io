@@ -404,6 +404,10 @@ ion-content::part(scroll) {
 }
 
 @media (max-width: 767px) {
+  /* Header action buttons: icon-only on phones (labels duplicate page tabs) */
+  .responsive-label {
+    display: none;
+  }
   .lottery-stage-shell {
     padding: 32px 18px;
   }
