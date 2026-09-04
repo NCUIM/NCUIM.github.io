@@ -31,7 +31,7 @@ import {
 } from "../services/all-courses-api";
 import { star, swapHorizontalOutline, linkOutline, calendarOutline } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
-import { TRACK_CONFIGS, matchCisToCurriculum, type TrackType } from "../data/im-curriculum";
+import { TRACK_CONFIGS, matchCisToCurriculum, type TrackType, type RequiredTagLabel } from "../data/im-curriculum";
 
 const STORAGE_KEY_CIS_COURSES = "ncu_my_cis_courses";
 
@@ -46,7 +46,7 @@ export interface Course {
   readonly myEnrolledTeacher?: string;
   readonly myEnrolledRoom?: string;
   readonly courseType?: "REQUIRED" | "ELECTIVE";
-  readonly requiredTag?: "碩一必修" | "碩二必修" | null;
+  readonly requiredTag?: RequiredTagLabel | null;
   readonly credit?: number;
   readonly isMyCourse?: boolean;
 }

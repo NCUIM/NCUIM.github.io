@@ -3,6 +3,8 @@
  */
 
 import fallbackMasterCourses from "../data/im-master-courses.json";
+import masterSnapshot from "../data/im-master-snapshot.json";
+import { getRequiredFact, requiredFactLabel, type RequiredTagLabel } from "../data/im-curriculum";
 
 export interface MasterCourseItem {
   readonly serialNo: number;
@@ -12,7 +14,7 @@ export interface MasterCourseItem {
   readonly teachers: readonly string[];
   readonly classTimes: readonly string[];
   readonly courseType: "REQUIRED" | "ELECTIVE";
-  readonly requiredTag?: "碩一必修" | "碩二必修" | null;
+  readonly requiredTag?: RequiredTagLabel | null;
   readonly passwordCard?: string;
   readonly limitCnt?: number | null;
   readonly admitCnt?: number | null;
@@ -36,33 +38,30 @@ export const EXCLUDED_MASTER_KEYWORDS: readonly string[] = [
 
 /**
  * Known classroom mapping for NCU IM Master's courses
+ * (rooms are regenerated from CIS by scripts/reconcile-curriculum.mjs;
+ *  this map is a last-resort fallback for courses absent from the snapshot).
  */
 export const IM_CLASSROOM_MAP: Record<string, string> = {
-  "IM5001-*": "I1-405-1", // 社會網路分析
-  "IM5007-*": "I1-405-1", // 資訊檢索
+  "IM5001-*": "I1-002", // 社會網路分析
+  "IM5007-*": "I1-002", // 資訊檢索
   "IM5008-*": "I1-404", // 商業智慧
-  "IM5019-A": "I1-404", // 管理溝通 (黃子菱)
-  "IM5019-B": "I1-405-1", // 管理溝通 (何迪亞)
+  "IM5019-A": "I1-002", // 管理溝通 (黃子菱)
+  "IM5019-B": "I1-404", // 管理溝通 (何迪亞)
   "IM5019-*": "I1-404", // 管理溝通
-  "IM5022-*": "I1-405-1", // 多媒體資料庫
-  "IM5025-A": "I1-405-1", // 研究方法 (劉子源)
-  "IM5025-B": "I1-404", // 研究方法 (許智誠)
-  "IM5025-*": "I1-405-1", // 研究方法
+  "IM5022-*": "I1-404", // 多媒體資料庫
   "IM5032-*": "I1-405-1", // 物聯網實務應用
-  "IM5038-*": "I1-404", // 進階區塊鏈應用與隱私防護
-  "IM5041-*": "I1-405-1", // 現代與後量子密碼學導論
-  "IM6002-*": "I1-404", // 資訊系統專案管理
+  "IM5038-*": "I1-114", // 進階區塊鏈應用與隱私防護
+  "IM5041-*": "I1-107", // 現代與後量子密碼學導論
+  "IM6002-*": "I-315", // 資訊系統專案管理
   "IM6003-*": "I1-404", // 軟體工程Ⅰ
   "IM6012-*": "I1-404", // 管理資訊系統
   "IM6041-*": "I1-404", // 生產與作業管理
-  "IM6053-*": "I1-404", // 多變量分析
-  "IM6055-*": "I1-405-1", // 電腦網路安全
-  "IM6082-*": "I1-404", // 行銷管理
-  "IM6103-*": "I1-405-1", // 網路經濟與賽局智慧
-  "IM7043-*": "I1-404", // 書報研討Ⅰ
-  "IM7044-*": "I1-404", // 書報研討Ⅱ
-  "IM7071-*": "I1-405-1", // 企業電腦網路
-  "IM7082-*": "I1-404", // 智慧型資訊系統
+  "IM6053-*": "I-315", // 多變量分析
+  "IM6055-*": "I1-107", // 電腦網路安全
+  "IM6082-*": "I1-114", // 行銷管理
+  "IM6103-*": "I1-002", // 網路經濟與賽局智慧
+  "IM7071-*": "I1-404", // 企業電腦網路
+  "IM7082-*": "I1-002", // 智慧型資訊系統
 };
 
 export const getCourseRoom = (classNo?: string): string => {
@@ -95,11 +94,44 @@ const isExcludedMasterCourse = (c: RawCourse): boolean =>
   EXCLUDED_CLASS_NOS.some((no) => c.classNo?.startsWith(no)) ||
   EXCLUDED_MASTER_KEYWORDS.some((kw) => c.title?.includes(kw));
 
+/** One per-course entry of the committed CIS snapshot (see im-master-snapshot.json). */
+interface SnapshotCourseMeta {
+  classNo?: string;
+  title?: string;
+  room?: string;
+  courseType?: string;
+  allowMaster?: boolean;
+}
+
+/** The committed snapshot: CIS-derived facts keyed by serialNo (see scripts/reconcile-curriculum.mjs). */
+const MASTER_SNAPSHOT: Record<string, SnapshotCourseMeta> =
+  (masterSnapshot as { courses?: Record<string, SnapshotCourseMeta> }).courses ?? {};
+
+/**
+ * Look up a live course in the committed snapshot by serialNo first, then by
+ * exact classNo (IM5019-A), then by its generic code section (IM5019-*).
+ */
+const findSnapshotMeta = (c: RawCourse): SnapshotCourseMeta | undefined => {
+  const bySerial = MASTER_SNAPSHOT[String(c.serialNo)];
+  if (bySerial) return bySerial;
+  if (MASTER_SNAPSHOT[c.classNo]) return MASTER_SNAPSHOT[c.classNo];
+  const prefix = c.classNo.split("-")[0];
+  return MASTER_SNAPSHOT[`${prefix}-*`];
+};
+
+/**
+ * A course belongs to the IM master's list only when the committed snapshot
+ * marks it allowMaster — i.e. its CIS 分發條件 admits the regular master's
+ * cohort. The snapshot is the sole gate: there is no numeric-band fallback,
+ * because the old 5xxx–7xxx band let doctoral courses such as IM7043 書報研討
+ * leak into the master's timetable. Courses CIS opened after the last
+ * reconcile stay out until the snapshot is regenerated (the weekly drift
+ * check reports them; see docs/engineering/curriculum-data.md).
+ */
 const isMasterLevelCourse = (c: RawCourse): boolean => {
-  const match = /IM(\d{4})/.exec(c.classNo || "");
-  if (!match) return false;
-  const num = Number.parseInt(match[1], 10);
-  return num >= 5000 && num < 8000;
+  const meta = findSnapshotMeta(c);
+  if (!meta) return false;
+  return meta.allowMaster === true;
 };
 
 const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
@@ -115,29 +147,14 @@ export const cleanCourseTitle = (rawTitle: string): string => {
   return rawTitle.trim();
 };
 
-export const getRequiredTag = (
-  classNo: string = "",
-  courseType?: string,
-): "碩一必修" | "碩二必修" | null => {
-  if (courseType !== "REQUIRED") return null;
-
-  if (
-    classNo.startsWith("IM5019") ||
-    classNo.startsWith("IM7043") || classNo.startsWith("IM7044")
-  ) {
-    return "碩二必修";
-  }
-
-  if (
-    classNo.startsWith("IM5025") ||
-    classNo.startsWith("IM6012") ||
-    classNo.startsWith("IM6053") ||
-    classNo.startsWith("IM6003")
-  ) {
-    return "碩一必修";
-  }
-
-  return null;
+/**
+ * Required tag (碩一/碩二必修, 管必, 系必) from the curriculum facts.
+ * The facts are the single source of truth — this no longer depends on the
+ * CIS courseType (which labels 組必修 as ELECTIVE and would drop their tags).
+ */
+export const getRequiredTag = (classNo: string = ""): RequiredTagLabel | null => {
+  const fact = getRequiredFact(classNo);
+  return fact ? requiredFactLabel(fact) : null;
 };
 
 const getCourseType = (c: RawCourse): "REQUIRED" | "ELECTIVE" => {
@@ -145,7 +162,8 @@ const getCourseType = (c: RawCourse): "REQUIRED" | "ELECTIVE" => {
 };
 
 const mapRawCourse = (c: RawCourse): MasterCourseItem => {
-  const reqTag = getRequiredTag(c.classNo, c.courseType);
+  const reqTag = getRequiredTag(c.classNo);
+  const meta = findSnapshotMeta(c);
   return {
     serialNo: c.serialNo,
     classNo: c.classNo,
@@ -158,14 +176,16 @@ const mapRawCourse = (c: RawCourse): MasterCourseItem => {
     passwordCard: c.passwordCard || undefined,
     limitCnt: c.limitCnt,
     admitCnt: c.admitCnt,
-    room: getCourseRoom(c.classNo),
+    // CIS-verified room from the snapshot wins; legacy map is last resort.
+    room: meta?.room ?? getCourseRoom(c.classNo),
   };
 };
 
 /**
  * Fetch all NCU courses from S3 and filter for IM Master courses.
- * Excludes individual research (IM7000 碩士論文) and doctoral courses (IM8xxx).
- * Falls back to bundled static json if network fails or offline.
+ * Membership is gated by the committed CIS snapshot (allowMaster), which
+ * excludes individual research (IM7000), doctoral courses and 在職專班 courses;
+ * falls back to the bundled static list if the network fails or is offline.
  */
 export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
   try {
