@@ -187,11 +187,19 @@ const mapRawCourse = (c: RawCourse): MasterCourseItem => {
  * excludes individual research (IM7000), doctoral courses and 在職專班 courses;
  * falls back to the bundled static list if the network fails or is offline.
  */
+/**
+ * Offline path: the bundled list was regenerated from the same CIS run as the
+ * snapshot (scripts/reconcile-curriculum.mjs), so mapping it through the same
+ * enrichment keeps 必修 tags and CIS rooms consistent with the online path.
+ */
+const mapFallbackCourses = (): MasterCourseItem[] =>
+  (fallbackMasterCourses as RawCourse[]).map(mapRawCourse);
+
 export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
   try {
     const res = await fetch(ALL_COURSES_API_URL, { cache: "default" });
     if (!res.ok) {
-      return fallbackMasterCourses as MasterCourseItem[];
+      return mapFallbackCourses();
     }
     const data = await res.json();
     const allCourses = (data.courses || []) as RawCourse[];
@@ -201,9 +209,9 @@ export const fetchImMasterCourses = async (): Promise<MasterCourseItem[]> => {
       return filtered.map(mapRawCourse);
     }
 
-    return fallbackMasterCourses as MasterCourseItem[];
+    return mapFallbackCourses();
   } catch {
-    return fallbackMasterCourses as MasterCourseItem[];
+    return mapFallbackCourses();
   }
 };
 
