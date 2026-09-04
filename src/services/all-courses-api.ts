@@ -120,20 +120,18 @@ const findSnapshotMeta = (c: RawCourse): SnapshotCourseMeta | undefined => {
 };
 
 /**
- * A course belongs to the IM master's list when the committed snapshot marks
- * it allowMaster — i.e. its CIS 分發條件 admits the regular master's cohort.
- * This replaces the numeric 5xxx–7xxx band, which let doctoral courses such as
- * IM7043 書報研討 leak into the master's timetable. Courses CIS opened after
- * the last reconcile (absent from the snapshot) fall back to the band so they
- * are not silently dropped.
+ * A course belongs to the IM master's list only when the committed snapshot
+ * marks it allowMaster — i.e. its CIS 分發條件 admits the regular master's
+ * cohort. The snapshot is the sole gate: there is no numeric-band fallback,
+ * because the old 5xxx–7xxx band let doctoral courses such as IM7043 書報研討
+ * leak into the master's timetable. Courses CIS opened after the last
+ * reconcile stay out until the snapshot is regenerated (the weekly drift
+ * check reports them; see docs/engineering/curriculum-data.md).
  */
 const isMasterLevelCourse = (c: RawCourse): boolean => {
   const meta = findSnapshotMeta(c);
-  if (meta) return meta.allowMaster === true;
-  const match = /IM(\d{4})/.exec(c.classNo || "");
-  if (!match) return false;
-  const num = Number.parseInt(match[1], 10);
-  return num >= 5000 && num < 8000;
+  if (!meta) return false;
+  return meta.allowMaster === true;
 };
 
 const filterMasterCourses = (allCourses: RawCourse[]): RawCourse[] =>
