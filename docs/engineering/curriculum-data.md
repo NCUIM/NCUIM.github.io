@@ -39,7 +39,7 @@ scripts/reconcile-curriculum.mjs（定期跑）
 | `src/data/im-curriculum.ts` | `REQUIRED_COURSE_FACTS`（由 COMMON/MGMT/SYS 課程陣列**衍生**，不會 drift）、`getRequiredFact`、`requiredFactLabel` | 課表變更時（**人工**） |
 | `src/data/im-master-snapshot.json` | 當期 52 門 IM 系課程的 CIS 事實：`{ serialNo: { classNo, title, credit, room, courseType, allowMaster } }` + `semester` | **由工具產生**，勿手改 |
 | `scripts/reconcile-curriculum.mjs` | 抓 CIS → 產出/比對 snapshot（`--check` 給 CI 用） | 工具邏輯變更時 |
-| `src/services/all-courses-api.ts` | `fetchImMasterCourses`：抓 live all.json → 用 snapshot 的 `allowMaster` 過濾（取代舊的 5xxx–7xxx 數字區間）→ room 優先取 snapshot、`IM_CLASSROOM_MAP` 只是最後防線 | snapshot 或過濾規則變更時 |
+| `src/services/all-courses-api.ts` | `fetchImMasterCourses`：抓 live all.json → 用 snapshot 的 `allowMaster` 過濾（**唯一門檻**：snapshot 缺席的課一律排除，不設 5xxx–7xxx 數字區間 fallback，避免博士班/在職專班漏進）→ room 優先取 snapshot、`IM_CLASSROOM_MAP` 只是最後防線 | snapshot 或過濾規則變更時 |
 | `.github/workflows/curriculum-drift.yml` | 每週一排程跑 `reconcile-curriculum.mjs --check`，snapshot 與 live CIS 不一致時紅燈 | 很少 |
 
 ---
@@ -83,7 +83,7 @@ scripts/reconcile-curriculum.mjs（定期跑）
 
 **離線不變式測試**（隨 `npm test` 跑，不需網路）：
 * `src/test/curriculum-snapshot.test.ts` — snapshot 結構、master-eligible 排除博士班(IM7043/IM8xxx)與在職專班(IMA)、CIS-REQUIRED ↔ common fact 雙向一致、每門 master 課都有教室。
-* `src/test/all-courses-api.test.ts` — snapshot gating（IM7043 進不來、IM7082 留著）、band fallback、管必/系必不被 `courseType` gate。
+* `src/test/all-courses-api.test.ts` — snapshot gating（IM7043 進不來、IM7082 留著）、snapshot 缺席課程一律排除（無 band fallback）、管必/系必不被 `courseType` gate。
 
 **線上 drift 檢查**（`.github/workflows/curriculum-drift.yml`，每週一 01:00 UTC + 可手動觸發）：
 ```bash
@@ -98,3 +98,4 @@ node scripts/reconcile-curriculum.mjs --check
 * **離線 fallback 過時**：`im-master-courses.json`（17 門、無 tag、缺管理溝通/研究方法）僅在網路失敗時使用，內容未隨 snapshot 同步——可接受（離線時本來就拿不到 live 人數/教師）。
 * **教室預設值**：`IM_CLASSROOM_MAP` 是手寫 legacy map，已對齊 1151 CIS；新課若 snapshot 缺教室會 fallback 到 `getCourseRoom`（最後回傳 `I1-404`）。教室真值一律以 snapshot（CIS）為準。
 * **換季時效**：App 不會主動警告「snapshot 學期 ≠ 現在學期」；靠 drift CI + SOP 第 2 步換新 snapshot。
+* **新課延遲上架**：學期中 CIS 新開的課在 snapshot 重新產生前不會出現在碩士清單（snapshot 為唯一門檻）；每週一 drift workflow 會列出 new course 提醒更新。
