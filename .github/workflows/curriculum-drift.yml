@@ -1,0 +1,33 @@
+name: Curriculum Snapshot Drift Check
+
+on:
+  schedule:
+    # Weekly on Monday 01:00 UTC — catches mid-semester CIS changes (rooms,
+    # eligibility) and signals when the committed snapshot needs regenerating
+    # after a semester turns over. Run manually via workflow_dispatch too.
+    - cron: "0 1 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift-check:
+    name: Compare committed snapshot with live CIS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # reconcile-curriculum.mjs uses only Node built-ins plus global fetch, so
+      # no npm ci is needed here. The job fails (nonzero) when the committed
+      # src/data/im-master-snapshot.json no longer matches live CIS; the log
+      # then lists every new/dropped/changed course. See the script header for
+      # how to regenerate the snapshot.
+      - name: Run drift check
+        run: node scripts/reconcile-curriculum.mjs --check
