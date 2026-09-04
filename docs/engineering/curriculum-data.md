@@ -12,7 +12,7 @@
 | :--- | :--- | :--- |
 | **CIS 課務系統**（`cis.ncu.edu.tw` + S3 `all.json` dump） | 每門課的 serialNo、課號、教室、選修別、**分發條件**（誰能修） | 線上動態資料 |
 | **所辦課表**（`src/data/im-curriculum.ts`） | 碩一/碩二必修、管必/系必等 **必修事實** | 靜態、手動維護 |
-| **bundled fallback**（`src/data/im-master-courses.json`） | 舊版靜態清單，**僅網路失敗時**使用 | 靜態、過時容忍 |
+| **bundled fallback**（`src/data/im-master-courses.json`） | 與 snapshot **同源產生**的碩士清單（`allowMaster` 19 門 + CIS 教室 + all.json 教師/時段/人數），**僅網路失敗時**使用；必修 tag 由 runtime facts 補上 | 換季時由工具一起重產生 |
 
 關鍵分層：**「誰能修」與「教室」只能問 CIS；「必修與否」只能問課表**。二者來源不同，因此分開維護、執行期才合併：
 
@@ -64,7 +64,7 @@ scripts/reconcile-curriculum.mjs（定期跑）
    node scripts/reconcile-curriculum.mjs          # 預設 1151
    NCU_SEMESTER=1152 node scripts/reconcile-curriculum.mjs   # 指定新學期
    ```
-   工具會抓該學期 IM 系全部課程、逐課解析 分發條件 與 教室，覆寫 `src/data/im-master-snapshot.json`。
+   工具會抓該學期 IM 系全部課程、逐課解析 分發條件 與 教室，覆寫 `src/data/im-master-snapshot.json` 與 `src/data/im-master-courses.json`（離線 fallback 同源重產生）。
 3. **檢視輸出**：確認 master-eligible 清單合理（新課出現、停開的課消失、博士班/在職專班被排除）。
 4. **更新測試 fixtures**：`all-courses-api.test.ts` 與 `curriculum-snapshot.test.ts` 使用**真實 serialNo / 課號**鎖定當期資料；換季後若有課程增刪，這些測試會**大聲失敗**——這是刻意設計，逼你重新檢視 snapshot 內容，再依失敗訊息更新 fixture。
 5. **驗證並提交**：
@@ -83,7 +83,7 @@ scripts/reconcile-curriculum.mjs（定期跑）
 
 **離線不變式測試**（隨 `npm test` 跑，不需網路）：
 * `src/test/curriculum-snapshot.test.ts` — snapshot 結構、master-eligible 排除博士班(IM7043/IM8xxx)與在職專班(IMA)、CIS-REQUIRED ↔ common fact 雙向一致、每門 master 課都有教室。
-* `src/test/all-courses-api.test.ts` — snapshot gating（IM7043 進不來、IM7082 留著）、snapshot 缺席課程一律排除（無 band fallback）、管必/系必不被 `courseType` gate。
+* `src/test/all-courses-api.test.ts` — snapshot gating（IM7043 進不來、IM7082 留著）、snapshot 缺席課程一律排除（無 band fallback）、離線 fallback 也套用必修 tag、管必/系必不被 `courseType` gate。
 
 **線上 drift 檢查**（`.github/workflows/curriculum-drift.yml`，每週一 01:00 UTC + 可手動觸發）：
 ```bash
@@ -95,7 +95,7 @@ node scripts/reconcile-curriculum.mjs --check
 
 ## 6. 已知限制 (Known Limitations)
 
-* **離線 fallback 過時**：`im-master-courses.json`（17 門、無 tag、缺管理溝通/研究方法）僅在網路失敗時使用，內容未隨 snapshot 同步——可接受（離線時本來就拿不到 live 人數/教師）。
+* **離線 fallback 即時性**：`im-master-courses.json` 與 snapshot 同源產生（19 門、含管理溝通，tag 由 runtime 補上）；教師/人數為產生當下快照，非 live——可接受（離線時本來就拿不到 live 人數/教師）。
 * **教室預設值**：`IM_CLASSROOM_MAP` 是手寫 legacy map，已對齊 1151 CIS；新課若 snapshot 缺教室會 fallback 到 `getCourseRoom`（最後回傳 `I1-404`）。教室真值一律以 snapshot（CIS）為準。
 * **換季時效**：App 不會主動警告「snapshot 學期 ≠ 現在學期」；靠 drift CI + SOP 第 2 步換新 snapshot。
 * **新課延遲上架**：學期中 CIS 新開的課在 snapshot 重新產生前不會出現在碩士清單（snapshot 為唯一門檻）；每週一 drift workflow 會列出 new course 提醒更新。
