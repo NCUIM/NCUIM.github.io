@@ -159,4 +159,68 @@ describe("all-courses-api service", () => {
     expect(multi?.requiredTag).toBe("管必");
     expect(net?.requiredTag).toBe("系必");
   });
+
+  it("gates the master list by the snapshot allowMaster flag (doctoral IM7043 excluded)", async () => {
+    const mockApiResponse = {
+      courses: [
+        {
+          serialNo: 43039,
+          classNo: "IM7043-*",
+          title: "書報研討Ⅰ",
+          credit: 1,
+          teachers: ["王存國"],
+          classTimes: ["2-5", "2-6", "2-7"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
+        {
+          serialNo: 43041,
+          classNo: "IM7082-*",
+          title: "智慧型資訊系統",
+          credit: 3,
+          teachers: ["某教授"],
+          classTimes: ["3-6", "3-7", "3-8"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockApiResponse),
+    } as Response);
+
+    const courses = await fetchImMasterCourses();
+    // IM7043 is in the 5xxx–7xxx numeric band but the snapshot (分發條件: 限博士班)
+    // marks it allowMaster:false — it must not appear in the master's timetable.
+    expect(courses.some((c) => c.classNo === "IM7043-*")).toBe(false);
+    // IM7082 shares the same band and is genuinely master-selectable — it stays.
+    expect(courses.some((c) => c.classNo === "IM7082-*")).toBe(true);
+  });
+
+  it("keeps courses absent from the snapshot via the band fallback (opened after last reconcile)", async () => {
+    const mockApiResponse = {
+      courses: [
+        {
+          serialNo: 999999,
+          classNo: "IM6500-*",
+          title: "新開課程",
+          credit: 3,
+          teachers: ["某教授"],
+          classTimes: ["1-2", "1-3", "1-4"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
+      ],
+    };
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockApiResponse),
+    } as Response);
+
+    const courses = await fetchImMasterCourses();
+    expect(courses.some((c) => c.classNo === "IM6500-*")).toBe(true);
+  });
 });
