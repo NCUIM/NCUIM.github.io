@@ -61,7 +61,7 @@ function walk(dir) {
 // Check 1: relative markdown links resolve
 // ---------------------------------------------------------------------------
 
-const LINK_RE = /\[[^\[\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+const LINK_RE = /\[[^[\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 
 function isFenceLine(trimmed) {
   return /^(```|~~~)/.test(trimmed);
