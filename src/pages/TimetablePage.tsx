@@ -31,8 +31,7 @@ import {
 } from "../services/all-courses-api";
 import { star, swapHorizontalOutline, linkOutline, calendarOutline } from "ionicons/icons";
 import CisLoginModal from "../components/CisLoginModal";
-import { TRACK_CONFIGS, type TrackType } from "../data/im-curriculum";
-import { matchCisToCurriculum } from "./CreditPage";
+import { TRACK_CONFIGS, matchCisToCurriculum, type TrackType } from "../data/im-curriculum";
 
 const STORAGE_KEY_CIS_COURSES = "ncu_my_cis_courses";
 
