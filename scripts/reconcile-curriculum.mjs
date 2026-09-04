@@ -16,6 +16,12 @@
  * runtime to filter the master list and attach rooms. Regenerate it whenever
  * the semester turns over:
  *   node scripts/reconcile-curriculum.mjs
+ *
+ * --check (used by CI): compare live CIS against the committed snapshot and
+ * exit nonzero when they drift, without writing the file:
+ *   node scripts/reconcile-curriculum.mjs --check
+ *
+ * Point at another semester with NCU_SEMESTER=1152 (or any env var).
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -29,10 +35,33 @@ const ALL_COURSES_URL = "https://ncucf-data.s3.amazonaws.com/data/dynamic/all.js
 const CIS_QUERY_URL = "https://cis.ncu.edu.tw/Course/main/query/byKeywords";
 const IM_DEPT_ID = "deptI1I4003I0";
 
-/** Current semester used by the keyword query; override via NCU_SEMESTER. */
-const SEMESTER = process.env.NCU_SEMESTER || "1151";
-const SEM_YEAR = SEMESTER.slice(0, 3); // "115"
-const SEM_FOREIGN = SEMESTER.slice(3); // "1" = 上學期
+/** Path of the committed snapshot the app consumes at runtime. */
+const SNAPSHOT_PATH = path.join(REPO_ROOT, "src", "data", "im-master-snapshot.json");
+
+/** --check compares against the committed snapshot instead of writing it. */
+const CHECK = process.argv.includes("--check");
+
+/**
+ * Current semester used by the keyword query. NCU_SEMESTER wins; otherwise
+ * --check targets the term the committed snapshot claims (so CI stays green
+ * until the snapshot is actually regenerated for a new term); a bare run with
+ * no committed snapshot falls back to the default below.
+ */
+let SEMESTER = process.env.NCU_SEMESTER || "";
+const DEFAULT_SEMESTER = "1151";
+let SEM_YEAR = "";
+let SEM_FOREIGN = "";
+
+function resolveSemester() {
+  if (SEMESTER) return SEMESTER;
+  try {
+    const committed = JSON.parse(readFileSync(SNAPSHOT_PATH, "utf8"));
+    if (committed.semester) return committed.semester;
+  } catch {
+    /* no committed snapshot yet — first generation */
+  }
+  return DEFAULT_SEMESTER;
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -133,7 +162,11 @@ function allowsMaster(limit) {
 }
 
 async function main() {
-  console.log("Fetching all.json…");
+  SEMESTER = resolveSemester();
+  SEM_YEAR = SEMESTER.slice(0, 3); // "115"
+  SEM_FOREIGN = SEMESTER.slice(3); // "1" = 上學期
+
+  console.log(`Fetching all.json… (semester ${SEMESTER})`);
   const all = await fetchAllCourses();
   const imCourses = all.filter(
     (c) => (c.departmentIds || []).includes(IM_DEPT_ID) && /^IM[A-Z]?\d/.test(c.classNo),
@@ -164,8 +197,30 @@ async function main() {
     await sleep(120); // be polite to CIS
   }
 
+  const out = {
+    semester: SEMESTER,
+    generatedAt: new Date().toISOString(),
+    courses: Object.fromEntries(courses.map((c) => [c.serialNo, c])),
+  };
+
+  if (CHECK) {
+    const notes = checkDrift(SNAPSHOT_PATH, out);
+    if (notes.length === 0) {
+      console.log(
+        `OK — committed snapshot (${Object.keys(out.courses).length} courses, ${SEMESTER}) matches live CIS.`,
+      );
+      return;
+    }
+    console.error(`DRIFT DETECTED between live CIS (${SEMESTER}) and the committed snapshot:`);
+    for (const n of notes) console.error(`  - ${n}`);
+    console.error("\nRegenerate and commit the snapshot:");
+    console.error("  node scripts/reconcile-curriculum.mjs");
+    process.exitCode = 1;
+    return;
+  }
+
   const masterCourses = courses.filter((c) => c.allowMaster);
-  console.log(`\nTotal IM courses: ${courses.length}; master-eligible: ${masterCourses.length}`);
+  console.log(`Total IM courses: ${courses.length}; master-eligible: ${masterCourses.length}`);
   console.log("\nMaster-eligible:");
   for (const c of [...masterCourses].sort((a, b) => a.classNo.localeCompare(b.classNo))) {
     console.log(`  ${c.classNo.padEnd(10)} ${c.title.padEnd(14)} room=${(c.room || "?").padEnd(8)} ${c.courseType}`);
@@ -175,15 +230,53 @@ async function main() {
     console.log(`  ${c.classNo.padEnd(10)} ${c.title.padEnd(14)} (conditions=${c.limitConditions})`);
   }
 
-  const out = {
-    semester: SEMESTER,
-    generatedAt: new Date().toISOString(),
-    courses: Object.fromEntries(courses.map((c) => [c.serialNo, c])),
-  };
-  const outPath =
-    process.env.SNAPSHOT_OUT || path.join(REPO_ROOT, "src", "data", "im-master-snapshot.json");
-  writeFileSync(outPath, JSON.stringify(out, null, 2), "utf8");
-  console.log(`\nSnapshot written: ${outPath}`);
+  writeFileSync(SNAPSHOT_PATH, JSON.stringify(out, null, 2), "utf8");
+  console.log(`\nSnapshot written: ${SNAPSHOT_PATH}`);
+}
+
+/**
+ * Compare a freshly fetched snapshot against the committed one and return
+ * drift notes (empty array = in sync). Semester and per-course fields are
+ * compared; generatedAt is metadata and ignored.
+ */
+function checkDrift(committedPath, fresh) {
+  let committed;
+  try {
+    committed = JSON.parse(readFileSync(committedPath, "utf8"));
+  } catch {
+    return [`committed snapshot missing (${committedPath}) — run the tool without --check first`];
+  }
+
+  const notes = [];
+  if (committed.semester !== fresh.semester) {
+    notes.push(`semester differs: committed=${committed.semester} vs live=${fresh.semester}`);
+  }
+
+  const oldBySerial = committed.courses || {};
+  const newBySerial = fresh.courses || {};
+  const serials = new Set([...Object.keys(oldBySerial), ...Object.keys(newBySerial)]);
+  const fields = ["classNo", "title", "credit", "room", "courseType", "allowMaster"];
+  for (const sn of [...serials].sort((a, b) => Number(a) - Number(b))) {
+    const a = oldBySerial[sn];
+    const b = newBySerial[sn];
+    if (!a) {
+      notes.push(`new course ${sn} (${b.classNo} ${b.title}; allowMaster=${b.allowMaster}, room=${b.room ?? "?"})`);
+      continue;
+    }
+    if (!b) {
+      notes.push(`dropped course ${sn} (${a.classNo} ${a.title})`);
+      continue;
+    }
+    const changed = fields.filter((k) => String(a[k] ?? "") !== String(b[k] ?? ""));
+    if (changed.length > 0) {
+      notes.push(
+        `changed ${a.classNo} (${sn}): ${changed
+          .map((k) => `${k} ${JSON.stringify(a[k] ?? "")} -> ${JSON.stringify(b[k] ?? "")}`)
+          .join(", ")}`,
+      );
+    }
+  }
+  return notes;
 }
 
 main().catch((err) => {
