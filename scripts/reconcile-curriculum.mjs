@@ -12,9 +12,9 @@
  * src/data/im-curriculum.ts (REQUIRED_COURSE_FACTS) and are applied at
  * runtime by the app, so the tool never needs to import TS curriculum code.
  *
- * Output: src/data/im-master-snapshot.json — a committed snapshot used at
- * runtime to filter the master list and attach rooms. Regenerate it whenever
- * the semester turns over:
+ * Output: src/data/im-master-snapshot.json (CIS facts) and
+ * src/data/im-master-courses.json (bundled offline fallback, same master set).
+ * Regenerate both whenever the semester turns over:
  *   node scripts/reconcile-curriculum.mjs
  *
  * --check (used by CI): compare live CIS against the committed snapshot and
@@ -39,6 +39,14 @@ const IM_DEPT_ID = "deptI1I4003I0";
 
 /** Path of the committed snapshot the app consumes at runtime. */
 const SNAPSHOT_PATH = path.join(REPO_ROOT, "src", "data", "im-master-snapshot.json");
+
+/**
+ * Path of the bundled offline fallback. Regenerated from the same run as the
+ * snapshot so the network-failure list always matches the master set; only
+ * fields all.json provides (teachers/classTimes/counts) plus the CIS room are
+ * stored — 必修 tags are applied at runtime from im-curriculum.ts.
+ */
+const FALLBACK_PATH = path.join(REPO_ROOT, "src", "data", "im-master-courses.json");
 
 /** --check compares against the committed snapshot instead of writing it. */
 const CHECK = process.argv.includes("--check");
@@ -210,6 +218,10 @@ async function main() {
 
   // Fetch, one keyword request + one limit request per course.
   const courses = [];
+  // all.json-only fields (teachers/classTimes/counts) kept aside: they feed the
+  // offline fallback but intentionally stay out of the snapshot (which stores
+  // only CIS-derived facts).
+  const allFields = new Map();
   for (const c of imCourses) {
     const kw = c.classNo.split("-")[0].replace(/\*$/, "");
     const rows = await fetchKeywordRows(kw);
@@ -228,6 +240,13 @@ async function main() {
       courseType: row.courseType.toUpperCase(),
       allowMaster: allowsMaster(limit),
       limitConditions: limit.rows.length,
+    });
+    allFields.set(row.serialNo, {
+      teachers: c.teachers || [],
+      classTimes: c.classTimes || [],
+      passwordCard: c.passwordCard ?? null,
+      limitCnt: c.limitCnt ?? null,
+      admitCnt: c.admitCnt ?? null,
     });
     await sleep(120); // be polite to CIS
   }
@@ -267,6 +286,32 @@ async function main() {
 
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(out, null, 2), "utf8");
   console.log(`\nSnapshot written: ${SNAPSHOT_PATH}`);
+
+  // Regenerate the bundled offline fallback from the same run, so the
+  // network-failure list mirrors the master set (rooms from CIS, rest from
+  // all.json). Required tags are NOT stored here — the app derives them at
+  // runtime from im-curriculum.ts facts.
+  const fallbackCourses = courses
+    .filter((c) => c.allowMaster)
+    .map((c) => {
+      const f = allFields.get(c.serialNo) || {};
+      return {
+        serialNo: Number(c.serialNo),
+        classNo: c.classNo,
+        title: c.title,
+        credit: c.credit,
+        teachers: f.teachers || [],
+        classTimes: f.classTimes || [],
+        room: c.room,
+        courseType: c.courseType,
+        passwordCard: f.passwordCard ?? null,
+        limitCnt: f.limitCnt ?? null,
+        admitCnt: f.admitCnt ?? null,
+      };
+    })
+    .sort((a, b) => Number(a.serialNo) - Number(b.serialNo));
+  writeFileSync(FALLBACK_PATH, JSON.stringify(fallbackCourses, null, 2), "utf8");
+  console.log(`Offline fallback written: ${FALLBACK_PATH} (${fallbackCourses.length} courses)`);
 }
 
 /**
