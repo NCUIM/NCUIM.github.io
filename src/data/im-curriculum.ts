@@ -14,6 +14,8 @@
  *   - Free Elective (3 cr): IM graduate course or MT internship (max 3 cr)
  */
 
+import type { CisCourse } from "../services/cis-course-api";
+
 export type TrackType = "mgmt" | "sys";
 
 export interface CurriculumCourse {
@@ -419,4 +421,57 @@ export const calculateTrackCredits = (
     isGraduationEligible,
     sectionResults,
   };
+};
+
+// ── CIS ↔ Curriculum Matching ──────────────────────────────────
+// Shared by CreditPage (auto-check synced history courses) and TimetablePage
+// (decide whether a synced course belongs to the active track).
+
+const NORM_RE = /[\s\-_()（）]/gu;
+const norm = (s: string) => s.replace(NORM_RE, "");
+
+const matchesCode = (cisCode?: string, courseCode?: string): boolean => {
+  if (!cisCode || !courseCode) return false;
+  return cisCode.includes(courseCode) || courseCode.includes(cisCode);
+};
+
+const matchesName = (cisName: string, courseName: string): boolean => {
+  const [a, b] = [norm(cisName), norm(courseName)];
+  return a.length >= 2 && b.length >= 2 && (a.includes(b) || b.includes(a));
+};
+
+const matchesCurriculumCourse = (cis: CisCourse, course: CurriculumCourse): boolean =>
+  matchesCode(cis.classNo, course.code) || matchesName(cis.name, course.name);
+
+const hasUnmatchedSysFreeElective = (
+  cisCourses: readonly CisCourse[],
+  config: (typeof TRACK_CONFIGS)[TrackType],
+): boolean =>
+  cisCourses.some(
+    (cis) =>
+      isSystemTrackFreeElectiveCode(cis.classNo) &&
+      !config.sections.some((s) =>
+        s.courses.some((course) => matchesCurriculumCourse(cis, course)),
+      ),
+  );
+
+/**
+ * Match synced CIS courses against a track's curriculum and return the ids of
+ * every curriculum course the student has taken. For the sys track, a synced
+ * IM course that matches no named curriculum course contributes IM_FREE.
+ */
+export const matchCisToCurriculum = (
+  cisCourses: readonly CisCourse[],
+  config: (typeof TRACK_CONFIGS)[TrackType],
+  track: TrackType,
+): string[] => {
+  const allCourses = config.sections.flatMap((s) => s.courses);
+  const ids = allCourses
+    .filter((c) => cisCourses.some((cis) => matchesCurriculumCourse(cis, c)))
+    .map((c) => c.id);
+
+  if (track === "sys" && hasUnmatchedSysFreeElective(cisCourses, config)) {
+    ids.push("IM_FREE");
+  }
+  return ids;
 };
