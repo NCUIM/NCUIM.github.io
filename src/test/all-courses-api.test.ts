@@ -199,9 +199,19 @@ describe("all-courses-api service", () => {
     expect(courses.some((c) => c.classNo === "IM7082-*")).toBe(true);
   });
 
-  it("keeps courses absent from the snapshot via the band fallback (opened after last reconcile)", async () => {
+  it("drops courses absent from the snapshot — no band fallback, so nothing leaks", async () => {
     const mockApiResponse = {
       courses: [
+        {
+          serialNo: 43041,
+          classNo: "IM7082-*",
+          title: "智慧型資訊系統",
+          credit: 3,
+          teachers: ["某教授"],
+          classTimes: ["3-6", "3-7", "3-8"],
+          courseType: "ELECTIVE",
+          departmentIds: ["deptI1I4003I0"],
+        },
         {
           serialNo: 999999,
           classNo: "IM6500-*",
@@ -221,6 +231,10 @@ describe("all-courses-api service", () => {
     } as Response);
 
     const courses = await fetchImMasterCourses();
-    expect(courses.some((c) => c.classNo === "IM6500-*")).toBe(true);
+    // The snapshot course stays…
+    expect(courses.some((c) => c.classNo === "IM7082-*")).toBe(true);
+    // …but IM6500 sits inside the old 5xxx–7xxx band yet has no snapshot entry
+    // (分發條件 unknown) — the snapshot is the sole gate, so it must not leak in.
+    expect(courses.some((c) => c.classNo === "IM6500-*")).toBe(false);
   });
 });
