@@ -51,7 +51,7 @@ interface ModuleCard {
 
 const modules: readonly ModuleCard[] = [
   {
-    title: "全系課表",
+    title: "課表",
     subtitle: "課表與教室時段查詢",
     icon: calendar,
     route: "/timetable",
