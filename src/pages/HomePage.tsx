@@ -882,7 +882,7 @@ const HomeBody = ({
 const CTF_CONFIG = {
   activeUrl: "https://im2026ctf.duckdns.org/",
   scoreboardUrl: "https://im2026ctf.duckdns.org/scoreboard",
-  endTime: "2026-09-07T00:00:00+08:00",
+  endTime: "2026-09-10T10:00:00+08:00",
 };
 
 const isCtfEnded = (): boolean => {
