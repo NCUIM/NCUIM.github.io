@@ -423,7 +423,7 @@ const PrereqItemRow = ({
         color: isChecked ? "#0d7a3e" : "var(--ncu-muted)",
       }}
     >
-      {isChecked ? "✓ 已抵免/已修" : "未修"}
+      {isChecked ? "✓ 已修" : "未修"}
     </IonNote>
   </IonItem>
 );
