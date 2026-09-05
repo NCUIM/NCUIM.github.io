@@ -70,7 +70,7 @@ const SeatsHeader = () => (
       <IonButtons slot="start">
         <IonBackButton defaultHref="/" text="" />
       </IonButtons>
-      <IonTitle>研究室座位表</IonTitle>
+      <IonTitle>座位表</IonTitle>
     </IonToolbar>
   </IonHeader>
 );

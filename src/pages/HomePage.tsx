@@ -65,7 +65,7 @@ const modules: readonly ModuleCard[] = [
     color: "var(--ncu-success)",
   },
   {
-    title: "研究室座位表",
+    title: "座位表",
     subtitle: "209 · 310 · 313 · 919",
     icon: map,
     route: "/seats",
