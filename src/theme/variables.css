@@ -408,6 +408,11 @@ ion-content::part(scroll) {
   .responsive-label {
     display: none;
   }
+  /* With labels hidden, drop the icon→label gap so glyphs center in outline buttons.
+     !important needed to beat Ionic's scoped .sc-ion-buttons-md-s slotted-icon margin. */
+  ion-toolbar ion-button ion-icon[slot="start"] {
+    margin-inline-end: 0 !important;
+  }
   .lottery-stage-shell {
     padding: 32px 18px;
   }
