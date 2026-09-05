@@ -74,22 +74,10 @@
     ]
   },
   {
-    "id": "tech-dev",
-    "title": "計中與開發者資源",
-    "subtitle": "正版軟體下載、校外 VPN、圖書館資料庫與學生開發者福利",
+    "id": "student-resources",
+    "title": "學生資源",
+    "subtitle": "學校信箱驗證即可領取的學生專屬優惠與開發者福利",
     "items": [
-      {
-        "title": "計中校園授權軟體庫",
-        "description": "學校正版 Windows、Office、MATLAB、SPSS 等軟體免費下載",
-        "url": "https://software.ncu.edu.tw/",
-        "tag": "軟體"
-      },
-      {
-        "title": "校園 GlobalProtect VPN 連線設定",
-        "description": "校外連回校園內網 · 存取圖書館電子期刊、論文資料庫與研究室資源",
-        "url": "https://wiki.cc.ncu.edu.tw/",
-        "tag": "連線"
-      },
       {
         "title": "Google AI Plus 學生免費方案",
         "description": "學校信箱驗證即享一年免費 · Gemini 進階模型與 400 GB 雲端空間",
@@ -107,6 +95,25 @@
         "description": "IntelliJ IDEA、PyCharm、WebStorm 等頂級 IDE 全套免費教育授權",
         "url": "https://www.jetbrains.com/academy/student-pack/",
         "tag": "IDE"
+      }
+    ]
+  },
+  {
+    "id": "tech-dev",
+    "title": "計中與開發者資源",
+    "subtitle": "正版軟體下載、校外 VPN 與校園電子資源",
+    "items": [
+      {
+        "title": "計中校園授權軟體庫",
+        "description": "學校正版 Windows、Office、MATLAB、SPSS 等軟體免費下載",
+        "url": "https://software.ncu.edu.tw/",
+        "tag": "軟體"
+      },
+      {
+        "title": "校園 GlobalProtect VPN 連線設定",
+        "description": "校外連回校園內網 · 存取圖書館電子期刊、論文資料庫與研究室資源",
+        "url": "https://wiki.cc.ncu.edu.tw/",
+        "tag": "連線"
       },
       {
         "title": "中大圖書館館藏與電子資源",

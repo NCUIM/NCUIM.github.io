@@ -56,6 +56,11 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     badgeColor: "tertiary",
     iconColor: "#7c3aed",
   },
+  "student-resources": {
+    icon: codeSlashOutline,
+    badgeColor: "primary",
+    iconColor: "var(--ncu-primary)",
+  },
 };
 
 const guideCategories: readonly ResourceCategory[] = guideCategoriesJson.map((cat) => ({
