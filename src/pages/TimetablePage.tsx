@@ -1208,7 +1208,7 @@ export const TimetableHeader = ({
           <IonBackButton defaultHref="/" text="" />
           {isIos && cisAuthenticated && linkButton}
         </IonButtons>
-        <IonTitle>{viewScope === "mine" ? "我的課表" : "全部課表"}</IonTitle>
+        <IonTitle>{viewScope === "mine" ? "我的課表" : "課表"}</IonTitle>
         <IonButtons slot="end">
           <IonButton
             size="small"

@@ -52,14 +52,14 @@ interface ModuleCard {
 const modules: readonly ModuleCard[] = [
   {
     title: "課表",
-    subtitle: "課表與教室時段查詢",
+    subtitle: "教室與時段查詢",
     icon: calendar,
     route: "/timetable",
     color: "var(--ncu-primary)",
   },
   {
     title: "學分試算",
-    subtitle: "畢業學分與門檻檢核",
+    subtitle: "畢業學分檢核",
     icon: calculator,
     route: "/tools/credit",
     color: "var(--ncu-success)",
