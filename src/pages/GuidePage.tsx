@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   IonPage,
   IonHeader,
@@ -16,6 +16,7 @@ import {
   schoolOutline,
   peopleOutline,
   codeSlashOutline,
+  gridOutline,
 } from "ionicons/icons";
 import guideCategoriesJson from "../data/guide-resources.json";
 
@@ -136,23 +137,7 @@ const ResourceItem = ({
   </IonItem>
 );
 
-const GuideIntroHeader = () => (
-  <div style={{ padding: "4px 4px 16px" }}>
-    <h1
-      style={{
-        fontSize: 22,
-        fontWeight: 800,
-        color: "var(--ncu-ink)",
-        margin: "0 0 4px",
-      }}
-    >
-      中大生活與實用入口
-    </h1>
-    <p style={{ fontSize: 14, color: "var(--ncu-muted)", margin: 0 }}>
-      收錄資管所常用之校園系統、生活服務與開發者軟體資源
-    </p>
-  </div>
-);
+
 
 const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
   const theme = CATEGORY_THEMES[cat.id] || {
@@ -164,24 +149,21 @@ const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
   };
 
   return (
-    <div style={{ marginBottom: 28 }}>
+    <div style={{ marginBottom: 24 }}>
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 8,
-          marginBottom: 6,
+          marginBottom: 10,
           padding: "0 4px",
         }}
       >
-        <IonIcon icon={theme.icon} style={{ fontSize: 20, color: theme.iconColor }} />
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--ncu-ink)" }}>
+        <IonIcon icon={theme.icon} style={{ fontSize: 19, color: theme.iconColor }} />
+        <h2 style={{ margin: 0, fontSize: 16.5, fontWeight: 800, color: "var(--ncu-ink)" }}>
           {cat.title}
         </h2>
       </div>
-      <p style={{ margin: "0 0 10px 4px", fontSize: 13, color: "var(--ncu-muted)" }}>
-        {cat.subtitle}
-      </p>
       <IonList
         inset
         style={{
@@ -199,16 +181,81 @@ const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
   );
 };
 
-const GuidePageBody = () => (
-  <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
-    <div style={{ maxWidth: 860, margin: "0 auto" }}>
-      <GuideIntroHeader />
-      {guideCategories.map((cat) => (
-        <CategorySection key={cat.id} cat={cat} />
-      ))}
-    </div>
-  </IonContent>
-);
+const FILTER_TABS = [
+  { id: "all", label: "全部資源", icon: gridOutline },
+  { id: "academic", label: "教務課務", icon: schoolOutline },
+  { id: "community", label: "校園生活", icon: peopleOutline },
+  { id: "student-resources", label: "學生福利", icon: codeSlashOutline },
+  { id: "tech-dev", label: "計中資源", icon: codeSlashOutline },
+] as const;
+
+const GuidePageBody = () => {
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+
+  const displayedCategories =
+    activeCategory === "all"
+      ? guideCategories
+      : guideCategories.filter((cat) => cat.id === activeCategory);
+
+  return (
+    <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
+      <div style={{ maxWidth: 860, margin: "0 auto", paddingTop: 4 }}>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            paddingBottom: 16,
+            marginBottom: 20,
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+        >
+          {FILTER_TABS.map((tab) => {
+            const isSelected = activeCategory === tab.id;
+            const isAll = tab.id === "all";
+
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveCategory(tab.id)}
+                aria-label={tab.label}
+                title={tab.label}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: isAll ? "6px 12px" : "6px 14px",
+                  borderRadius: "var(--ncu-radius-full)",
+                  fontSize: 13,
+                  fontWeight: isSelected ? 800 : 600,
+                  border: isSelected ? "1.5px solid var(--ncu-ink)" : "1px solid var(--ncu-border)",
+                  background: isSelected ? "var(--ncu-ink)" : "var(--ncu-surface)",
+                  color: isSelected ? "#ffffff" : "var(--ncu-ink)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  boxShadow: isSelected ? "var(--ncu-shadow-sm)" : "none",
+                  transition: "all 0.15s ease",
+                  flexShrink: 0,
+                }}
+              >
+                <IonIcon icon={tab.icon} style={{ fontSize: isAll ? 16 : 14 }} />
+                {!isAll && <span>{tab.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {displayedCategories.map((cat) => (
+          <CategorySection key={cat.id} cat={cat} />
+        ))}
+      </div>
+    </IonContent>
+  );
+};
 
 const GuidePageHeader = () => (
   <IonHeader>
