@@ -466,3 +466,19 @@ ion-content::part(scroll) {
   min-height: 32px;
   --color: #b9f6ca;
 }
+
+/* ── Guide page filter chips ─────────────────────────────────────── */
+.guide-filter-chip-label {
+  display: inline-flex;
+}
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 767px) {
+  .guide-filter-chip-label {
+    display: none;
+  }
+}

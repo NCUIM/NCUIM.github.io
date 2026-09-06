@@ -34,7 +34,7 @@
     "title": "校園生活",
     "items": [
       {
-        "title": "新生知訊網 · 校園生活地圖",
+        "title": "校園生活地圖",
         "description": "校園建築地標與周邊生活設施",
         "url": "https://ncufresh.ncu.edu.tw/map",
         "tag": "地圖"
@@ -46,7 +46,7 @@
         "tag": "行政"
       },
       {
-        "title": "iNCU 學校活動報名系統",
+        "title": "iNCU 活動報名系統",
         "description": "校園講座、企業參訪與工作坊",
         "url": "https://cis.ncu.edu.tw/iNCU/messageNotice/activityManagement/activity",
         "tag": "報名"
@@ -58,7 +58,7 @@
         "tag": "討論"
       },
       {
-        "title": "復活福利社 (二手市集)",
+        "title": "復活福利社",
         "description": "教科書、家具家電與用品出清",
         "url": "https://www.facebook.com/groups/209055389218793/",
         "tag": "二手"
@@ -76,31 +76,31 @@
     "title": "學生福利",
     "items": [
       {
-        "title": "Google AI Plus 學生免費方案",
+        "title": "Google AI Plus 學生版",
         "description": "信箱認證免費享 Gemini 與 400GB",
         "url": "https://one.google.com/ai-student",
         "tag": "AI"
       },
       {
-        "title": "Microsoft Azure for Students",
+        "title": "Microsoft Azure 學生版",
         "description": "免綁信用卡享 $100 額度與免費服務",
         "url": "https://azure.microsoft.com/free/students/",
         "tag": "雲端"
       },
       {
-        "title": "Google Cloud for Education",
+        "title": "Google Cloud 教育版",
         "description": "免費雲端實作點數與免費試用額度",
         "url": "https://cloud.google.com/edu/students",
         "tag": "雲端"
       },
       {
-        "title": "GitHub Student Developer Pack",
+        "title": "GitHub 學生開發者套件",
         "description": "免費 GitHub Pro、Copilot 與雲端額度",
         "url": "https://education.github.com/pack",
         "tag": "開發"
       },
       {
-        "title": "JetBrains 免費學生專業版",
+        "title": "JetBrains 學生專業版",
         "description": "全套專業 IDE 免費教育授權",
         "url": "https://www.jetbrains.com/academy/student-pack/",
         "tag": "IDE"
@@ -112,19 +112,19 @@
     "title": "計中資源",
     "items": [
       {
-        "title": "計中校園授權軟體庫",
+        "title": "校園授權軟體庫",
         "description": "正版 Windows、Office 與專業軟體",
         "url": "https://software.ncu.edu.tw/",
         "tag": "軟體"
       },
       {
-        "title": "校園 GlobalProtect VPN 連線設定",
+        "title": "GlobalProtect VPN",
         "description": "校外存取期刊資料庫與校園內網",
         "url": "https://wiki.cc.ncu.edu.tw/",
         "tag": "連線"
       },
       {
-        "title": "中大圖書館館藏與電子資源",
+        "title": "圖書館館藏與電子資源",
         "description": "論文期刊檢索、借書與空間預約",
         "url": "https://www.lib.ncu.edu.tw/",
         "tag": "館藏"

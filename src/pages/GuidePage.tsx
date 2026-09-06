@@ -14,10 +14,24 @@ import {
 import {
   openOutline,
   schoolOutline,
+  schoolSharp,
   peopleOutline,
+  peopleSharp,
   codeSlashOutline,
+  codeSlashSharp,
   gridOutline,
+  gridSharp,
+  giftOutline,
+  giftSharp,
 } from "ionicons/icons";
+
+const SOLID_ICON: Readonly<Record<string, string>> = {
+  [schoolOutline]: schoolSharp,
+  [peopleOutline]: peopleSharp,
+  [codeSlashOutline]: codeSlashSharp,
+  [gridOutline]: gridSharp,
+  [giftOutline]: giftSharp,
+};
 import guideCategoriesJson from "../data/guide-resources.json";
 
 interface ResourceLink {
@@ -61,10 +75,10 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     tagColor: "#6b21a8",
   },
   "student-resources": {
-    icon: codeSlashOutline,
-    iconColor: "var(--ncu-primary)",
-    tagBg: "var(--ncu-primary-light)",
-    tagColor: "var(--ncu-primary)",
+    icon: giftOutline,
+    iconColor: "#d97706",
+    tagBg: "#fef3c7",
+    tagColor: "#92400e",
   },
 };
 
@@ -72,6 +86,13 @@ const guideCategories: readonly ResourceCategory[] = guideCategoriesJson.map((ca
   ...cat,
   icon: CATEGORY_THEMES[cat.id]?.icon || schoolOutline,
 }));
+
+const CATEGORY_ICON_COLORS: Readonly<Record<string, string>> = {
+  all: "var(--ncu-ink)",
+  ...Object.fromEntries(
+    Object.entries(CATEGORY_THEMES).map(([id, theme]) => [id, theme.iconColor]),
+  ),
+};
 
 const ResourceItem = ({
   item,
@@ -240,8 +261,14 @@ const GuideFilterChips = ({
             flexShrink: 0,
           }}
         >
-          <IonIcon icon={tab.icon} style={{ fontSize: isAll ? 16 : 14 }} />
-          {!isAll && <span>{tab.label}</span>}
+          <IonIcon
+            icon={SOLID_ICON[tab.icon] ?? tab.icon}
+            style={{
+              fontSize: isAll ? 16 : 14,
+              color: isSelected ? "#ffffff" : CATEGORY_ICON_COLORS[tab.id] ?? "var(--ncu-ink)",
+            }}
+          />
+          <span className="guide-filter-chip-label">{tab.label}</span>
         </button>
       );
     })}

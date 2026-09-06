@@ -9,9 +9,9 @@ import {
   IonCardTitle,
   IonCardContent,
   IonButton,
+  IonButtons,
   IonIcon,
   IonBadge,
-  IonItem,
   IonInput,
   IonSpinner,
   IonList,
@@ -20,10 +20,7 @@ import {
   type RefresherEventDetail,
 } from "@ionic/react";
 import {
-  scan,
-  openOutline,
   checkmarkCircle,
-  personOutline,
   logOutOutline,
   refreshOutline,
   logoGithub,
@@ -53,29 +50,45 @@ const VerifiedEntryResult = ({
 }>) => (
   <div
     style={{
-      marginTop: 16,
-      padding: "16px",
-      background: "var(--ncu-primary-light)",
-      borderRadius: "var(--ncu-radius-md)",
-      border: "1.5px solid var(--ncu-primary)",
+      textAlign: "center",
+      padding: "12px 16px 16px",
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ncu-primary)" }}>
-      <IonIcon icon={checkmarkCircle} style={{ fontSize: 20 }} />
-      <span style={{ fontWeight: 800 }}>驗證成功！</span>
-    </div>
-    <div style={{ marginTop: 8, fontSize: "14px" }}>
-      <div><strong>身分：</strong>{verifiedInfo.label}</div>
-      <div><strong>活動：</strong>{verifiedInfo.event.name}</div>
-      <div><strong>報到碼：</strong><code>{verifiedInfo.entryCode}</code></div>
-    </div>
-    <IonButton
-      expand="block"
-      style={{ marginTop: 12 }}
-      onClick={onSaveAndJoin}
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "10px 16px",
+        borderRadius: 8,
+        background: "var(--ncu-success-light)",
+        color: "#0f766e",
+        fontWeight: 800,
+        fontSize: 15,
+      }}
     >
-      前往建立 / 編輯電子名片
-      <IonIcon icon={openOutline} slot="end" style={{ fontSize: 14 }} />
+      <IonIcon icon={checkmarkCircle} style={{ fontSize: 22 }} />
+      <span style={{ whiteSpace: "nowrap" }}>
+        報到成功 · 謝謝參加！🎉
+      </span>
+    </div>
+    <p
+      style={{
+        margin: "10px 0 0",
+        color: "var(--ncu-muted)",
+        fontSize: 13,
+        lineHeight: 1.5,
+      }}
+    >
+      你已成功登記活動身分，主辦單位將依照報到名單發放對應權益。
+    </p>
+    <IonButton
+      fill="outline"
+      color="success"
+      onClick={onSaveAndJoin}
+      style={{ marginTop: 10, fontWeight: 700 }}
+    >
+      前往活動頁面 ↗
     </IonButton>
   </div>
 );
@@ -90,7 +103,7 @@ const CheckInFormCard = ({
   onSaveAndJoin,
 }: Readonly<{
   entryCode: string;
-  setEntryCode: (v: string) => void;
+  setEntryCode: (code: string) => void;
   loading: boolean;
   error: string | null;
   verifiedInfo: EntryCodeInfo | null;
@@ -99,64 +112,43 @@ const CheckInFormCard = ({
 }>) => (
   <IonCard style={{ margin: "0 0 16px" }}>
     <IonCardHeader style={{ paddingBottom: 8 }}>
-      <IonCardTitle style={{ fontSize: "17px", fontWeight: 700 }}>
+      <IonCardTitle style={{ fontSize: "17px", fontWeight: 800 }}>
         活動身分報到
       </IonCardTitle>
     </IonCardHeader>
-    <IonCardContent>
-      <p style={{ color: "var(--ncu-muted)", fontSize: "13px", marginTop: 0 }}>
-        請輸入現場工作人員提供的報到代碼（Entry Code）：
-      </p>
-
-      <IonItem
-        lines="none"
-        style={{
-          "--background": "var(--ncu-canvas)",
-          borderRadius: "var(--ncu-radius-md)",
-          border: "1.5px solid var(--ncu-border)",
-          marginTop: 8,
-        }}
-      >
-        <IonInput
-          value={entryCode}
-          placeholder="例如：JOINNCU1"
-          onIonInput={(e) => setEntryCode(String(e.detail.value ?? ""))}
-          style={{ fontWeight: 700, letterSpacing: 1 }}
-        />
-      </IonItem>
-
-      {error && (
-        <p style={{ color: "var(--ncu-danger)", fontSize: "13px", margin: "8px 0 0" }}>
-          {error}
-        </p>
-      )}
-
-      <div style={{ display: "flex", gap: "8px", marginTop: 12 }}>
-        <IonButton
-          expand="block"
-          style={{ flex: 1 }}
-          onClick={onVerify}
-          disabled={loading || !entryCode.trim()}
-        >
-          {loading ? <IonSpinner name="crescent" /> : "驗證報到碼"}
-        </IonButton>
-        <IonButton
-          expand="block"
-          fill="outline"
-          style={{ flex: 1 }}
-          href={entryCode.trim() ? `${CARD_EVENT_CONFIG.baseUrl}/join/${encodeURIComponent(entryCode.trim().toUpperCase())}` : `${CARD_EVENT_CONFIG.baseUrl}/scan`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {entryCode.trim() ? "前往報到 ↗" : "掃碼報到 ↗"}
-        </IonButton>
-      </div>
-
-      {verifiedInfo && (
+    <IonCardContent style={{ padding: "4px 16px 16px" }}>
+      {verifiedInfo ? (
         <VerifiedEntryResult
           verifiedInfo={verifiedInfo}
           onSaveAndJoin={onSaveAndJoin}
         />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <IonInput
+              value={entryCode}
+              onIonInput={(e) => setEntryCode((e.target as unknown as HTMLInputElement).value)}
+              placeholder="輸入報到代碼"
+              fill="outline"
+              style={{ width: "100%", fontWeight: 600 }}
+            />
+          </div>
+          {error && (
+            <p style={{ margin: 0, color: "var(--ncu-danger)", fontSize: 13 }}>
+              {error}
+            </p>
+          )}
+          <IonButton
+            expand="block"
+            fill="outline"
+            disabled={loading || !entryCode.trim()}
+            onClick={onVerify}
+            style={{ fontWeight: 700 }}
+          >
+            {loading && <IonSpinner name="crescent" style={{ marginRight: 8 }} />}
+            核對報到代碼
+          </IonButton>
+        </div>
       )}
     </IonCardContent>
   </IonCard>
@@ -169,74 +161,65 @@ const UserProfileCard = ({
   savedUser: SavedParticipantInfo;
   onLogout: () => void;
 }>) => (
-  <IonCard style={{ margin: "0 0 16px", border: "2px solid var(--ncu-ink)" }}>
+  <IonCard style={{ margin: "0 0 16px" }}>
     <IonCardHeader style={{ paddingBottom: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <IonCardTitle style={{ fontSize: "17px", fontWeight: 800 }}>
-          我的電子名片
-        </IonCardTitle>
-        <IonBadge color="success">已報到</IonBadge>
-      </div>
+      <IonCardTitle style={{ fontSize: "17px", fontWeight: 800 }}>
+        目前身分
+      </IonCardTitle>
     </IonCardHeader>
-    <IonCardContent>
+    <IonCardContent style={{ padding: "4px 16px 16px" }}>
       <div
         style={{
           display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "12px",
-          background: "var(--ncu-surface)",
-          borderRadius: "var(--ncu-radius-md)",
-          border: "1.5px solid var(--ncu-border)",
+          flexDirection: "column",
+          gap: 8,
+          padding: "8px 0",
         }}
       >
         <div
           style={{
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: "var(--ncu-primary)",
-            color: "#fff",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            fontSize: 20,
-            fontWeight: 800,
+            justifyContent: "space-between",
           }}
         >
-          <IonIcon icon={personOutline} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: "16px" }}>{savedUser.label}</div>
-          <div style={{ color: "var(--ncu-muted)", fontSize: "12px" }}>
-            代碼：<code>{savedUser.entryCode}</code> · {savedUser.eventName}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-        <IonButton
-          expand="block"
-          color="primary"
-          href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <IonIcon icon={scan} slot="start" />
-          開啟相機 掃碼交換名片
-          <IonIcon icon={openOutline} slot="end" style={{ fontSize: 13 }} />
-        </IonButton>
-
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-          <IonButton
-            size="small"
-            fill="clear"
-            href={`${CARD_EVENT_CONFIG.baseUrl}/join/${savedUser.entryCode}`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}
           >
-            修改個人名片資料 ↗
-          </IonButton>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "var(--ncu-primary-light)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--ncu-primary)",
+                fontWeight: 800,
+                fontSize: 14,
+              }}
+            >
+              {savedUser.label.charAt(0)}
+            </div>
+            <span style={{ fontWeight: 700, fontSize: 15 }}>
+              {savedUser.label}
+            </span>
+          </div>
+          <IonBadge color="primary" style={{ fontWeight: 800, padding: "4px 8px" }}>
+            已報到
+          </IonBadge>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
           <IonButton
             size="small"
             fill="clear"
@@ -274,25 +257,41 @@ const LeaderboardCard = ({
   return (
     <IonCard style={{ margin: "0 0 16px" }}>
       <IonCardHeader style={{ paddingBottom: 8 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
             <IonCardTitle style={{ fontSize: "17px", fontWeight: 800 }}>
-              即時排行榜 (Top 10)
+              即時排行榜
             </IonCardTitle>
             {data && (
               <span style={{ fontSize: "11px", color: "var(--ncu-muted)" }}>
-                共 {data.totalRanked} 人在榜 · 更新於 {new Date(data.updatedAt).toLocaleTimeString()}
+                共 {data.totalRanked} 人在榜 · 更新於{" "}
+                {new Date(data.updatedAt).toLocaleTimeString()}
               </span>
             )}
           </div>
-          <IonButton size="small" fill="clear" onClick={onRefresh} aria-label="重新整理">
+          <IonButton
+            size="small"
+            fill="clear"
+            onClick={onRefresh}
+            aria-label="重新整理"
+            style={{ marginLeft: "auto" }}
+          >
             <IonIcon icon={refreshOutline} />
           </IonButton>
         </div>
 
         {savedUser && myRankEntry && (
           <div style={{ marginTop: 8 }}>
-            <IonBadge color="warning" style={{ fontWeight: 800, padding: "4px 8px" }}>
+            <IonBadge
+              color="warning"
+              style={{ fontWeight: 800, padding: "4px 8px" }}
+            >
               我的排名：第 {myRankEntry.rank} 名 ({myRankEntry.score} 分)
             </IonBadge>
           </div>
@@ -303,24 +302,47 @@ const LeaderboardCard = ({
         {loading && !data && (
           <div style={{ textAlign: "center", padding: "24px 0" }}>
             <IonSpinner name="crescent" />
-            <p style={{ color: "var(--ncu-muted)", fontSize: "13px", marginTop: 8 }}>
+            <p
+              style={{
+                color: "var(--ncu-muted)",
+                fontSize: "13px",
+                marginTop: 8,
+              }}
+            >
               正在載入最新排行榜…
             </p>
           </div>
         )}
 
         {error && !data && (
-          <div style={{ textAlign: "center", padding: "16px", color: "var(--ncu-danger)" }}>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "16px",
+              color: "var(--ncu-danger)",
+            }}
+          >
             <p style={{ margin: 0, fontSize: "13px" }}>{error}</p>
-            <IonButton size="small" fill="outline" onClick={onRefresh} style={{ marginTop: 8 }}>
+            <IonButton
+              size="small"
+              fill="outline"
+              onClick={onRefresh}
+              style={{ marginTop: 8 }}
+            >
               點此重試
             </IonButton>
           </div>
         )}
-
         {data && (
           <>
-            <IonList lines="full">
+            <IonList
+              lines="full"
+              style={{
+                maxHeight: "42vh",
+                overflowY: "auto",
+                paddingRight: "var(--ncu-space-1)",
+              }}
+            >
               {data.top.map((player) => (
                 <LeaderboardPlayerItem
                   key={`${player.rank}-${player.nickname}`}
@@ -331,7 +353,7 @@ const LeaderboardCard = ({
             </IonList>
             <div
               style={{
-                padding: "8px 16px 4px",
+                padding: "6px 16px 2px",
                 fontSize: "11.5px",
                 color: "var(--ncu-muted)",
                 textAlign: "center",
@@ -339,22 +361,6 @@ const LeaderboardCard = ({
             >
               📌 公開榜單僅展示前 10 名；全員分數由主辦方後台記錄
             </div>
-
-            {!savedUser && (
-              <div style={{ padding: "8px 16px 14px" }}>
-                <IonButton
-                  size="small"
-                  expand="block"
-                  fill="outline"
-                  style={{ fontWeight: 700 }}
-                  href={`${CARD_EVENT_CONFIG.baseUrl}/scan`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  📷 前往掃碼報到 ↗
-                </IonButton>
-              </div>
-            )}
           </>
         )}
       </IonCardContent>
@@ -368,7 +374,7 @@ const UserPageFooter = () => (
   <div
     style={{
       textAlign: "center",
-      padding: "24px 16px 36px",
+      padding: "16px 16px 0",
       fontSize: 12,
       color: "var(--ncu-muted)",
       display: "flex",
@@ -377,23 +383,6 @@ const UserPageFooter = () => (
       gap: 8,
     }}
   >
-    <a
-      href="https://github.com/NCUIM/NCUIM.github.io"
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        color: "var(--ncu-muted)",
-        textDecoration: "underline",
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 5,
-        fontWeight: 600,
-      }}
-    >
-      <IonIcon icon={logoGithub} style={{ fontSize: 14 }} />
-      <span>歡迎參與專案貢獻 (GitHub) ↗</span>
-    </a>
-
     <div style={{ display: "inline-flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
       <img
         src="https://hits.sh/ncuim.github.io.svg?style=flat-square&label=VISITORS&color=2563eb"
@@ -469,7 +458,9 @@ const CardsPage = () => {
     setEntryCode("");
   }, []);
 
-  const handlePullRefresh = async (event: CustomEvent<RefresherEventDetail>) => {
+  const handlePullRefresh = async (
+    event: CustomEvent<RefresherEventDetail>,
+  ) => {
     try {
       const res = await fetchLiveLeaderboard();
       setLbData(res);
@@ -492,6 +483,18 @@ const CardsPage = () => {
       <IonHeader>
         <IonToolbar>
           <IonTitle>個人中心</IonTitle>
+          <IonButtons slot="end">
+            <IonButton
+              fill="outline"
+              size="small"
+              href="https://github.com/NCUIM/NCUIM.github.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+            >
+              <IonIcon slot="icon-only" icon={logoGithub} />
+            </IonButton>
+          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
