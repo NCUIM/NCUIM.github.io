@@ -377,25 +377,17 @@ const LeaderboardCard = ({
 const UserPageFooter = () => (
   <div
     style={{
+      textAlign: "center",
+      padding: "24px 16px 36px",
+      fontSize: 12,
+      color: "var(--ncu-muted)",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
-      justifyContent: "center",
-      gap: 12,
-      padding: "18px 16px 22px",
+      gap: 8,
     }}
   >
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "6px 10px",
-        borderRadius: 9999,
-        background: "var(--ncu-surface)",
-        border: "1px solid var(--ncu-border)",
-        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.06)",
-      }}
-    >
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
       <img
         src="https://hits.sh/ncuim.github.io.svg?style=flat-square&label=VISITORS&color=2563eb"
         alt="Visitors Counter"
