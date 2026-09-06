@@ -14,7 +14,6 @@ import {
   IonItem,
   IonInput,
   IonSpinner,
-  IonLabel,
   IonList,
   IonRefresher,
   IonRefresherContent,
@@ -39,7 +38,6 @@ import {
   CARD_EVENT_CONFIG,
   type EntryCodeInfo,
   type SavedParticipantInfo,
-  type LeaderboardEntry,
   type LeaderboardResponse,
 } from "../services/card-event-api";
 import { LeaderboardPlayerItem } from "../components/leaderboard/LeaderboardPlayerItem";

@@ -12,8 +12,6 @@ import {
   IonCardTitle,
   IonCardContent,
   IonList,
-  IonItem,
-  IonLabel,
   IonIcon,
   IonBadge,
   IonSpinner,
@@ -30,7 +28,6 @@ import {
   fetchLiveLeaderboard,
   getSavedParticipantInfo,
   CARD_EVENT_CONFIG,
-  type LeaderboardEntry,
   type LeaderboardResponse,
   type SavedParticipantInfo,
 } from "../services/card-event-api";
