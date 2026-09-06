@@ -21,6 +21,7 @@ export interface AnnouncementItem {
   readonly author: string;
   readonly role: string;
   readonly date: string;
+  readonly createdAt?: string;
   readonly category: AnnouncementCategory;
   readonly priority: AnnouncementPriority;
   readonly actionUrls?: readonly string[];
@@ -199,6 +200,7 @@ export const parseGitHubIssue = (issue: GitHubIssue): AnnouncementItem => {
     author,
     role,
     date: dateStr,
+    createdAt: issue.created_at,
     category,
     priority,
     actionUrls: resolvedActionUrls,
@@ -225,7 +227,14 @@ export const sortAnnouncements = (items: readonly AnnouncementItem[]): Announcem
     if (pA !== pB) {
       return pB - pA;
     }
-    return b.date.localeCompare(a.date);
+    const dateDiff = b.date.localeCompare(a.date);
+    if (dateDiff !== 0) {
+      return dateDiff;
+    }
+    if (a.createdAt && b.createdAt) {
+      return b.createdAt.localeCompare(a.createdAt);
+    }
+    return 0;
   });
 };
 

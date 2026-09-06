@@ -43,6 +43,14 @@ const CATEGORIES: readonly AnnouncementCategory[] = [
   "general",
 ];
 
+const RECENT_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+const isRecentAnnouncement = (item: AnnouncementItem): boolean => {
+  const ts = item.createdAt ? new Date(item.createdAt).getTime() : new Date(item.date).getTime();
+  if (Number.isNaN(ts)) return false;
+  return Date.now() - ts < RECENT_THRESHOLD_MS;
+};
+
 export const AnnouncementModal = ({
   isOpen,
   announcements,
@@ -212,9 +220,27 @@ export const AnnouncementModal = ({
                           <span>{priorityConfig.label}</span>
                         </span>
                       </div>
-                      <span style={{ fontSize: 12, color: "var(--ncu-muted)", fontWeight: 600 }}>
-                        {item.date}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        {isRecentAnnouncement(item) && (
+                          <span
+                            style={{
+                              padding: "1px 5px",
+                              borderRadius: 4,
+                              background: "#ef4444",
+                              color: "#ffffff",
+                              fontSize: 10,
+                              fontWeight: 900,
+                              letterSpacing: 0.5,
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            NEW
+                          </span>
+                        )}
+                        <span style={{ fontSize: 12, color: "var(--ncu-muted)", fontWeight: 600 }}>
+                          {item.date}
+                        </span>
+                      </div>
                     </div>
 
                     <IonCardTitle

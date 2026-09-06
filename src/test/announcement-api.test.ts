@@ -182,6 +182,37 @@ _No response_`,
     expect(sorted[2].id).toBe("1"); // normal third
   });
 
+  it("sorts same-day announcements with same priority by createdAt descending", () => {
+    const items = [
+      {
+        id: "earlier",
+        title: "先發布的公告",
+        content: "c",
+        author: "a",
+        role: "r",
+        date: "2026/09/06",
+        createdAt: "2026-09-06T08:00:00Z",
+        category: "general" as const,
+        priority: "normal" as const,
+      },
+      {
+        id: "later",
+        title: "後發布的公告",
+        content: "c",
+        author: "a",
+        role: "r",
+        date: "2026/09/06",
+        createdAt: "2026-09-06T14:30:00Z",
+        category: "general" as const,
+        priority: "normal" as const,
+      },
+    ];
+
+    const sorted = sortAnnouncements(items);
+    expect(sorted[0].id).toBe("later");
+    expect(sorted[1].id).toBe("earlier");
+  });
+
   it("falls back to empty array when network fails and no cache exists", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network error")));
 
