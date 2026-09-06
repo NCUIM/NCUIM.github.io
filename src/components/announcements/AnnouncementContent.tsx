@@ -11,7 +11,7 @@ export interface ContentSegment {
 
 export interface InlineSegment {
   readonly id: string;
-  readonly type: "text" | "link";
+  readonly type: "text" | "link" | "bold";
   readonly text: string;
   readonly url?: string;
 }
@@ -152,8 +152,31 @@ interface FoundInlineToken {
   readonly fullMatch: string;
   readonly mdText: string | undefined;
   readonly mdUrl: string | undefined;
+  readonly boldText?: string;
   readonly index: number;
 }
+
+interface FoundBoldToken {
+  readonly index: number;
+  readonly length: number;
+  readonly text: string;
+  readonly raw: string;
+}
+
+const findNextBoldToken = (text: string, fromIndex: number): FoundBoldToken | null => {
+  const start = text.indexOf("**", fromIndex);
+  if (start === -1) return null;
+  const end = text.indexOf("**", start + 2);
+  if (end === -1 || end === start + 2) return null;
+  const inner = text.slice(start + 2, end);
+  if (inner.includes("\n")) return null;
+  return {
+    index: start,
+    length: end + 2 - start,
+    text: inner,
+    raw: text.slice(start, end + 2),
+  };
+};
 
 const isInlineWhitespace = (ch: string): boolean =>
   ch === " " ||
@@ -229,26 +252,37 @@ const findNextMarkdownLink = (
 const findNextInlineToken = (text: string, fromIndex: number): FoundInlineToken | null => {
   const mdLink = findNextMarkdownLink(text, fromIndex);
   const bareMatch = INLINE_BARE_URL_REGEX.exec(text.slice(fromIndex));
+  const boldMatch = findNextBoldToken(text, fromIndex);
 
-  if (!mdLink && !bareMatch) return null;
+  const candidates: FoundInlineToken[] = [];
 
-  const mdIndex = mdLink ? mdLink.index : Infinity;
-  const bareIndex = bareMatch ? fromIndex + bareMatch.index : Infinity;
-
-  if (mdIndex <= bareIndex && mdLink) return mdLink;
+  if (mdLink) candidates.push(mdLink);
   if (bareMatch) {
-    return {
+    candidates.push({
       fullMatch: bareMatch[0],
       mdText: undefined,
       mdUrl: undefined,
       index: fromIndex + bareMatch.index,
-    };
+    });
   }
-  return null;
+  if (boldMatch) {
+    candidates.push({
+      fullMatch: boldMatch.raw,
+      mdText: undefined,
+      mdUrl: undefined,
+      boldText: boldMatch.text,
+      index: boldMatch.index,
+    });
+  }
+
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) => a.index - b.index);
+  return candidates[0];
 };
 
 /**
- * Parses inline text for markdown links [text](url) and bare URLs https://...
+ * Parses inline text for markdown links [text](url), bare URLs https://..., and bold text **...**
  */
 export const parseInlineSegments = (text: string, baseId: string): readonly InlineSegment[] => {
   if (!text) return [];
@@ -260,7 +294,7 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
     const token = findNextInlineToken(text, lastIndex);
     if (!token) break;
 
-    const { fullMatch, mdText, mdUrl, index: matchStart } = token;
+    const { fullMatch, mdText, mdUrl, boldText, index: matchStart } = token;
 
     if (matchStart > lastIndex) {
       segments.push({
@@ -270,7 +304,13 @@ export const parseInlineSegments = (text: string, baseId: string): readonly Inli
       });
     }
 
-    if (mdUrl && mdText) {
+    if (boldText !== undefined) {
+      segments.push({
+        id: `${baseId}-b-${matchStart}`,
+        type: "bold",
+        text: boldText,
+      });
+    } else if (mdUrl && mdText) {
       appendMarkdownLink(segments, baseId, matchStart, mdText, mdUrl, fullMatch);
     } else {
       appendBareUrlLink(segments, baseId, matchStart, fullMatch, fullMatch);
@@ -424,20 +464,14 @@ export const parseContentSegments = (text: string): readonly ContentSegment[] =>
   return segments;
 };
 
-const TextParagraph = ({
-  content,
-  segmentId,
-}: Readonly<{ content: string; segmentId: string }>) => {
-  const inlineNodes = parseInlineSegments(content, segmentId);
+const InlineNodes = ({
+  text,
+  baseId,
+}: Readonly<{ text: string; baseId: string }>) => {
+  const inlineNodes = parseInlineSegments(text, baseId);
 
   return (
-    <p
-      style={{
-        margin: "0 0 8px",
-        whiteSpace: "pre-line",
-        wordBreak: "break-word",
-      }}
-    >
+    <>
       {inlineNodes.map((item) => {
         if (item.type === "link" && item.url) {
           return (
@@ -462,9 +496,191 @@ const TextParagraph = ({
             </a>
           );
         }
+        if (item.type === "bold") {
+          return (
+            <strong
+              key={item.id}
+              style={{
+                fontWeight: 800,
+                color: "var(--ncu-ink, #0f172a)",
+              }}
+            >
+              {item.text}
+            </strong>
+          );
+        }
         return <React.Fragment key={item.id}>{item.text}</React.Fragment>;
       })}
-    </p>
+    </>
+  );
+};
+
+const isHorizontalRuleLine = (trimmed: string): boolean => {
+  if (trimmed.length < 3) return false;
+  const firstChar = trimmed[0];
+  if (firstChar !== "-" && firstChar !== "*" && firstChar !== "_") return false;
+  for (let i = 1; i < trimmed.length; i++) {
+    if (trimmed[i] !== firstChar) return false;
+  }
+  return true;
+};
+
+const getHeadingFontSize = (level: number): number => {
+  if (level === 1) return 16;
+  if (level === 2) return 15;
+  return 14.5;
+};
+
+const parseCalloutText = (trimmed: string): string | null => {
+  if (!trimmed.startsWith("---") || !trimmed.endsWith("---")) return null;
+  let start = 0;
+  while (start < trimmed.length && trimmed[start] === "-") {
+    start++;
+  }
+  let end = trimmed.length;
+  while (end > start && trimmed[end - 1] === "-") {
+    end--;
+  }
+  const inner = trimmed.slice(start, end).trim();
+  return inner.length > 0 ? inner : null;
+};
+
+const parseHeadingLine = (trimmed: string): { level: number; text: string } | null => {
+  let count = 0;
+  while (count < 4 && trimmed[count] === "#") {
+    count++;
+  }
+  if (count > 0 && trimmed[count] === " ") {
+    const text = trimmed.slice(count + 1).trim();
+    if (text.length > 0) {
+      return { level: count, text };
+    }
+  }
+  return null;
+};
+
+const parseListItemLine = (trimmed: string): string | null => {
+  if (
+    trimmed.length >= 2 &&
+    (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• "))
+  ) {
+    const text = trimmed.slice(2).trim();
+    return text.length > 0 ? text : null;
+  }
+  return null;
+};
+
+const TextParagraph = ({
+  content,
+  segmentId,
+}: Readonly<{ content: string; segmentId: string }>) => {
+  const lines = content.split("\n");
+
+  return (
+    <div style={{ margin: "0 0 8px" }}>
+      {lines.map((line, idx) => {
+        const lineKey = `${segmentId}-l-${idx}`;
+        const trimmed = line.trim();
+
+        if (isHorizontalRuleLine(trimmed)) {
+          return (
+            <hr
+              key={lineKey}
+              style={{
+                border: "none",
+                borderTop: "1.5px dashed var(--ncu-border, #cbd5e1)",
+                margin: "14px 0",
+              }}
+            />
+          );
+        }
+
+        const calloutText = parseCalloutText(trimmed);
+        if (calloutText) {
+          return (
+            <div
+              key={lineKey}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                margin: "12px 0",
+                color: "var(--ncu-muted, #64748b)",
+                fontSize: 12.5,
+                fontWeight: 600,
+              }}
+            >
+              <div style={{ flex: 1, borderTop: "1px dashed var(--ncu-border, #cbd5e1)" }} />
+              <span>
+                <InlineNodes text={calloutText} baseId={`${lineKey}-c`} />
+              </span>
+              <div style={{ flex: 1, borderTop: "1px dashed var(--ncu-border, #cbd5e1)" }} />
+            </div>
+          );
+        }
+
+        const heading = parseHeadingLine(trimmed);
+        if (heading) {
+          const fontSize = getHeadingFontSize(heading.level);
+
+          return (
+            <h4
+              key={lineKey}
+              style={{
+                margin: "12px 0 6px",
+                fontSize,
+                fontWeight: 800,
+                color: "var(--ncu-ink, #0f172a)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <InlineNodes text={heading.text} baseId={`${lineKey}-h`} />
+            </h4>
+          );
+        }
+
+        const listItemText = parseListItemLine(trimmed);
+        if (listItemText) {
+          return (
+            <div
+              key={lineKey}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 6,
+                margin: "3px 0",
+                paddingLeft: 4,
+                lineHeight: 1.65,
+              }}
+            >
+              <span style={{ color: "var(--ncu-primary, #1e40af)", fontWeight: 700, lineHeight: 1.65 }}>•</span>
+              <div style={{ flex: 1, wordBreak: "break-word" }}>
+                <InlineNodes text={listItemText} baseId={`${lineKey}-li`} />
+              </div>
+            </div>
+          );
+        }
+
+        if (trimmed === "") {
+          return <div key={lineKey} style={{ height: 6 }} />;
+        }
+
+        return (
+          <div
+            key={lineKey}
+            style={{
+              wordBreak: "break-word",
+              lineHeight: 1.65,
+              margin: "1px 0",
+            }}
+          >
+            <InlineNodes text={line} baseId={lineKey} />
+          </div>
+        );
+      })}
+    </div>
   );
 };
 

@@ -21,6 +21,7 @@ export interface AnnouncementItem {
   readonly author: string;
   readonly role: string;
   readonly date: string;
+  readonly createdAt?: string;
   readonly category: AnnouncementCategory;
   readonly priority: AnnouncementPriority;
   readonly actionUrls?: readonly string[];
@@ -47,10 +48,10 @@ export const PRIORITY_CONFIG: Record<
   AnnouncementPriority,
   { label: string; badgeColor: string; icon: string; order: number }
 > = {
-  urgent: { label: "緊急置頂", badgeColor: "#ef4444", icon: "🚨", order: 4 },
-  high: { label: "重要提醒", badgeColor: "#f97316", icon: "🔴", order: 3 },
-  normal: { label: "一般通知", badgeColor: "#3b82f6", icon: "🟡", order: 2 },
-  low: { label: "參考資訊", badgeColor: "#64748b", icon: "🟢", order: 1 },
+  urgent: { label: "緊急", badgeColor: "#ef4444", icon: "🚨", order: 4 },
+  high: { label: "重要", badgeColor: "#f97316", icon: "🔴", order: 3 },
+  normal: { label: "普通", badgeColor: "#3b82f6", icon: "🟡", order: 2 },
+  low: { label: "參考", badgeColor: "#64748b", icon: "🟢", order: 1 },
 };
 
 export const BUILTIN_ANNOUNCEMENTS: readonly AnnouncementItem[] = [];
@@ -199,6 +200,7 @@ export const parseGitHubIssue = (issue: GitHubIssue): AnnouncementItem => {
     author,
     role,
     date: dateStr,
+    createdAt: issue.created_at,
     category,
     priority,
     actionUrls: resolvedActionUrls,
@@ -225,7 +227,14 @@ export const sortAnnouncements = (items: readonly AnnouncementItem[]): Announcem
     if (pA !== pB) {
       return pB - pA;
     }
-    return b.date.localeCompare(a.date);
+    const dateDiff = b.date.localeCompare(a.date);
+    if (dateDiff !== 0) {
+      return dateDiff;
+    }
+    if (a.createdAt && b.createdAt) {
+      return b.createdAt.localeCompare(a.createdAt);
+    }
+    return 0;
   });
 };
 

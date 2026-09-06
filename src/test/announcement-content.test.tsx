@@ -289,5 +289,44 @@ describe("AnnouncementContent Security & Parsing", () => {
       expect(img).toBeTruthy();
       expect(img.closest("a")).toBeNull();
     });
+
+    it("renders bold text using strong tag", () => {
+      const content = "這是 **重要提醒** 請注意！";
+      render(<AnnouncementContent content={content} />);
+
+      const boldEl = screen.getByText("重要提醒");
+      expect(boldEl.tagName.toLowerCase()).toBe("strong");
+    });
+
+    it("renders horizontal rule for three or more dashes", () => {
+      const content = "上半部\n------------------------------\n下半部";
+      const { container } = render(<AnnouncementContent content={content} />);
+
+      const hr = container.querySelector("hr");
+      expect(hr).toBeTruthy();
+    });
+
+    it("renders decorative callout for dashed note lines", () => {
+      const content = "---持續更新中 如有要添加群組連結 歡迎聯絡所代---";
+      render(<AnnouncementContent content={content} />);
+
+      expect(screen.getByText("持續更新中 如有要添加群組連結 歡迎聯絡所代")).toBeTruthy();
+    });
+
+    it("renders heading for ### markdown syntax", () => {
+      const content = "### 運動社群列表";
+      render(<AnnouncementContent content={content} />);
+
+      const heading = screen.getByRole("heading", { level: 4, name: "運動社群列表" });
+      expect(heading).toBeTruthy();
+    });
+
+    it("renders bullet list items for - or * list syntax", () => {
+      const content = "- 項目一\n- 項目二";
+      render(<AnnouncementContent content={content} />);
+
+      expect(screen.getByText("項目一")).toBeTruthy();
+      expect(screen.getByText("項目二")).toBeTruthy();
+    });
   });
 });
