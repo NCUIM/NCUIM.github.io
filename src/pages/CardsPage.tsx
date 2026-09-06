@@ -12,7 +12,6 @@ import {
   IonButtons,
   IonIcon,
   IonBadge,
-  IonItem,
   IonInput,
   IonSpinner,
   IonList,
@@ -21,10 +20,7 @@ import {
   type RefresherEventDetail,
 } from "@ionic/react";
 import {
-  scan,
-  openOutline,
   checkmarkCircle,
-  personOutline,
   logOutOutline,
   refreshOutline,
   logoGithub,
