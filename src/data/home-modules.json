@@ -1,0 +1,45 @@
+[
+  {
+    "id": "timetable",
+    "title": "課表查詢",
+    "subtitle": "教室與時段一覽",
+    "icon": "calendar",
+    "route": "/timetable",
+    "color": "var(--ncu-primary)"
+  },
+  {
+    "id": "credit",
+    "title": "學分試算",
+    "subtitle": "畢業學分檢核",
+    "icon": "calculator",
+    "route": "/tools/credit",
+    "color": "var(--ncu-success)"
+  },
+  {
+    "id": "seats",
+    "title": "座位地圖",
+    "subtitle": "209 · 310 · 313 · 919",
+    "icon": "map",
+    "route": "/seats",
+    "color": "var(--ncu-star)"
+  },
+  {
+    "id": "lottery",
+    "title": "抽籤大會",
+    "subtitle": "大螢幕開獎 · 蛇形相鄰分配",
+    "icon": "sparkles",
+    "route": "/stage/lottery",
+    "color": "var(--ncu-star)",
+    "badge": "舞台",
+    "hidden": true
+  },
+  {
+    "id": "food",
+    "title": "中大美食地圖",
+    "subtitle": "後門 · 宵夜街 · 前門 · 校內",
+    "icon": "restaurant",
+    "route": "/food",
+    "color": "var(--ncu-danger)",
+    "hidden": true
+  }
+]
