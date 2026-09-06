@@ -38,6 +38,8 @@ interface CategoryTheme {
   readonly icon: string;
   readonly badgeColor: string;
   readonly iconColor: string;
+  readonly tagBg: string;
+  readonly tagColor: string;
 }
 
 const CATEGORY_THEMES: Record<string, CategoryTheme> = {
@@ -45,21 +47,29 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     icon: schoolOutline,
     badgeColor: "primary",
     iconColor: "var(--ncu-primary)",
+    tagBg: "var(--ncu-primary-light)",
+    tagColor: "var(--ncu-primary)",
   },
   community: {
     icon: peopleOutline,
     badgeColor: "success",
     iconColor: "var(--ncu-success)",
+    tagBg: "var(--ncu-success-light)",
+    tagColor: "#0f766e",
   },
   "tech-dev": {
     icon: codeSlashOutline,
     badgeColor: "tertiary",
     iconColor: "#7c3aed",
+    tagBg: "#f3e8ff",
+    tagColor: "#6b21a8",
   },
   "student-resources": {
     icon: codeSlashOutline,
     badgeColor: "primary",
     iconColor: "var(--ncu-primary)",
+    tagBg: "var(--ncu-primary-light)",
+    tagColor: "var(--ncu-primary)",
   },
 };
 
@@ -70,10 +80,10 @@ const guideCategories: readonly ResourceCategory[] = guideCategoriesJson.map((ca
 
 const ResourceItem = ({
   item,
-  badgeColor,
+  theme,
 }: Readonly<{
   item: ResourceLink;
-  badgeColor: string;
+  theme: CategoryTheme;
 }>) => (
   <IonItem
     button
@@ -88,7 +98,6 @@ const ResourceItem = ({
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 5 }}>
         {item.tag && (
           <IonBadge
-            color={badgeColor}
             style={{
               fontSize: 15,
               fontWeight: 800,
@@ -99,6 +108,8 @@ const ResourceItem = ({
               alignItems: "center",
               justifyContent: "center",
               lineHeight: 1,
+              background: theme.tagBg,
+              color: theme.tagColor,
             }}
           >
             {item.tag}
@@ -148,6 +159,8 @@ const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
     icon: schoolOutline,
     badgeColor: "primary",
     iconColor: "var(--ncu-primary)",
+    tagBg: "var(--ncu-primary-light)",
+    tagColor: "var(--ncu-primary)",
   };
 
   return (
@@ -179,7 +192,7 @@ const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
         }}
       >
         {cat.items.map((item) => (
-          <ResourceItem key={item.url} item={item} badgeColor={theme.badgeColor} />
+          <ResourceItem key={item.url} item={item} theme={theme} />
         ))}
       </IonList>
     </div>
