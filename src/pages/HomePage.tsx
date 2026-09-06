@@ -27,6 +27,7 @@ import {
   chevronForwardOutline,
   openOutline,
   timeOutline,
+  gridOutline,
 } from "ionicons/icons";
 import {
   AnnouncementItem,
@@ -599,23 +600,27 @@ const AnnouncementModal = ({
             {categories.map((cat) => {
               const info = CATEGORY_LABELS[cat];
               const isSelected = selectedCategory === cat;
+              const isAll = cat === "all";
               const count =
-                cat === "all"
+                isAll
                   ? announcements.length
                   : announcements.filter((item) => item.category === cat).length;
 
-              if (cat !== "all" && count === 0) return null;
+              if (!isAll && count === 0) return null;
 
               return (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
+                  aria-label={isAll ? "全部公告" : info.label}
+                  title={isAll ? "全部公告" : info.label}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: 4,
-                    padding: "5px 12px",
+                    padding: isAll ? "5px 12px" : "5px 12px",
                     borderRadius: 20,
                     fontSize: 12.5,
                     fontWeight: isSelected ? 800 : 600,
@@ -628,9 +633,15 @@ const AnnouncementModal = ({
                     transition: "all 0.15s ease",
                   }}
                 >
-                  <span>{info.icon}</span>
-                  <span>{info.label}</span>
-                  <span style={{ opacity: 0.75, fontSize: 11 }}>({count})</span>
+                  {isAll ? (
+                    <IonIcon icon={gridOutline} style={{ fontSize: 16 }} />
+                  ) : (
+                    <>
+                      <span>{info.icon}</span>
+                      <span>{info.label}</span>
+                      <span style={{ opacity: 0.75, fontSize: 11 }}>({count})</span>
+                    </>
+                  )}
                 </button>
               );
             })}
