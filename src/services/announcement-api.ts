@@ -47,10 +47,10 @@ export const PRIORITY_CONFIG: Record<
   AnnouncementPriority,
   { label: string; badgeColor: string; icon: string; order: number }
 > = {
-  urgent: { label: "緊急置頂", badgeColor: "#ef4444", icon: "🚨", order: 4 },
-  high: { label: "重要提醒", badgeColor: "#f97316", icon: "🔴", order: 3 },
-  normal: { label: "一般通知", badgeColor: "#3b82f6", icon: "🟡", order: 2 },
-  low: { label: "參考資訊", badgeColor: "#64748b", icon: "🟢", order: 1 },
+  urgent: { label: "緊急", badgeColor: "#ef4444", icon: "🚨", order: 4 },
+  high: { label: "重要", badgeColor: "#f97316", icon: "🔴", order: 3 },
+  normal: { label: "普通", badgeColor: "#3b82f6", icon: "🟡", order: 2 },
+  low: { label: "參考", badgeColor: "#64748b", icon: "🟢", order: 1 },
 };
 
 export const BUILTIN_ANNOUNCEMENTS: readonly AnnouncementItem[] = [];

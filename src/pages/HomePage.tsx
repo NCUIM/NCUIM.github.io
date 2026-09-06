@@ -501,7 +501,7 @@ const AnnouncementBar = ({
           }}
         >
           <span>{priorityConfig.icon}</span>
-          <span>{isUrgent ? "緊急置頂" : "公告"}</span>
+          <span>{isUrgent ? priorityConfig.label : "公告"}</span>
         </div>
         <span
           style={{

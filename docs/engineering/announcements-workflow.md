@@ -29,10 +29,10 @@
      * `系統與維護 (category:system)`
      * `一般公告 (category:general)`
    * **重要程度 (Priority)**：
-     * `緊急置頂 (priority:urgent)`：紅色高亮標籤，強制置頂於首頁跑馬燈。
-     * `重要提醒 (priority:high)`：橘色標籤，次高優先級。
-     * `一般通知 (priority:normal)`：藍色標籤，標準排序。
-     * `參考資訊 (priority:low)`：灰色標籤，一般參考消息。
+     * `緊急 (priority:urgent)`：紅色高亮標籤，強制置頂於首頁跑馬燈。
+     * `重要 (priority:high)`：橘色標籤，次高優先級。
+     * `普通 (priority:normal)`：藍色標籤，標準排序。
+     * `參考 (priority:low)`：灰色標籤，一般參考消息。
    * **發布單位與署名 (Author & Role)**：格式為 `單位/職稱 · 姓名`（例如：`資管所所代 · 阿駿`、`系辦公室`、`迎新活動籌備組`）。
    * **公告內文 (Content)**：支援完整 Markdown 語法（段落、粗體、列表、分行），並支援安全插入圖片（`![圖說](https://...)` 或 `<img src="..." width="..." />`）。可直接拖曳或剪貼簿貼上多張圖片（如 LINE 群組 QR Code），系統將自動解析為自適應圖片並支援點擊查看高解析原圖。
    * **相關連結 (Action URL，選填)**：若有外部表單（如 Google 表單報名、系網 PDF 或學校系統），填入完整網址 `https://...`；若無外部動作則留空。
