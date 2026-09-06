@@ -166,25 +166,58 @@ const isTeacherMatch = (teachers: readonly string[] = [], target?: string): bool
   });
 };
 
-const isSerialMatch = (masterSerial: number, cisSerial?: string): boolean =>
+export const extractCourseCodeAndSection = (
+  rawNo?: string,
+): { base: string; section: string } => {
+  if (!rawNo) return { base: "", section: "" };
+  const clean = rawNo.replace(/[-*]/g, "").trim().toUpperCase();
+  const match = /^([A-Z]+\d+)([A-Z0-9]*)$/.exec(clean);
+  if (match) {
+    return { base: match[1], section: match[2] };
+  }
+  return { base: clean, section: "" };
+};
+
+export const isSerialMatch = (masterSerial: number, cisSerial?: string): boolean =>
   Boolean(cisSerial && String(masterSerial) === String(cisSerial).trim());
 
-const isClassNoMatch = (masterNo: string, cisNo?: string): boolean => {
+export const isClassNoMatch = (masterNo: string, cisNo?: string): boolean => {
   if (!cisNo || !masterNo) return false;
-  const cClean = cisNo.replace(/[-*]/g, "").trim().toUpperCase();
-  const mClean = masterNo.replace(/[-*]/g, "").trim().toUpperCase();
-  if (cClean.length < 4 || mClean.length < 4) return false;
-  // Extract course-number base (e.g. "IM5001" from "IM5001A") by splitting at section boundary
-  const courseNoRe = /^[A-Z]+\d+/;
-  const cBase = courseNoRe.exec(cClean)?.[0] ?? cClean;
-  const mBase = courseNoRe.exec(mClean)?.[0] ?? mClean;
-  return cBase === mBase;
+  const m = extractCourseCodeAndSection(masterNo);
+  const c = extractCourseCodeAndSection(cisNo);
+  if (!m.base || !c.base || m.base !== c.base) return false;
+  if (m.section && c.section && m.section !== c.section) {
+    return false;
+  }
+  return true;
 };
 
 // skipcq: JS-R1005
-const isCourseMatch = (master: MasterCourseItem, cis: Partial<CisCourse>): boolean => {
-  if (isSerialMatch(master.serialNo, cis.serialNo)) return true;
-  if (isClassNoMatch(master.classNo, cis.classNo)) return true;
+export const isSingleMasterCourseMatch = (
+  master: MasterCourseItem,
+  cis: Partial<CisCourse>,
+): boolean => {
+  const cisSerial = cis.serialNo?.trim();
+  const hasCisSerial = Boolean(cisSerial && /^\d+$/.test(cisSerial));
+
+  if (hasCisSerial) {
+    return isSerialMatch(master.serialNo, cisSerial);
+  }
+
+  if (cis.classNo && master.classNo) {
+    const m = extractCourseCodeAndSection(master.classNo);
+    const c = extractCourseCodeAndSection(cis.classNo);
+    if (m.base && c.base && m.base === c.base) {
+      if (m.section && c.section) {
+        return m.section === c.section;
+      }
+      if (cis.teacher) {
+        return isTeacherMatch(master.teachers, cis.teacher);
+      }
+      return true;
+    }
+  }
+
   const cisTitle = cleanCourseTitle(cis.name || "");
   const masterTitle = cleanCourseTitle(master.title || "");
   const isSameTitle = cisTitle.length > 0 && cisTitle === masterTitle;
@@ -192,23 +225,68 @@ const isCourseMatch = (master: MasterCourseItem, cis: Partial<CisCourse>): boole
     if (!cis.teacher) return true;
     return isTeacherMatch(master.teachers, cis.teacher);
   }
+
   return false;
 };
 
-const matchCisCourse = (
+// skipcq: JS-R1005
+export const isCourseMatch = (master: MasterCourseItem, cis: Partial<CisCourse>): boolean => {
+  if (master.mergedSections && master.mergedSections.length > 0) {
+    return master.mergedSections.some((sec) =>
+      isSingleMasterCourseMatch(
+        {
+          ...master,
+          serialNo: sec.serialNo,
+          classNo: sec.classNo,
+          teachers: sec.teachers,
+          room: sec.room,
+        },
+        cis,
+      ),
+    );
+  }
+  return isSingleMasterCourseMatch(master, cis);
+};
+
+export const matchCisCourse = (
   master: MasterCourseItem,
   myCourses: readonly CisCourse[],
 ): { isMine: boolean; room?: string; matchedTeacher?: string; matchedRoom?: string } => {
-  const matched = myCourses.find((courseItem) => isCourseMatch(master, courseItem));
+  if (master.mergedSections && master.mergedSections.length > 0) {
+    for (const sec of master.mergedSections) {
+      const secMaster: MasterCourseItem = {
+        ...master,
+        serialNo: sec.serialNo,
+        classNo: sec.classNo,
+        teachers: sec.teachers,
+        room: sec.room,
+      };
+      const matched = myCourses.find((courseItem) =>
+        isSingleMasterCourseMatch(secMaster, courseItem),
+      );
+      if (matched) {
+        const secRoom = sec.room || master.room;
+        const secTeacher = sec.teachers[0] || matched.teacher;
+        return {
+          isMine: true,
+          room: secRoom,
+          matchedTeacher: secTeacher,
+          matchedRoom: secRoom || (matched.classNo ? getCourseRoom(matched.classNo) : undefined),
+        };
+      }
+    }
+  }
+
+  const matched = myCourses.find((courseItem) => isSingleMasterCourseMatch(master, courseItem));
   return {
     isMine: Boolean(matched),
     room: matched?.room || master.room,
-    matchedTeacher: matched?.teacher,
-    matchedRoom: matched?.room || (matched?.classNo ? getCourseRoom(matched.classNo) : undefined),
+    matchedTeacher: matched?.teacher || (matched ? master.teachers[0] : undefined),
+    matchedRoom: matched?.room || (matched?.classNo ? getCourseRoom(matched.classNo) : master.room),
   };
 };
 
-const mapMasterCourseToCourse = (
+export const mapMasterCourseToCourse = (
   c: MasterCourseItem,
   myCourses: readonly CisCourse[],
 ): Course => {
@@ -303,7 +381,7 @@ const addCisCourseToMap = (
   }
 };
 
-const buildTimetableFromCisCourses = (
+export const buildTimetableFromCisCourses = (
   courses: readonly CisCourse[],
   masterCourses: readonly MasterCourseItem[] = [],
 ): Record<string, Course[]> => {
@@ -319,13 +397,22 @@ const buildTimetableFromCisCourses = (
       ? c.classTimes
       : (matchedMaster?.classTimes || []);
 
-    const effectiveRoom = c.room || matchedMaster?.room || getCourseRoom(c.classNo || matchedMaster?.classNo);
-    const effectiveTeacher = c.teacher || matchedMaster?.teachers.join(" / ") || "";
-    const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(c.classNo);
+    const effectiveRoom =
+      c.room ||
+      matchedMaster?.room ||
+      getCourseRoom(matchedMaster?.classNo || c.classNo);
+    const effectiveTeacher =
+      c.teacher ||
+      (matchedMaster?.teachers ? matchedMaster.teachers.join(" / ") : "");
+    const effectiveClassNo =
+      (!c.classNo || !c.classNo.includes("-")) && matchedMaster?.classNo
+        ? matchedMaster.classNo
+        : (c.classNo || matchedMaster?.classNo);
+    const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(effectiveClassNo);
 
     const enrichedCourse: Course = {
       id: c.serialNo || (matchedMaster ? String(matchedMaster.serialNo) : undefined),
-      classNo: c.classNo || matchedMaster?.classNo,
+      classNo: effectiveClassNo,
       name: cleanCourseTitle(c.name || matchedMaster?.title || ""),
       teacher: effectiveTeacher,
       room: effectiveRoom,
