@@ -30,14 +30,12 @@ interface ResourceLink {
 interface ResourceCategory {
   readonly id: string;
   readonly title: string;
-  readonly subtitle: string;
   readonly icon: string;
   readonly items: readonly ResourceLink[];
 }
 
 interface CategoryTheme {
   readonly icon: string;
-  readonly badgeColor: string;
   readonly iconColor: string;
   readonly tagBg: string;
   readonly tagColor: string;
@@ -46,28 +44,24 @@ interface CategoryTheme {
 const CATEGORY_THEMES: Record<string, CategoryTheme> = {
   academic: {
     icon: schoolOutline,
-    badgeColor: "primary",
     iconColor: "var(--ncu-primary)",
     tagBg: "var(--ncu-primary-light)",
     tagColor: "var(--ncu-primary)",
   },
   community: {
     icon: peopleOutline,
-    badgeColor: "success",
     iconColor: "var(--ncu-success)",
     tagBg: "var(--ncu-success-light)",
     tagColor: "#0f766e",
   },
   "tech-dev": {
     icon: codeSlashOutline,
-    badgeColor: "tertiary",
     iconColor: "#7c3aed",
     tagBg: "#f3e8ff",
     tagColor: "#6b21a8",
   },
   "student-resources": {
     icon: codeSlashOutline,
-    badgeColor: "primary",
     iconColor: "var(--ncu-primary)",
     tagBg: "var(--ncu-primary-light)",
     tagColor: "var(--ncu-primary)",
@@ -142,7 +136,6 @@ const ResourceItem = ({
 const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
   const theme = CATEGORY_THEMES[cat.id] || {
     icon: schoolOutline,
-    badgeColor: "primary",
     iconColor: "var(--ncu-primary)",
     tagBg: "var(--ncu-primary-light)",
     tagColor: "var(--ncu-primary)",
@@ -181,13 +174,20 @@ const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
   );
 };
 
-const FILTER_TABS = [
+interface FilterTab {
+  readonly id: string;
+  readonly label: string;
+  readonly icon: string;
+}
+
+const FILTER_TABS: readonly FilterTab[] = [
   { id: "all", label: "全部資源", icon: gridOutline },
-  { id: "academic", label: "教務課務", icon: schoolOutline },
-  { id: "community", label: "校園生活", icon: peopleOutline },
-  { id: "student-resources", label: "學生福利", icon: codeSlashOutline },
-  { id: "tech-dev", label: "計中資源", icon: codeSlashOutline },
-] as const;
+  ...guideCategories.map((cat) => ({
+    id: cat.id,
+    label: cat.title,
+    icon: cat.icon,
+  })),
+];
 
 const GuidePageBody = () => {
   const [activeCategory, setActiveCategory] = useState<string>("all");

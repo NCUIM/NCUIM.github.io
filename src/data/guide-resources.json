@@ -2,7 +2,6 @@
   {
     "id": "academic",
     "title": "教務課務",
-    "subtitle": "",
     "items": [
       {
         "title": "NCU Portal 入口網",
@@ -33,7 +32,6 @@
   {
     "id": "community",
     "title": "校園生活",
-    "subtitle": "",
     "items": [
       {
         "title": "新生知訊網 · 校園生活地圖",
@@ -76,7 +74,6 @@
   {
     "id": "student-resources",
     "title": "學生福利",
-    "subtitle": "",
     "items": [
       {
         "title": "Google AI Plus 學生免費方案",
@@ -113,7 +110,6 @@
   {
     "id": "tech-dev",
     "title": "計中資源",
-    "subtitle": "",
     "items": [
       {
         "title": "計中校園授權軟體庫",
