@@ -182,23 +182,6 @@ export const AnnouncementModal = ({
                           style={{
                             padding: "2px 8px",
                             borderRadius: 6,
-                            background: priorityConfig.badgeColor,
-                            color: "#ffffff",
-                            fontSize: 11,
-                            fontWeight: 800,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 3,
-                          }}
-                        >
-                          <span>{priorityConfig.icon}</span>
-                          <span>{priorityConfig.label}</span>
-                        </span>
-
-                        <span
-                          style={{
-                            padding: "2px 8px",
-                            borderRadius: 6,
                             background: "rgba(27, 42, 74, 0.08)",
                             color: "var(--ncu-ink)",
                             fontSize: 11,
@@ -210,6 +193,23 @@ export const AnnouncementModal = ({
                         >
                           <span>{categoryConfig.icon}</span>
                           <span>{categoryConfig.label}</span>
+                        </span>
+
+                        <span
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                            background: priorityConfig.badgeColor,
+                            color: "#ffffff",
+                            fontSize: 11,
+                            fontWeight: 800,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 3,
+                          }}
+                        >
+                          <span>{priorityConfig.icon}</span>
+                          <span>{priorityConfig.label}</span>
                         </span>
                       </div>
                       <span style={{ fontSize: 12, color: "var(--ncu-muted)", fontWeight: 600 }}>
