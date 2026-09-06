@@ -459,8 +459,14 @@ const AnnouncementBar = ({
   const latest = announcements[0];
   if (!latest) return null;
 
-  const isUrgent = latest.priority === "urgent";
-  const priorityConfig = PRIORITY_CONFIG[latest.priority];
+  const priorityBorderColor =
+    latest.priority === "urgent"
+      ? "#f59e0b"
+      : latest.priority === "high"
+        ? "#f97316"
+        : latest.priority === "normal"
+          ? "#3b82f6"
+          : "var(--ncu-ink)";
 
   return (
     <button
@@ -473,10 +479,10 @@ const AnnouncementBar = ({
         width: "100%",
         textAlign: "inherit",
         font: "inherit",
-        background: isUrgent ? "rgba(239, 68, 68, 0.08)" : "var(--ncu-surface)",
-        border: isUrgent ? "2px solid #ef4444" : "1.5px solid var(--ncu-ink)",
+        background: "var(--ncu-surface)",
+        border: `2px solid ${priorityBorderColor}`,
         borderRadius: "var(--ncu-radius-md)",
-        boxShadow: isUrgent ? "0 0 12px rgba(239, 68, 68, 0.25)" : "var(--ncu-shadow-sm)",
+        boxShadow: "var(--ncu-shadow-sm)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -486,23 +492,19 @@ const AnnouncementBar = ({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: 1 }}>
-        <div
+        <span
           style={{
-            padding: "2px 6px",
-            borderRadius: "6px",
-            background: isUrgent ? "#ef4444" : "rgba(27, 42, 74, 0.08)",
-            color: isUrgent ? "#ffffff" : "var(--ncu-primary)",
+            color: "var(--ncu-muted)",
             fontSize: 11,
-            fontWeight: 800,
-            display: "flex",
+            fontWeight: 700,
+            display: "inline-flex",
             alignItems: "center",
             gap: 3,
             flexShrink: 0,
           }}
         >
-          <span>{priorityConfig.icon}</span>
-          <span>{isUrgent ? priorityConfig.label : "公告"}</span>
-        </div>
+          <span>公告</span>
+        </span>
         <span
           style={{
             fontSize: 13.5,
