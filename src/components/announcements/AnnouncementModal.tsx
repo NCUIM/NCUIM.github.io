@@ -43,14 +43,20 @@ const CATEGORIES: readonly AnnouncementCategory[] = [
   "general",
 ];
 
-const RECENT_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-
-const isRecentAnnouncement = (item: AnnouncementItem): boolean => {
-  const ts = item.createdAt ? new Date(item.createdAt).getTime() : new Date(item.date).getTime();
+const isTodayAnnouncement = (item: AnnouncementItem): boolean => {
+  const ts =
+    item.createdAt
+      ? new Date(item.createdAt).getTime()
+      : new Date(item.date).getTime();
   if (Number.isNaN(ts)) return false;
-  return Date.now() - ts < RECENT_THRESHOLD_MS;
+  const d = new Date(ts);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
 };
-
 export const AnnouncementModal = ({
   isOpen,
   announcements,
@@ -159,18 +165,27 @@ export const AnnouncementModal = ({
               const priorityConfig = PRIORITY_CONFIG[item.priority];
               const categoryConfig = CATEGORY_LABELS[item.category];
 
-              return (
-                <IonCard
+              return (                  <IonCard
                   key={item.id}
                   style={{
                     margin: "0 0 16px",
                     border:
-                      item.priority === "urgent" ? "2.5px solid #ef4444" : "2px solid var(--ncu-ink)",
+                      item.priority === "urgent"
+                        ? "2.5px solid #f59e0b"
+                        : item.priority === "high"
+                          ? "2px solid #f97316"
+                          : item.priority === "normal"
+                            ? "2px solid #3b82f6"
+                            : "2px solid var(--ncu-ink)",
                     borderRadius: "var(--ncu-radius-md)",
                     boxShadow:
                       item.priority === "urgent"
-                        ? "0 0 16px rgba(239, 68, 68, 0.2)"
-                        : "var(--ncu-shadow-hard)",
+                        ? "4px 4px 0 0 rgba(245, 158, 11, 0.45)"
+                        : item.priority === "high"
+                          ? "4px 4px 0 0 rgba(249, 115, 22, 0.4)"
+                          : item.priority === "normal"
+                            ? "4px 4px 0 0 rgba(59, 130, 246, 0.4)"
+                            : "4px 4px 0 0 rgba(23, 32, 51, 0.45)",
                     background: "var(--ncu-surface)",
                   }}
                 >
@@ -205,39 +220,27 @@ export const AnnouncementModal = ({
 
                         <span
                           style={{
-                            padding: "2px 8px",
-                            borderRadius: 6,
-                            background: priorityConfig.badgeColor,
-                            color: "#ffffff",
+                            color: "var(--ncu-muted)",
                             fontSize: 11,
-                            fontWeight: 800,
+                            fontWeight: 700,
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 3,
                           }}
                         >
-                          <span>{priorityConfig.icon}</span>
                           <span>{priorityConfig.label}</span>
                         </span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        {isRecentAnnouncement(item) && (
-                          <span
-                            style={{
-                              padding: "1px 5px",
-                              borderRadius: 4,
-                              background: "#ef4444",
-                              color: "#ffffff",
-                              fontSize: 10,
-                              fontWeight: 900,
-                              letterSpacing: 0.5,
-                              lineHeight: 1.2,
-                            }}
-                          >
-                            NEW
-                          </span>
-                        )}
-                        <span style={{ fontSize: 12, color: "var(--ncu-muted)", fontWeight: 600 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 800,
+                            color: isTodayAnnouncement(item)
+                              ? "#dc2626"
+                              : "var(--ncu-muted)",
+                          }}
+                        >
                           {item.date}
                         </span>
                       </div>
