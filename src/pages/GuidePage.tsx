@@ -83,7 +83,6 @@ const ResourceItem = ({
   <IonItem
     button
     detail={false}
-    key={item.url}
     href={item.url}
     target="_blank"
     rel="noopener noreferrer"
@@ -189,6 +188,67 @@ const FILTER_TABS: readonly FilterTab[] = [
   })),
 ];
 
+const GuideFilterChips = ({
+  activeCategory,
+  onSelectCategory,
+}: Readonly<{
+  activeCategory: string;
+  onSelectCategory: (id: string) => void;
+}>) => (
+  <div
+    role="tablist"
+    aria-label="資源類別篩選"
+    style={{
+      display: "flex",
+      gap: 8,
+      overflowX: "auto",
+      paddingBottom: 16,
+      marginBottom: 20,
+      scrollbarWidth: "none",
+      msOverflowStyle: "none",
+    }}
+  >
+    {FILTER_TABS.map((tab) => {
+      const isSelected = activeCategory === tab.id;
+      const isAll = tab.id === "all";
+
+      return (
+        <button
+          key={tab.id}
+          type="button"
+          role="tab"
+          aria-selected={isSelected}
+          aria-pressed={isSelected}
+          onClick={() => onSelectCategory(tab.id)}
+          aria-label={tab.label}
+          title={tab.label}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            padding: isAll ? "6px 12px" : "6px 14px",
+            borderRadius: "var(--ncu-radius-full)",
+            fontSize: 13,
+            fontWeight: isSelected ? 800 : 600,
+            border: isSelected ? "1.5px solid var(--ncu-ink)" : "1px solid var(--ncu-border)",
+            background: isSelected ? "var(--ncu-ink)" : "var(--ncu-surface)",
+            color: isSelected ? "#ffffff" : "var(--ncu-ink)",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            boxShadow: isSelected ? "var(--ncu-shadow-sm)" : "none",
+            transition: "all 0.15s ease",
+            flexShrink: 0,
+          }}
+        >
+          <IonIcon icon={tab.icon} style={{ fontSize: isAll ? 16 : 14 }} />
+          {!isAll && <span>{tab.label}</span>}
+        </button>
+      );
+    })}
+  </div>
+);
+
 const GuidePageBody = () => {
   const [activeCategory, setActiveCategory] = useState<string>("all");
 
@@ -200,54 +260,10 @@ const GuidePageBody = () => {
   return (
     <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
       <div style={{ maxWidth: 860, margin: "0 auto", paddingTop: 4 }}>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            overflowX: "auto",
-            paddingBottom: 16,
-            marginBottom: 20,
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-          }}
-        >
-          {FILTER_TABS.map((tab) => {
-            const isSelected = activeCategory === tab.id;
-            const isAll = tab.id === "all";
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveCategory(tab.id)}
-                aria-label={tab.label}
-                title={tab.label}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  padding: isAll ? "6px 12px" : "6px 14px",
-                  borderRadius: "var(--ncu-radius-full)",
-                  fontSize: 13,
-                  fontWeight: isSelected ? 800 : 600,
-                  border: isSelected ? "1.5px solid var(--ncu-ink)" : "1px solid var(--ncu-border)",
-                  background: isSelected ? "var(--ncu-ink)" : "var(--ncu-surface)",
-                  color: isSelected ? "#ffffff" : "var(--ncu-ink)",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  boxShadow: isSelected ? "var(--ncu-shadow-sm)" : "none",
-                  transition: "all 0.15s ease",
-                  flexShrink: 0,
-                }}
-              >
-                <IonIcon icon={tab.icon} style={{ fontSize: isAll ? 16 : 14 }} />
-                {!isAll && <span>{tab.label}</span>}
-              </button>
-            );
-          })}
-        </div>
+        <GuideFilterChips
+          activeCategory={activeCategory}
+          onSelectCategory={setActiveCategory}
+        />
 
         {displayedCategories.map((cat) => (
           <CategorySection key={cat.id} cat={cat} />
