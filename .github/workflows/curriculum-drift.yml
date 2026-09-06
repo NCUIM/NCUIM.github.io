@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       # reconcile-curriculum.mjs uses only Node built-ins plus global fetch, so
       # no npm ci is needed here. The job fails (nonzero) when the committed
