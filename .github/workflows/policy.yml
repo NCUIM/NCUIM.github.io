@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Prove the policy code itself is sane before using it as the gate.
       - name: Policy self-test
         run: node scripts/commit-policy.mjs self-test
 
       - name: Validate PR title and commit messages
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             // The rules live in exactly one file: scripts/commit-policy.mjs.
