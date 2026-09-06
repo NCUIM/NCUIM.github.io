@@ -515,10 +515,50 @@ const InlineNodes = ({
   );
 };
 
-const HR_REGEX = /^\s*[-*_]{3,}\s*$/;
-const CALLOUT_REGEX = /^\s*---+\s*([^-]+?)\s*---+\s*$/;
-const HEADING_REGEX = /^\s*(#{1,4})\s+(.+)$/;
-const LIST_ITEM_REGEX = /^\s*[-*•]\s+(.+)$/;
+const isHorizontalRuleLine = (trimmed: string): boolean => {
+  if (trimmed.length < 3) return false;
+  const firstChar = trimmed[0];
+  if (firstChar !== "-" && firstChar !== "*" && firstChar !== "_") return false;
+  for (let i = 1; i < trimmed.length; i++) {
+    if (trimmed[i] !== firstChar) return false;
+  }
+  return true;
+};
+
+const getHeadingFontSize = (level: number): number => {
+  if (level === 1) return 16;
+  if (level === 2) return 15;
+  return 14.5;
+};
+
+const parseCalloutText = (trimmed: string): string | null => {
+  if (!trimmed.startsWith("---") || !trimmed.endsWith("---")) return null;
+  const withoutPrefix = trimmed.replace(/^-+/, "");
+  const inner = withoutPrefix.replace(/-+$/, "").trim();
+  return inner.length > 0 ? inner : null;
+};
+
+const parseHeadingLine = (trimmed: string): { level: number; text: string } | null => {
+  let count = 0;
+  while (count < 4 && trimmed[count] === "#") {
+    count++;
+  }
+  if (count > 0 && trimmed[count] === " ") {
+    const text = trimmed.slice(count + 1).trim();
+    if (text.length > 0) {
+      return { level: count, text };
+    }
+  }
+  return null;
+};
+
+const parseListItemLine = (trimmed: string): string | null => {
+  if (trimmed.length >= 2 && (trimmed[0] === "-" || trimmed[0] === "*" || trimmed[0] === "•") && trimmed[1] === " ") {
+    const text = trimmed.slice(2).trim();
+    return text.length > 0 ? text : null;
+  }
+  return null;
+};
 
 const TextParagraph = ({
   content,
@@ -530,8 +570,9 @@ const TextParagraph = ({
     <div style={{ margin: "0 0 8px" }}>
       {lines.map((line, idx) => {
         const lineKey = `${segmentId}-l-${idx}`;
+        const trimmed = line.trim();
 
-        if (HR_REGEX.test(line)) {
+        if (isHorizontalRuleLine(trimmed)) {
           return (
             <hr
               key={lineKey}
@@ -544,8 +585,8 @@ const TextParagraph = ({
           );
         }
 
-        const calloutMatch = CALLOUT_REGEX.exec(line);
-        if (calloutMatch) {
+        const calloutText = parseCalloutText(trimmed);
+        if (calloutText) {
           return (
             <div
               key={lineKey}
@@ -561,17 +602,16 @@ const TextParagraph = ({
             >
               <div style={{ flex: 1, borderTop: "1px dashed var(--ncu-border, #cbd5e1)" }} />
               <span>
-                <InlineNodes text={calloutMatch[1].trim()} baseId={`${lineKey}-c`} />
+                <InlineNodes text={calloutText} baseId={`${lineKey}-c`} />
               </span>
               <div style={{ flex: 1, borderTop: "1px dashed var(--ncu-border, #cbd5e1)" }} />
             </div>
           );
         }
 
-        const headingMatch = HEADING_REGEX.exec(line);
-        if (headingMatch) {
-          const level = headingMatch[1].length;
-          const fontSize = level === 1 ? 16 : level === 2 ? 15 : 14.5;
+        const heading = parseHeadingLine(trimmed);
+        if (heading) {
+          const fontSize = getHeadingFontSize(heading.level);
 
           return (
             <h4
@@ -586,13 +626,13 @@ const TextParagraph = ({
                 gap: 6,
               }}
             >
-              <InlineNodes text={headingMatch[2]} baseId={`${lineKey}-h`} />
+              <InlineNodes text={heading.text} baseId={`${lineKey}-h`} />
             </h4>
           );
         }
 
-        const listMatch = LIST_ITEM_REGEX.exec(line);
-        if (listMatch) {
+        const listItemText = parseListItemLine(trimmed);
+        if (listItemText) {
           return (
             <div
               key={lineKey}
@@ -607,13 +647,13 @@ const TextParagraph = ({
             >
               <span style={{ color: "var(--ncu-primary, #1e40af)", fontWeight: 700, lineHeight: 1.65 }}>•</span>
               <div style={{ flex: 1, wordBreak: "break-word" }}>
-                <InlineNodes text={listMatch[1]} baseId={`${lineKey}-li`} />
+                <InlineNodes text={listItemText} baseId={`${lineKey}-li`} />
               </div>
             </div>
           );
         }
 
-        if (line.trim() === "") {
+        if (trimmed === "") {
           return <div key={lineKey} style={{ height: 6 }} />;
         }
 

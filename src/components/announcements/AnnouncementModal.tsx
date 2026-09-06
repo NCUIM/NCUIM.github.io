@@ -57,6 +57,20 @@ const isTodayAnnouncement = (item: AnnouncementItem): boolean => {
     d.getDate() === now.getDate()
   );
 };
+const getCardBorderStyle = (priority: string): string => {
+  if (priority === "urgent") return "2.5px solid #f59e0b";
+  if (priority === "high") return "2px solid #f97316";
+  if (priority === "normal") return "2px solid #3b82f6";
+  return "2px solid var(--ncu-ink)";
+};
+
+const getCardShadowStyle = (priority: string): string => {
+  if (priority === "urgent") return "4px 4px 0 0 rgba(245, 158, 11, 0.45)";
+  if (priority === "high") return "4px 4px 0 0 rgba(249, 115, 22, 0.4)";
+  if (priority === "normal") return "4px 4px 0 0 rgba(59, 130, 246, 0.4)";
+  return "4px 4px 0 0 rgba(23, 32, 51, 0.45)";
+};
+
 export const AnnouncementModal = ({
   isOpen,
   announcements,
@@ -119,7 +133,7 @@ export const AnnouncementModal = ({
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 4,
-                    padding: isAll ? "5px 12px" : "5px 12px",
+                    padding: "5px 12px",
                     borderRadius: 20,
                     fontSize: 12.5,
                     fontWeight: isSelected ? 800 : 600,
@@ -165,27 +179,14 @@ export const AnnouncementModal = ({
               const priorityConfig = PRIORITY_CONFIG[item.priority];
               const categoryConfig = CATEGORY_LABELS[item.category];
 
-              return (                  <IonCard
+              return (
+                <IonCard
                   key={item.id}
                   style={{
                     margin: "0 0 16px",
-                    border:
-                      item.priority === "urgent"
-                        ? "2.5px solid #f59e0b"
-                        : item.priority === "high"
-                          ? "2px solid #f97316"
-                          : item.priority === "normal"
-                            ? "2px solid #3b82f6"
-                            : "2px solid var(--ncu-ink)",
+                    border: getCardBorderStyle(item.priority),
                     borderRadius: "var(--ncu-radius-md)",
-                    boxShadow:
-                      item.priority === "urgent"
-                        ? "4px 4px 0 0 rgba(245, 158, 11, 0.45)"
-                        : item.priority === "high"
-                          ? "4px 4px 0 0 rgba(249, 115, 22, 0.4)"
-                          : item.priority === "normal"
-                            ? "4px 4px 0 0 rgba(59, 130, 246, 0.4)"
-                            : "4px 4px 0 0 rgba(23, 32, 51, 0.45)",
+                    boxShadow: getCardShadowStyle(item.priority),
                     background: "var(--ncu-surface)",
                   }}
                 >

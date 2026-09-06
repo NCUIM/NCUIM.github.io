@@ -449,6 +449,13 @@ const HomeModuleList = ({
   );
 };
 
+const getPriorityBorderColor = (priority: string): string => {
+  if (priority === "urgent") return "#f59e0b";
+  if (priority === "high") return "#f97316";
+  if (priority === "normal") return "#3b82f6";
+  return "var(--ncu-ink)";
+};
+
 const AnnouncementBar = ({
   announcements,
   onOpen,
@@ -459,14 +466,7 @@ const AnnouncementBar = ({
   const latest = announcements[0];
   if (!latest) return null;
 
-  const priorityBorderColor =
-    latest.priority === "urgent"
-      ? "#f59e0b"
-      : latest.priority === "high"
-        ? "#f97316"
-        : latest.priority === "normal"
-          ? "#3b82f6"
-          : "var(--ncu-ink)";
+  const priorityBorderColor = getPriorityBorderColor(latest.priority);
 
   return (
     <button
