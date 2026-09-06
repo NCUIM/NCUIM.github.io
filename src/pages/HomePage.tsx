@@ -790,7 +790,7 @@ const AnnouncementModal = ({
                             }}
                           >
                             <IonIcon icon={openOutline} style={{ fontSize: 14 }} />
-                            <span>{item.actionUrls!.length > 1 ? `開啟連結 ${idx + 1} ↗` : "開啟相關連結 ↗"}</span>
+                            <span>{item.actionUrls!.length > 1 ? `開啟連結 ${idx + 1}` : "開啟相關連結"}</span>
                           </button>
                         ))}
                       </div>
