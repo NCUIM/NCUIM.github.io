@@ -27,8 +27,10 @@ import {
   fetchAnnouncements,
 } from "../services/announcement-api";
 import AnnouncementModal from "../components/announcements/AnnouncementModal";
+import homeModulesJson from "../data/home-modules.json";
 
-interface ModuleCard {
+interface ModuleCardRaw {
+  readonly id: string;
   readonly title: string;
   readonly subtitle: string;
   readonly icon: string;
@@ -39,46 +41,24 @@ interface ModuleCard {
   readonly hidden?: boolean;
 }
 
-const modules: readonly ModuleCard[] = [
-  {
-    title: "課表查詢",
-    subtitle: "教室與時段一覽",
-    icon: calendar,
-    route: "/timetable",
-    color: "var(--ncu-primary)",
-  },
-  {
-    title: "學分試算",
-    subtitle: "畢業學分檢核",
-    icon: calculator,
-    route: "/tools/credit",
-    color: "var(--ncu-success)",
-  },
-  {
-    title: "座位地圖",
-    subtitle: "209 · 310 · 313 · 919",
-    icon: map,
-    route: "/seats",
-    color: "var(--ncu-star)",
-  },
-  {
-    title: "抽籤大會",
-    subtitle: "大螢幕開獎 · 蛇形相鄰分配",
-    icon: sparkles,
-    route: "/stage/lottery",
-    color: "var(--ncu-star)",
-    badge: "舞台",
-    hidden: true,
-  },
-  {
-    title: "中大美食地圖",
-    subtitle: "後門 · 宵夜街 · 前門 · 校內",
-    icon: restaurant,
-    route: "/food",
-    color: "var(--ncu-danger)",
-    hidden: true,
-  },
-];
+interface ModuleCard extends Omit<ModuleCardRaw, "icon"> {
+  readonly icon: string;
+}
+
+const MODULE_ICONS: Record<string, string> = {
+  calendar,
+  calculator,
+  map,
+  sparkles,
+  restaurant,
+};
+
+const modules: readonly ModuleCard[] = (homeModulesJson as readonly ModuleCardRaw[]).map(
+  (m) => ({
+    ...m,
+    icon: MODULE_ICONS[m.icon] ?? calendar,
+  })
+);
 
 const NcuimLogoIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%" aria-hidden="true">
