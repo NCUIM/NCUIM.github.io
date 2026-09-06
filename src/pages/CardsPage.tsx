@@ -378,7 +378,7 @@ const UserPageFooter = () => (
   <div
     style={{
       textAlign: "center",
-      padding: "24px 16px 36px",
+      padding: "16px 16px 0",
       fontSize: 12,
       color: "var(--ncu-muted)",
       display: "flex",
