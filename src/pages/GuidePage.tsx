@@ -218,7 +218,6 @@ const GuideFilterChips = ({
           type="button"
           role="tab"
           aria-selected={isSelected}
-          aria-pressed={isSelected}
           onClick={() => onSelectCategory(tab.id)}
           aria-label={tab.label}
           title={tab.label}
