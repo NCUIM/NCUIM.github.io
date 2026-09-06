@@ -391,7 +391,7 @@ const UserPageFooter = () => (
       }}
     >
       <IonIcon icon={logoGithub} style={{ fontSize: 14 }} />
-      <span>歡迎參與專案貢獻 (GitHub) ↗</span>
+      <span>GitHub 給個星星 ⭐</span>
     </a>
 
     <div style={{ display: "inline-flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
