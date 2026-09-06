@@ -566,7 +566,7 @@ const CardsPage = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>使用者中心</IonTitle>
+          <IonTitle>個人中心</IonTitle>
         </IonToolbar>
       </IonHeader>
 

@@ -276,7 +276,7 @@ const GuidePageBody = () => {
 const GuidePageHeader = () => (
   <IonHeader>
     <IonToolbar>
-      <IonTitle>常用資源與校園導航</IonTitle>
+      <IonTitle>校園指南</IonTitle>
     </IonToolbar>
   </IonHeader>
 );
