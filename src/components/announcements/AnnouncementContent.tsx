@@ -533,8 +533,15 @@ const getHeadingFontSize = (level: number): number => {
 
 const parseCalloutText = (trimmed: string): string | null => {
   if (!trimmed.startsWith("---") || !trimmed.endsWith("---")) return null;
-  const withoutPrefix = trimmed.replace(/^-+/, "");
-  const inner = withoutPrefix.replace(/-+$/, "").trim();
+  let start = 0;
+  while (start < trimmed.length && trimmed[start] === "-") {
+    start++;
+  }
+  let end = trimmed.length;
+  while (end > start && trimmed[end - 1] === "-") {
+    end--;
+  }
+  const inner = trimmed.slice(start, end).trim();
   return inner.length > 0 ? inner : null;
 };
 
@@ -553,7 +560,10 @@ const parseHeadingLine = (trimmed: string): { level: number; text: string } | nu
 };
 
 const parseListItemLine = (trimmed: string): string | null => {
-  if (trimmed.length >= 2 && (trimmed[0] === "-" || trimmed[0] === "*" || trimmed[0] === "•") && trimmed[1] === " ") {
+  if (
+    trimmed.length >= 2 &&
+    (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• "))
+  ) {
     const text = trimmed.slice(2).trim();
     return text.length > 0 ? text : null;
   }

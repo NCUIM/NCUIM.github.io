@@ -7,7 +7,6 @@ import {
   IonContent,
   IonCard,
   IonCardHeader,
-  IonCardContent,
   IonCardTitle,
   IonCardSubtitle,
   IonIcon,
@@ -24,7 +23,6 @@ import {
 } from "ionicons/icons";
 import {
   AnnouncementItem,
-  PRIORITY_CONFIG,
   BUILTIN_ANNOUNCEMENTS,
   fetchAnnouncements,
 } from "../services/announcement-api";
