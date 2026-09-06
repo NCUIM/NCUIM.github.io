@@ -36,6 +36,7 @@ import {
   flashOutline,
 } from "ionicons/icons";
 import { parseBookmarkletPayload } from "../services/cis-course-api";
+import { isIosHeaderMode } from "../services/platform";
 import {
   TRACK_CONFIGS,
   GRADUATION_GATES,
@@ -58,37 +59,45 @@ const STORAGE_KEY_GATES = "ncu_selected_gates";
 // Sub-components: Header & Top Controls
 // ---------------------------------------------------------------------------
 
-const CreditPageHeader = ({
+export const CreditPageHeader = ({
   onOpenCisModal,
   onResetAll,
 }: Readonly<{
   onOpenCisModal: () => void;
   onResetAll: () => void;
-}>) => (
-  <IonHeader>
-    <IonToolbar>
-      <IonButtons slot="start">
-        <IonBackButton defaultHref="/" text="" />
-      </IonButtons>
-      <IonTitle>115 碩士班學分試算</IonTitle>
-      <IonButtons slot="end">
-        <IonButton
-          size="small"
-          fill="outline"
-          onClick={onOpenCisModal}
-          style={{ fontWeight: 700, fontSize: 12 }}
-          aria-label="同步課務"
-        >
-          <IonIcon slot="start" icon={flashOutline} />
-          <span className="responsive-label">同步課務</span>
-        </IonButton>
-        <IonButton fill="clear" size="small" color="medium" onClick={onResetAll} aria-label="重設全部">
-          <IonIcon icon={refreshOutline} />
-        </IonButton>
-      </IonButtons>
-    </IonToolbar>
-  </IonHeader>
-);
+}>) => {
+  // Cupertino centers the title across the full toolbar, so on iOS the primary
+  // action flanks it on the leading side; md/Material keeps everything trailing.
+  const primaryCisButton = (
+    <IonButton
+      size="small"
+      fill="outline"
+      onClick={onOpenCisModal}
+      style={{ fontWeight: 700, fontSize: 12 }}
+      aria-label="同步課務"
+    >
+      <IonIcon slot="start" icon={flashOutline} />
+      <span className="responsive-label">同步課務</span>
+    </IonButton>
+  );
+  return (
+    <IonHeader>
+      <IonToolbar>
+        <IonButtons slot="start">
+          <IonBackButton defaultHref="/" text="" />
+          {isIosHeaderMode() && primaryCisButton}
+        </IonButtons>
+        <IonTitle>學分試算</IonTitle>
+        <IonButtons slot="end">
+          {!isIosHeaderMode() && primaryCisButton}
+          <IonButton fill="clear" size="small" color="medium" onClick={onResetAll} aria-label="重設全部">
+            <IonIcon icon={refreshOutline} />
+          </IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+  );
+};
 
 const CURRICULUM_PDF_URL =
   "https://im.mgt.ncu.edu.tw/download/newpost/115%E5%AD%B8%E5%B9%B4%E5%BA%A6%E5%85%A5%E5%AD%B8%E9%81%A9%E7%94%A8-%E8%B3%87%E7%AE%A1%E7%B3%BB%E7%A2%A9%E5%A3%AB%E7%8F%AD%E5%BF%85%E4%BF%AE%E5%8F%8A%E9%81%B8%E4%BF%AE%E7%A7%91%E7%9B%AE%E8%A1%A8-v1150609.pdf";
@@ -414,7 +423,7 @@ const PrereqItemRow = ({
         color: isChecked ? "#0d7a3e" : "var(--ncu-muted)",
       }}
     >
-      {isChecked ? "✓ 已抵免/已修" : "未修"}
+      {isChecked ? "✓ 已修" : "未修"}
     </IonNote>
   </IonItem>
 );

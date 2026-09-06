@@ -51,21 +51,21 @@ interface ModuleCard {
 
 const modules: readonly ModuleCard[] = [
   {
-    title: "全系課表",
-    subtitle: "課表與教室時段查詢",
+    title: "課表查詢",
+    subtitle: "教室與時段一覽",
     icon: calendar,
     route: "/timetable",
     color: "var(--ncu-primary)",
   },
   {
     title: "學分試算",
-    subtitle: "畢業學分與門檻檢核",
+    subtitle: "畢業學分檢核",
     icon: calculator,
     route: "/tools/credit",
     color: "var(--ncu-success)",
   },
   {
-    title: "研究室座位表",
+    title: "座位地圖",
     subtitle: "209 · 310 · 313 · 919",
     icon: map,
     route: "/seats",
@@ -882,7 +882,7 @@ const HomeBody = ({
 const CTF_CONFIG = {
   activeUrl: "https://im2026ctf.duckdns.org/",
   scoreboardUrl: "https://im2026ctf.duckdns.org/scoreboard",
-  endTime: "2026-09-07T00:00:00+08:00",
+  endTime: "2026-09-10T10:00:00+08:00",
 };
 
 const isCtfEnded = (): boolean => {

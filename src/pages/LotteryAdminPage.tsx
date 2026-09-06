@@ -47,7 +47,7 @@ const ValidationSection = () => (
 const PublishSection = () => (
   <section>
     <h2>3. 現場發布</h2>
-    <p>發布後，本機將同步更新研究室抽籤結果與座位表。</p>
+    <p>發布後，本機將同步更新研究室抽籤結果與座位地圖。</p>
     <IonButton disabled>尚未載入抽籤名單</IonButton>
   </section>
 );

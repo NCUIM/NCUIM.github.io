@@ -35,7 +35,7 @@ const TabsShell = () => (
       </IonTabButton>
       <IonTabButton tab="user" href="/cards">
         <IonIcon icon={person} />
-        <IonLabel>使用者</IonLabel>
+        <IonLabel>個人</IonLabel>
       </IonTabButton>
     </IonTabBar>
   </IonTabs>
