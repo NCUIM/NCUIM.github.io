@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useMemo } from "react";
 import {
   IonModal,
   IonHeader,
@@ -10,7 +10,6 @@ import {
   IonIcon,
   IonSegment,
   IonSegmentButton,
-  useIonToast,
 } from "@ionic/react";
 import {
   diceOutline,
@@ -23,14 +22,9 @@ import {
   chevronUpOutline,
   restaurantOutline,
 } from "ionicons/icons";
-import {
-  getAllMealCandidates,
-  getRoomMealCandidates,
-  pickRandomCandidates,
-  getSecureRandomFloat,
-  type MealCandidate,
-} from "../../utils/meal-lottery";
+import { type MealCandidate } from "../../utils/meal-lottery";
 import { isIosHeaderMode } from "../../services/platform";
+import { useMealLottery } from "./useMealLottery";
 
 export interface MealLotteryModalProps {
   readonly isOpen: boolean;
@@ -255,6 +249,13 @@ export const MealLotteryHeader = ({
     </IonButton>
   );
 
+  const handleDismiss = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    onDismiss();
+  };
+
   return (
     <IonHeader>
       <IonToolbar>
@@ -274,7 +275,7 @@ export const MealLotteryHeader = ({
         </IonTitle>
         <IonButtons slot="end">
           {!isIos && repeatModeButton}
-          <IonButton onClick={onDismiss}>
+          <IonButton onClick={handleDismiss}>
             <IonIcon slot="icon-only" icon={closeOutline} />
           </IonButton>
         </IonButtons>
@@ -292,157 +293,44 @@ export const MealLotteryModal = ({
   defaultRoomId = "209",
   onDismiss,
 }: Readonly<MealLotteryModalProps>) => {
-  const [selectedRoom, setSelectedRoom] = useState<string>("all");
-  const [pickCount, setPickCount] = useState<number>(1);
-  const [isRolling, setIsRolling] = useState(false);
-  const [autoNoRepeat, setAutoNoRepeat] = useState(false);
-  const [showExcluded, setShowExcluded] = useState(false);
-  const [rollingCandidate, setRollingCandidate] = useState<MealCandidate | null>(null);
-  const [pickedResults, setPickedResults] = useState<MealCandidate[]>([]);
-  const [excludedNames, setExcludedNames] = useState<string[]>([]);
-  const [presentToast] = useIonToast();
-
-  const rollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Sync default room when modal opens
-  useEffect(() => {
-    if (isOpen && defaultRoomId) {
-      const isValid = ROOM_OPTIONS.some((r) => r.id === defaultRoomId);
-      if (isValid) {
-        setSelectedRoom(defaultRoomId);
-      }
-    }
-  }, [isOpen, defaultRoomId]);
-
-  // Clean timers on unmount or when modal closes
-  useEffect(() => {
-    return () => {
-      if (rollTimerRef.current) clearInterval(rollTimerRef.current);
-      if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
-      setIsRolling(false);
-    };
-  }, [isOpen]);
-
-  const candidatesPool = useMemo(() => {
-    if (selectedRoom === "all") {
-      return getAllMealCandidates();
-    }
-    return getRoomMealCandidates(selectedRoom);
-  }, [selectedRoom]);
-
-  // Filter remaining eligible candidates based on autoNoRepeat
-  const remainingCandidates = useMemo(() => {
-    if (!autoNoRepeat) return candidatesPool;
-    const excludeSet = new Set(excludedNames);
-    return candidatesPool.filter((c) => !excludeSet.has(c.name));
-  }, [candidatesPool, autoNoRepeat, excludedNames]);
-
-  const handleStartDraw = () => {
-    if (candidatesPool.length === 0 || isRolling) return;
-
-    if (autoNoRepeat && remainingCandidates.length === 0) {
-      presentToast({
-        message: "名額已全數抽完！請先清除重置名單",
-        duration: 2000,
-        position: "top",
-        color: "warning",
-      });
-      return;
-    }
-
-    setIsRolling(true);
-    setPickedResults([]);
-
-    const finalCandidates = pickRandomCandidates(
-      candidatesPool,
-      pickCount,
-      excludedNames,
-      !autoNoRepeat,
-    );
-
-    // Rapidly cycle random names for rolling effect
-    if (rollTimerRef.current) clearInterval(rollTimerRef.current);
-    rollTimerRef.current = setInterval(() => {
-      const randIdx = Math.floor(getSecureRandomFloat() * candidatesPool.length);
-      setRollingCandidate(candidatesPool[randIdx]);
-    }, 60);
-
-    // Stop after animation completes
-    if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
-    finishTimerRef.current = setTimeout(() => {
-      if (rollTimerRef.current) clearInterval(rollTimerRef.current);
-      setIsRolling(false);
-      setRollingCandidate(null);
-      setPickedResults(finalCandidates);
-      if (autoNoRepeat) {
-        setExcludedNames((prev) => Array.from(new Set([...prev, ...finalCandidates.map((c) => c.name)])));
-      }
-    }, 1200);
-  };
-
-  const handleResetExclusions = () => {
-    setExcludedNames([]);
-    setPickedResults([]);
-    setShowExcluded(false);
-    presentToast({
-      message: "已重置已中籤名單",
-      duration: 1500,
-      position: "top",
-      color: "dark",
-    });
-  };
-
-  const handleCopyResults = async () => {
-    if (pickedResults.length === 0) return;
-    const roomText = selectedRoom === "all" ? "全班" : `${selectedRoom} 室`;
-    const names = pickedResults
-      .map((c) => `${c.name} (${c.roomId}室 ${c.seatLabel})`)
-      .join("、");
-    const text = `【${roomText}·今天跟誰一起吃~】${names}`;
-
-    if (navigator?.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(text);
-        presentToast({
-          message: "已複製名單到剪貼簿！",
-          duration: 1500,
-          position: "top",
-          color: "success",
-        });
-        return;
-      } catch {
-        // Fallback below
-      }
-    }
-
-    presentToast({
-      message: "無法存取剪貼簿，請手動複製！",
-      duration: 2000,
-      position: "top",
-      color: "warning",
-    });
-  };
-
-  const scopeLabel = autoNoRepeat
-    ? `抽籤範圍 (剩 ${remainingCandidates.length} / 共 ${candidatesPool.length} 人)`
-    : `抽籤範圍 (共 ${candidatesPool.length} 人)`;
-
-  const resolveDrawButtonText = (): string => {
-    if (isRolling) return "抽獎中...";
-    if (autoNoRepeat && remainingCandidates.length === 0) return "名額已抽完";
-    return "開始抽籤";
-  };
+  const {
+    selectedRoom,
+    pickCount,
+    isRolling,
+    autoNoRepeat,
+    showExcluded,
+    rollingCandidate,
+    pickedResults,
+    excludedNames,
+    candidatesPool,
+    remainingCandidates,
+    scopeLabel,
+    drawButtonText,
+    handleSelectRoom,
+    handleSelectPickCount,
+    handleToggleAutoNoRepeat,
+    handleToggleShowExcluded,
+    handleStartDraw,
+    handleResetExclusions,
+    handleCopyResults,
+  } = useMealLottery({ isOpen, defaultRoomId });
 
   const isIos = isIosHeaderMode();
 
+  const handleModalDismiss = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    onDismiss();
+  };
+
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
+    <IonModal isOpen={isOpen} onDidDismiss={handleModalDismiss}>
       <MealLotteryHeader
         isIos={isIos}
         autoNoRepeat={autoNoRepeat}
-        onToggleAutoNoRepeat={() => setAutoNoRepeat((prev) => !prev)}
-        onDismiss={onDismiss}
+        onToggleAutoNoRepeat={handleToggleAutoNoRepeat}
+        onDismiss={handleModalDismiss}
       />
 
       <IonContent className="ion-padding">
@@ -468,7 +356,7 @@ export const MealLotteryModal = ({
                     <IonButton
                       fill="clear"
                       size="small"
-                      onClick={() => setShowExcluded((prev) => !prev)}
+                      onClick={handleToggleShowExcluded}
                       disabled={isRolling}
                       style={{
                         fontSize: 12,
@@ -514,10 +402,7 @@ export const MealLotteryModal = ({
             <IonSegment
               className="meal-lottery-segment"
               value={selectedRoom}
-              onIonChange={(e) => {
-                setSelectedRoom(e.detail.value as string);
-                setPickedResults([]);
-              }}
+              onIonChange={(e) => handleSelectRoom(e.detail.value as string)}
               disabled={isRolling}
               style={{
                 width: "100%",
@@ -551,7 +436,7 @@ export const MealLotteryModal = ({
             <IonSegment
               className="meal-lottery-segment"
               value={String(pickCount)}
-              onIonChange={(e) => setPickCount(Number(e.detail.value))}
+              onIonChange={(e) => handleSelectPickCount(Number(e.detail.value))}
               disabled={isRolling}
               style={{
                 width: "100%",
@@ -591,7 +476,7 @@ export const MealLotteryModal = ({
             }}
           >
             <IonIcon slot="start" icon={diceOutline} />
-            {resolveDrawButtonText()}
+            {drawButtonText}
           </IonButton>
 
           {/* Rolling State */}

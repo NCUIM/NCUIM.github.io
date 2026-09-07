@@ -78,7 +78,13 @@ const SeatsHeader = ({ onOpenLottery }: Readonly<{ onOpenLottery: () => void }>)
       <IonButtons slot="end">
         <IonButton
           fill="clear"
-          onClick={onOpenLottery}
+          onClick={(e) => {
+            (e.currentTarget as HTMLElement)?.blur();
+            if (document.activeElement instanceof HTMLElement) {
+              document.activeElement.blur();
+            }
+            onOpenLottery();
+          }}
           aria-label="今天跟誰一起吃~"
           title="今天跟誰一起吃~"
         >
