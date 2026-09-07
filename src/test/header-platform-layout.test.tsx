@@ -4,6 +4,7 @@ import { render, cleanup } from "@testing-library/react";
 import { IonApp } from "@ionic/react";
 import { TimetableHeader } from "../pages/TimetablePage";
 import { CreditPageHeader } from "../pages/CreditPage";
+import { MealLotteryHeader } from "../components/seats/MealLotteryModal";
 
 const mockIsIos = vi.hoisted(() => vi.fn(() => false));
 vi.mock("../services/platform", () => ({
@@ -95,6 +96,36 @@ describe("per-platform header action layout", () => {
       );
       expect(slotOf("同步課務")).toBe("start");
       expect(slotOf("重設全部")).toBe("end");
+    });
+  });
+
+  describe("MealLotteryHeader", () => {
+    it("md mode (Android / web): repeat mode toggle stays trailing in slot end", () => {
+      renderResult = render(
+        <IonApp>
+          <MealLotteryHeader
+            isIos={false}
+            autoNoRepeat={false}
+            onToggleAutoNoRepeat={() => {}}
+            onDismiss={() => {}}
+          />
+        </IonApp>,
+      );
+      expect(slotOf("自動不重複：關閉")).toBe("end");
+    });
+
+    it("ios mode (iPhone): repeat mode toggle moves to slot start", () => {
+      renderResult = render(
+        <IonApp>
+          <MealLotteryHeader
+            isIos={true}
+            autoNoRepeat={false}
+            onToggleAutoNoRepeat={() => {}}
+            onDismiss={() => {}}
+          />
+        </IonApp>,
+      );
+      expect(slotOf("自動不重複：關閉")).toBe("start");
     });
   });
 });

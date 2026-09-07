@@ -30,6 +30,7 @@ import {
   getSecureRandomFloat,
   type MealCandidate,
 } from "../../utils/meal-lottery";
+import { isIosHeaderMode } from "../../services/platform";
 
 export interface MealLotteryModalProps {
   readonly isOpen: boolean;
@@ -220,6 +221,68 @@ const ExcludedListDrawer = ({
   );
 };
 
+export interface MealLotteryHeaderProps {
+  readonly isIos: boolean;
+  readonly autoNoRepeat: boolean;
+  readonly onToggleAutoNoRepeat: () => void;
+  readonly onDismiss: () => void;
+}
+
+export const MealLotteryHeader = ({
+  isIos,
+  autoNoRepeat,
+  onToggleAutoNoRepeat,
+  onDismiss,
+}: Readonly<MealLotteryHeaderProps>) => {
+  const repeatModeButton = (
+    <IonButton
+      fill={autoNoRepeat ? "solid" : "clear"}
+      color={autoNoRepeat ? "primary" : "medium"}
+      onClick={onToggleAutoNoRepeat}
+      aria-label={autoNoRepeat ? "自動不重複：開啟" : "自動不重複：關閉"}
+      title={autoNoRepeat ? "自動不重複 (點擊切換為可重複)" : "可重複抽取 (點擊切換為自動不重複)"}
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        marginRight: isIos ? 0 : 4,
+        marginLeft: isIos ? 4 : 0,
+        "--border-radius": "999px",
+        height: 28,
+      }}
+    >
+      <IonIcon slot="start" icon={repeatOutline} />
+      {autoNoRepeat ? "不重複" : "可重複"}
+    </IonButton>
+  );
+
+  return (
+    <IonHeader>
+      <IonToolbar>
+        {isIos && <IonButtons slot="start">{repeatModeButton}</IonButtons>}
+        <IonTitle style={{ paddingInline: 4 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: isIos ? "center" : "flex-start",
+              gap: 6,
+            }}
+          >
+            <IonIcon icon={restaurantOutline} style={{ color: "var(--ncu-primary)" }} />
+            <span>今天跟誰一起吃~</span>
+          </div>
+        </IonTitle>
+        <IonButtons slot="end">
+          {!isIos && repeatModeButton}
+          <IonButton onClick={onDismiss}>
+            <IonIcon slot="icon-only" icon={closeOutline} />
+          </IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+  );
+};
+
 // ---------------------------------------------------------------------------
 // Main Modal Component
 // ---------------------------------------------------------------------------
@@ -371,40 +434,16 @@ export const MealLotteryModal = ({
     return "開始抽籤";
   };
 
+  const isIos = isIosHeaderMode();
+
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle style={{ paddingInline: 6 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <IonIcon icon={restaurantOutline} style={{ color: "var(--ncu-primary)" }} />
-              <span>今天跟誰一起吃~</span>
-            </div>
-          </IonTitle>
-          <IonButtons slot="end">
-            <IonButton
-              fill={autoNoRepeat ? "solid" : "clear"}
-              color={autoNoRepeat ? "primary" : "medium"}
-              onClick={() => setAutoNoRepeat((prev) => !prev)}
-              aria-label={autoNoRepeat ? "自動不重複：開啟" : "自動不重複：關閉"}
-              title={autoNoRepeat ? "自動不重複 (點擊切換為可重複)" : "可重複抽取 (點擊切換為自動不重複)"}
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                marginRight: 4,
-                "--border-radius": "999px",
-                height: 28,
-              }}
-            >
-              <IonIcon slot="start" icon={repeatOutline} />
-              {autoNoRepeat ? "不重複" : "可重複"}
-            </IonButton>
-            <IonButton onClick={onDismiss}>
-              <IonIcon slot="icon-only" icon={closeOutline} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      <MealLotteryHeader
+        isIos={isIos}
+        autoNoRepeat={autoNoRepeat}
+        onToggleAutoNoRepeat={() => setAutoNoRepeat((prev) => !prev)}
+        onDismiss={onDismiss}
+      />
 
       <IonContent className="ion-padding">
         <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18, paddingBottom: 48 }}>
