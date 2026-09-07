@@ -5,6 +5,8 @@ import {
   IonTitle,
   IonBackButton,
   IonButtons,
+  IonButton,
+  IonIcon,
   IonContent,
   IonCard,
   IonCardHeader,
@@ -13,9 +15,11 @@ import {
   IonSegment,
   IonSegmentButton,
 } from "@ionic/react";
+import { diceOutline } from "ionicons/icons";
 import { useState } from "react";
 import { ROOM_LAYOUTS, type RoomLayout } from "../data/room-layouts";
 import SeatGrid from "../components/seats/SeatGrid";
+import DutyLotteryModal from "../components/seats/DutyLotteryModal";
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -64,13 +68,23 @@ const RoomCard = ({ layout }: Readonly<{ layout: RoomLayout }>) => (
   </IonCard>
 );
 
-const SeatsHeader = () => (
+const SeatsHeader = ({ onOpenLottery }: Readonly<{ onOpenLottery: () => void }>) => (
   <IonHeader>
     <IonToolbar>
       <IonButtons slot="start">
         <IonBackButton defaultHref="/" text="" />
       </IonButtons>
       <IonTitle>座位地圖</IonTitle>
+      <IonButtons slot="end">
+        <IonButton
+          fill="clear"
+          onClick={onOpenLottery}
+          aria-label="今天跟誰一起吃~"
+          title="今天跟誰一起吃~"
+        >
+          <IonIcon slot="icon-only" icon={diceOutline} />
+        </IonButton>
+      </IonButtons>
     </IonToolbar>
   </IonHeader>
 );
@@ -109,15 +123,21 @@ const SeatsBody = ({
 
 const SeatsPage = () => {
   const [selectedRoom, setSelectedRoom] = useState("209");
+  const [isLotteryOpen, setIsLotteryOpen] = useState(false);
   const currentLayout = ROOM_LAYOUTS.find((r) => r.id === selectedRoom);
 
   return (
     <IonPage>
-      <SeatsHeader />
+      <SeatsHeader onOpenLottery={() => setIsLotteryOpen(true)} />
       <SeatsBody
         selectedRoom={selectedRoom}
         currentLayout={currentLayout}
         onSelectRoom={setSelectedRoom}
+      />
+      <DutyLotteryModal
+        isOpen={isLotteryOpen}
+        defaultRoomId={selectedRoom}
+        onDismiss={() => setIsLotteryOpen(false)}
       />
     </IonPage>
   );
