@@ -24,18 +24,20 @@ import {
   restaurantOutline,
 } from "ionicons/icons";
 import {
-  getAllDutyCandidates,
-  getRoomDutyCandidates,
+  getAllMealCandidates,
+  getRoomMealCandidates,
   pickRandomCandidates,
   getSecureRandomFloat,
-  type DutyCandidate,
-} from "../../utils/duty-lottery";
+  type MealCandidate,
+} from "../../utils/meal-lottery";
 
-interface DutyLotteryModalProps {
+export interface MealLotteryModalProps {
   readonly isOpen: boolean;
   readonly defaultRoomId?: string;
   readonly onDismiss: () => void;
 }
+
+export type DutyLotteryModalProps = MealLotteryModalProps;
 
 const ROOM_OPTIONS = [
   { id: "all", label: "全班" },
@@ -55,7 +57,7 @@ const CandidateResultCard = ({
   candidate,
   index,
 }: Readonly<{
-  candidate: DutyCandidate;
+  candidate: MealCandidate;
   index: number;
 }>) => (
   <div
@@ -171,10 +173,10 @@ const ExcludedListDrawer = ({
   allCandidates,
 }: Readonly<{
   names: readonly string[];
-  allCandidates: readonly DutyCandidate[];
+  allCandidates: readonly MealCandidate[];
 }>) => {
   const candidateMap = useMemo(() => {
-    const map = new Map<string, DutyCandidate>();
+    const map = new Map<string, MealCandidate>();
     for (const c of allCandidates) {
       map.set(c.name, c);
     }
@@ -222,18 +224,18 @@ const ExcludedListDrawer = ({
 // Main Modal Component
 // ---------------------------------------------------------------------------
 
-export const DutyLotteryModal = ({
+export const MealLotteryModal = ({
   isOpen,
   defaultRoomId = "209",
   onDismiss,
-}: Readonly<DutyLotteryModalProps>) => {
+}: Readonly<MealLotteryModalProps>) => {
   const [selectedRoom, setSelectedRoom] = useState<string>("all");
   const [pickCount, setPickCount] = useState<number>(1);
   const [isRolling, setIsRolling] = useState(false);
   const [autoNoRepeat, setAutoNoRepeat] = useState(false);
   const [showExcluded, setShowExcluded] = useState(false);
-  const [rollingCandidate, setRollingCandidate] = useState<DutyCandidate | null>(null);
-  const [pickedResults, setPickedResults] = useState<DutyCandidate[]>([]);
+  const [rollingCandidate, setRollingCandidate] = useState<MealCandidate | null>(null);
+  const [pickedResults, setPickedResults] = useState<MealCandidate[]>([]);
   const [excludedNames, setExcludedNames] = useState<string[]>([]);
   const [presentToast] = useIonToast();
 
@@ -261,9 +263,9 @@ export const DutyLotteryModal = ({
 
   const candidatesPool = useMemo(() => {
     if (selectedRoom === "all") {
-      return getAllDutyCandidates();
+      return getAllMealCandidates();
     }
-    return getRoomDutyCandidates(selectedRoom);
+    return getRoomMealCandidates(selectedRoom);
   }, [selectedRoom]);
 
   // Filter remaining eligible candidates based on autoNoRepeat
@@ -471,7 +473,7 @@ export const DutyLotteryModal = ({
               </div>
             )}
             <IonSegment
-              className="duty-lottery-segment"
+              className="meal-lottery-segment"
               value={selectedRoom}
               onIonChange={(e) => {
                 setSelectedRoom(e.detail.value as string);
@@ -508,7 +510,7 @@ export const DutyLotteryModal = ({
               抽出名額
             </div>
             <IonSegment
-              className="duty-lottery-segment"
+              className="meal-lottery-segment"
               value={String(pickCount)}
               onIonChange={(e) => setPickCount(Number(e.detail.value))}
               disabled={isRolling}
@@ -601,4 +603,6 @@ export const DutyLotteryModal = ({
   );
 };
 
-export default DutyLotteryModal;
+export const DutyLotteryModal = MealLotteryModal;
+
+export default MealLotteryModal;

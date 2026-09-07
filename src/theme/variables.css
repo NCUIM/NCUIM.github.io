@@ -162,10 +162,12 @@ ion-content::part(scroll) {
   .timetable-desktop { display: block; }
 }
 
-/* ── Meal Buddy Duty Lottery Modal Responsive Segments ───────── */
+/* ── Meal Buddy Lottery Modal Responsive Segments ─────────────── */
+ion-segment.meal-lottery-segment,
 ion-segment.duty-lottery-segment {
   width: 100%;
 }
+ion-segment.meal-lottery-segment ion-segment-button,
 ion-segment.duty-lottery-segment ion-segment-button {
   --min-width: 0px !important;
   min-width: 0 !important;

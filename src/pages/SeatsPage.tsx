@@ -19,7 +19,7 @@ import { diceOutline } from "ionicons/icons";
 import { useState } from "react";
 import { ROOM_LAYOUTS, type RoomLayout } from "../data/room-layouts";
 import SeatGrid from "../components/seats/SeatGrid";
-import DutyLotteryModal from "../components/seats/DutyLotteryModal";
+import MealLotteryModal from "../components/seats/MealLotteryModal";
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -134,7 +134,7 @@ const SeatsPage = () => {
         currentLayout={currentLayout}
         onSelectRoom={setSelectedRoom}
       />
-      <DutyLotteryModal
+      <MealLotteryModal
         isOpen={isLotteryOpen}
         defaultRoomId={selectedRoom}
         onDismiss={() => setIsLotteryOpen(false)}
