@@ -60,7 +60,7 @@ const CandidateResultCard = ({
 }>) => (
   <div
     style={{
-      padding: "12px 16px",
+      padding: "10px 12px",
       borderRadius: "var(--ncu-radius-md)",
       border: "2px solid var(--ncu-ink)",
       background: "var(--ncu-star-light)",
@@ -68,31 +68,38 @@ const CandidateResultCard = ({
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 8,
+      boxSizing: "border-box",
+      width: "100%",
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 auto" }}>
       <span
         style={{
-          width: 26,
-          height: 26,
+          width: 24,
+          height: 24,
+          minWidth: 24,
           borderRadius: 999,
           background: "var(--ncu-primary)",
           color: "#fff",
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 800,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          flexShrink: 0,
         }}
       >
         {index + 1}
       </span>
       <span
         style={{
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: 800,
           color: "var(--ncu-ink)",
           letterSpacing: 1,
+          wordBreak: "break-word",
         }}
       >
         {candidate.name}
@@ -104,9 +111,11 @@ const CandidateResultCard = ({
         fontWeight: 700,
         color: "var(--ncu-muted)",
         background: "var(--ncu-surface)",
-        padding: "4px 8px",
+        padding: "3px 8px",
         borderRadius: "var(--ncu-radius-sm)",
         border: "1px solid var(--ncu-border)",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
       }}
     >
       {candidate.roomId} 室 · 座位 {candidate.seatLabel}
@@ -123,27 +132,30 @@ const RollingDisplay = ({
 }>) => (
   <div
     style={{
-      padding: "28px 16px",
+      padding: "20px 14px",
       borderRadius: "var(--ncu-radius-md)",
       border: "2px dashed var(--ncu-primary)",
       background: "var(--ncu-primary-light)",
       textAlign: "center",
+      boxSizing: "border-box",
+      width: "100%",
     }}
   >
     <div
       style={{
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 800,
         color: "var(--ncu-primary)",
         letterSpacing: 2,
-        minHeight: 38,
+        minHeight: 34,
+        wordBreak: "break-word",
       }}
     >
       {displayName}
     </div>
     <div
       style={{
-        fontSize: 13,
+        fontSize: 12.5,
         fontWeight: 600,
         color: "var(--ncu-muted)",
         marginTop: 6,
@@ -179,6 +191,8 @@ const ExcludedListDrawer = ({
         display: "flex",
         flexWrap: "wrap",
         gap: 6,
+        maxHeight: 140,
+        overflowY: "auto",
       }}
     >
       {names.map((name) => {
@@ -359,7 +373,7 @@ export const DutyLotteryModal = ({
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>
+          <IonTitle style={{ paddingInline: 6 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <IonIcon icon={restaurantOutline} style={{ color: "var(--ncu-primary)" }} />
               <span>今天跟誰一起吃~</span>
@@ -391,7 +405,7 @@ export const DutyLotteryModal = ({
       </IonHeader>
 
       <IonContent className="ion-padding">
-        <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18, paddingBottom: 48 }}>
           {/* Scope Selector */}
           <div>
             <div
@@ -399,6 +413,8 @@ export const DutyLotteryModal = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 6,
                 marginBottom: 6,
               }}
             >
@@ -455,15 +471,31 @@ export const DutyLotteryModal = ({
               </div>
             )}
             <IonSegment
+              className="duty-lottery-segment"
               value={selectedRoom}
               onIonChange={(e) => {
                 setSelectedRoom(e.detail.value as string);
                 setPickedResults([]);
               }}
               disabled={isRolling}
+              style={{
+                width: "100%",
+                "--min-width": "0px",
+              } as React.CSSProperties}
             >
               {ROOM_OPTIONS.map((opt) => (
-                <IonSegmentButton key={opt.id} value={opt.id}>
+                <IonSegmentButton
+                  key={opt.id}
+                  value={opt.id}
+                  style={{
+                    minWidth: 0,
+                    "--min-width": "0px",
+                    "--padding-start": "2px",
+                    "--padding-end": "2px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                  } as React.CSSProperties}
+                >
                   {opt.label}
                 </IonSegmentButton>
               ))}
@@ -476,12 +508,28 @@ export const DutyLotteryModal = ({
               抽出名額
             </div>
             <IonSegment
+              className="duty-lottery-segment"
               value={String(pickCount)}
               onIonChange={(e) => setPickCount(Number(e.detail.value))}
               disabled={isRolling}
+              style={{
+                width: "100%",
+                "--min-width": "0px",
+              } as React.CSSProperties}
             >
               {COUNT_OPTIONS.map((num) => (
-                <IonSegmentButton key={num} value={String(num)}>
+                <IonSegmentButton
+                  key={num}
+                  value={String(num)}
+                  style={{
+                    minWidth: 0,
+                    "--min-width": "0px",
+                    "--padding-start": "2px",
+                    "--padding-end": "2px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                  } as React.CSSProperties}
+                >
                   {num} 位
                 </IonSegmentButton>
               ))}

@@ -162,6 +162,19 @@ ion-content::part(scroll) {
   .timetable-desktop { display: block; }
 }
 
+/* ── Meal Buddy Duty Lottery Modal Responsive Segments ───────── */
+ion-segment.duty-lottery-segment {
+  width: 100%;
+}
+ion-segment.duty-lottery-segment ion-segment-button {
+  --min-width: 0px !important;
+  min-width: 0 !important;
+  --padding-start: 2px !important;
+  --padding-end: 2px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
 
 .lottery-stage-content {
   --background: var(--ncu-terminal);
