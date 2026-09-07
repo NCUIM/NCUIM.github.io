@@ -6,6 +6,14 @@ import fallbackMasterCourses from "../data/im-master-courses.json";
 import masterSnapshot from "../data/im-master-snapshot.json";
 import { getRequiredFact, requiredFactLabel, type RequiredTagLabel } from "../data/im-curriculum";
 
+export interface MasterCourseSection {
+  readonly serialNo: number;
+  readonly classNo: string;
+  readonly teachers: readonly string[];
+  readonly room?: string;
+  readonly classTimes?: readonly string[];
+}
+
 export interface MasterCourseItem {
   readonly serialNo: number;
   readonly classNo: string;
@@ -20,6 +28,7 @@ export interface MasterCourseItem {
   readonly admitCnt?: number | null;
   readonly room?: string;
   readonly isMyCourse?: boolean;
+  readonly mergedSections?: readonly MasterCourseSection[];
 }
 
 export const ALL_COURSES_API_URL =
@@ -223,6 +232,14 @@ const parseDayAndPeriod = (ct: string): { dayIdx: number; periodId: string } | n
   return { dayIdx: dayNum - 1, periodId: parts[1] };
 };
 
+const toMasterCourseSection = (item: MasterCourseItem): MasterCourseSection => ({
+  serialNo: item.serialNo,
+  classNo: item.classNo,
+  teachers: item.teachers,
+  room: item.room,
+  classTimes: item.classTimes,
+});
+
 const addCourseTimeToMap = (
   result: Record<string, MasterCourseItem[]>,
   c: MasterCourseItem,
@@ -252,16 +269,23 @@ const addCourseTimeToMap = (
       combinedRoom = existing.room || c.room;
     }
 
+    const currentSections = existing.mergedSections ?? [toMasterCourseSection(existing)];
+    const updatedSections = [...currentSections, toMasterCourseSection(c)];
+
     const idx = result[key].indexOf(existing);
     result[key][idx] = {
       ...existing,
       teachers: combinedTeachers,
       room: combinedRoom,
+      mergedSections: updatedSections,
     };
     return;
   }
 
-  result[key].push(c);
+  result[key].push({
+    ...c,
+    mergedSections: [toMasterCourseSection(c)],
+  });
 };
 
 /**
