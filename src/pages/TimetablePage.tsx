@@ -171,9 +171,11 @@ export const extractCourseCodeAndSection = (
 ): { base: string; section: string } => {
   if (!rawNo) return { base: "", section: "" };
   const clean = rawNo.replace(/[-*]/g, "").trim().toUpperCase();
-  const match = /^([A-Z]+\d+)([A-Z0-9]*)$/.exec(clean);
-  if (match) {
-    return { base: match[1], section: match[2] };
+  const baseMatch = /^[A-Z]+\d+/.exec(clean);
+  if (baseMatch) {
+    const base = baseMatch[0];
+    const section = clean.slice(base.length);
+    return { base, section };
   }
   return { base: clean, section: "" };
 };
@@ -192,41 +194,61 @@ export const isClassNoMatch = (masterNo: string, cisNo?: string): boolean => {
   return true;
 };
 
+const checkClassNoMatch = (
+  masterClassNo: string,
+  cisClassNo: string,
+  masterTeachers: readonly string[],
+  cisTeacher?: string,
+): boolean | null => {
+  const m = extractCourseCodeAndSection(masterClassNo);
+  const c = extractCourseCodeAndSection(cisClassNo);
+  if (!m.base || !c.base || m.base !== c.base) {
+    return null;
+  }
+  if (m.section && c.section && m.section !== c.section) {
+    return false;
+  }
+  if (cisTeacher) {
+    return isTeacherMatch(masterTeachers, cisTeacher);
+  }
+  return true;
+};
+
+const isTitleCourseMatch = (
+  masterTitle: string,
+  cisName: string | undefined,
+  masterTeachers: readonly string[],
+  cisTeacher?: string,
+): boolean => {
+  const cisTitle = cleanCourseTitle(cisName || "");
+  const mTitle = cleanCourseTitle(masterTitle || "");
+  if (!cisTitle || cisTitle !== mTitle) return false;
+  return !cisTeacher || isTeacherMatch(masterTeachers, cisTeacher);
+};
+
 // skipcq: JS-R1005
 export const isSingleMasterCourseMatch = (
   master: MasterCourseItem,
   cis: Partial<CisCourse>,
 ): boolean => {
   const cisSerial = cis.serialNo?.trim();
-  const hasCisSerial = Boolean(cisSerial && /^\d+$/.test(cisSerial));
-
-  if (hasCisSerial) {
+  if (cisSerial && /^\d+$/.test(cisSerial)) {
     return isSerialMatch(master.serialNo, cisSerial);
   }
 
   if (cis.classNo && master.classNo) {
-    const m = extractCourseCodeAndSection(master.classNo);
-    const c = extractCourseCodeAndSection(cis.classNo);
-    if (m.base && c.base && m.base === c.base) {
-      if (m.section && c.section) {
-        return m.section === c.section;
-      }
-      if (cis.teacher) {
-        return isTeacherMatch(master.teachers, cis.teacher);
-      }
-      return true;
+    const classMatch = checkClassNoMatch(
+      master.classNo,
+      cis.classNo,
+      master.teachers,
+      cis.teacher,
+    );
+    if (classMatch !== null) {
+      return classMatch;
     }
   }
 
-  const cisTitle = cleanCourseTitle(cis.name || "");
-  const masterTitle = cleanCourseTitle(master.title || "");
-  const isSameTitle = cisTitle.length > 0 && cisTitle === masterTitle;
-  if (isSameTitle) {
-    if (!cis.teacher) return true;
-    return isTeacherMatch(master.teachers, cis.teacher);
-  }
-
-  return false;
+  return isTitleCourseMatch(master.title, cis.name, master.teachers, cis.teacher);
 };
 
 // skipcq: JS-R1005
@@ -381,6 +403,44 @@ const addCisCourseToMap = (
   }
 };
 
+const enrichCisCourse = (
+  c: CisCourse,
+  masterCourses: readonly MasterCourseItem[],
+): { enrichedCourse: Course; effectiveTimes: readonly string[] } => {
+  const matchedMaster = masterCourses.find((m) => isCourseMatch(m, c));
+  const effectiveTimes = (c.classTimes && c.classTimes.length > 0)
+    ? c.classTimes
+    : (matchedMaster?.classTimes || []);
+
+  const effectiveRoom =
+    c.room ||
+    matchedMaster?.room ||
+    getCourseRoom(matchedMaster?.classNo || c.classNo);
+  const effectiveTeacher =
+    c.teacher ||
+    matchedMaster?.teachers.join(" / ") ||
+    "";
+  const effectiveClassNo =
+    !c.classNo?.includes("-") && matchedMaster?.classNo
+      ? matchedMaster.classNo
+      : (c.classNo ?? matchedMaster?.classNo);
+  const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(effectiveClassNo);
+
+  const enrichedCourse: Course = {
+    id: c.serialNo || (matchedMaster ? String(matchedMaster.serialNo) : undefined),
+    classNo: effectiveClassNo,
+    name: cleanCourseTitle(c.name || matchedMaster?.title || ""),
+    teacher: effectiveTeacher,
+    room: effectiveRoom,
+    courseType: (reqTag || matchedMaster?.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
+    requiredTag: reqTag,
+    credit: c.credit ?? matchedMaster?.credit,
+    isMyCourse: true,
+  };
+
+  return { enrichedCourse, effectiveTimes };
+};
+
 export const buildTimetableFromCisCourses = (
   courses: readonly CisCourse[],
   masterCourses: readonly MasterCourseItem[] = [],
@@ -392,36 +452,7 @@ export const buildTimetableFromCisCourses = (
   const result: Record<string, Course[]> = {};
 
   for (const c of courses) {
-    const matchedMaster = masterCourses.find((m) => isCourseMatch(m, c));
-    const effectiveTimes: readonly string[] = (c.classTimes && c.classTimes.length > 0)
-      ? c.classTimes
-      : (matchedMaster?.classTimes || []);
-
-    const effectiveRoom =
-      c.room ||
-      matchedMaster?.room ||
-      getCourseRoom(matchedMaster?.classNo || c.classNo);
-    const effectiveTeacher =
-      c.teacher ||
-      (matchedMaster?.teachers ? matchedMaster.teachers.join(" / ") : "");
-    const effectiveClassNo =
-      (!c.classNo || !c.classNo.includes("-")) && matchedMaster?.classNo
-        ? matchedMaster.classNo
-        : (c.classNo || matchedMaster?.classNo);
-    const reqTag = matchedMaster?.requiredTag ?? getRequiredTag(effectiveClassNo);
-
-    const enrichedCourse: Course = {
-      id: c.serialNo || (matchedMaster ? String(matchedMaster.serialNo) : undefined),
-      classNo: effectiveClassNo,
-      name: cleanCourseTitle(c.name || matchedMaster?.title || ""),
-      teacher: effectiveTeacher,
-      room: effectiveRoom,
-      courseType: (reqTag || matchedMaster?.courseType === "REQUIRED") ? "REQUIRED" : "ELECTIVE",
-      requiredTag: reqTag,
-      credit: c.credit ?? matchedMaster?.credit,
-      isMyCourse: true,
-    };
-
+    const { enrichedCourse, effectiveTimes } = enrichCisCourse(c, masterCourses);
     for (const ct of effectiveTimes) {
       const { dayIdx, periodChars } = parseClassTimeDayAndPeriods(ct, DAY_MAP);
       if (dayIdx >= 0) {
