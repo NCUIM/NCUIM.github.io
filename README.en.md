@@ -6,6 +6,7 @@
   <p>
     <a href="https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml"><img src="https://img.shields.io/github/actions/workflow/status/NCUIM/NCUIM.github.io/deploy-pages.yml?branch=main&label=Deploy&style=flat-square" alt="Deploy" /></a>
     <a href="https://ncuim.github.io/"><img src="https://img.shields.io/badge/Online-ncuim.github.io-blue?style=flat-square" alt="Online" /></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=NCUIM_NCUIM.github.io"><img src="https://sonarcloud.io/api/project_badges/measure?project=NCUIM_NCUIM.github.io&metric=alert_status" alt="Quality Gate Status" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" /></a>
   </p>
 
@@ -34,6 +35,14 @@ It is built as a pure client-side single-page application (SPA). All personal co
 ### Lab Floor Plans (`/seats`)
 - **Physical Room Layouts**: Interactive floor plans for 209 (20 seats), 310 (27 seats), 313 (23 seats), and 919 (9 seats).
 - **Seat & Member Search**: Instant highlighting by student name or advisor.
+
+### Student Profile & Badge (`/cards`)
+- **Personal Digital Badge**: Display assigned lab and seat identification with optional GitHub profile integration.
+- **Event Check-in QR Code**: Interactive check-in barcode for departmental events and orientation.
+
+### Event Leaderboard (`/leaderboard`)
+- **Real-time Event Tracker**: Live check-in statistics and progress for freshman orientation challenges.
+- **Hall of Fame**: Interactive ranking board highlighting top participants and group milestones.
 
 ### Survival Guide & Campus Life (`/guide`, `/food`)
 - **Freshman Checklist & Links**: Timeline of key procedures, software benefits, and essential campus portals.
