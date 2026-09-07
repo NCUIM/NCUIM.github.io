@@ -1,10 +1,12 @@
 import seatAssignments from "../data/seats.json";
 
-export interface DutyCandidate {
+export interface MealCandidate {
   readonly name: string;
   readonly roomId: string;
   readonly seatLabel: string;
 }
+
+export type DutyCandidate = MealCandidate;
 
 /**
  * Generates a random float in [0, 1) using crypto.getRandomValues if available,
@@ -22,9 +24,9 @@ export const getSecureRandomFloat = (): number => {
 /**
  * Extracts all valid student candidates across all laboratory rooms.
  */
-export const getAllDutyCandidates = (): DutyCandidate[] => {
+export const getAllMealCandidates = (): MealCandidate[] => {
   const data = seatAssignments as Record<string, Record<string, string>>;
-  const candidates: DutyCandidate[] = [];
+  const candidates: MealCandidate[] = [];
 
   for (const [roomId, seats] of Object.entries(data)) {
     for (const [seatLabel, name] of Object.entries(seats)) {
@@ -42,15 +44,17 @@ export const getAllDutyCandidates = (): DutyCandidate[] => {
   return candidates;
 };
 
+export const getAllDutyCandidates = getAllMealCandidates;
+
 /**
  * Extracts candidates belonging to a specific room.
  */
-export const getRoomDutyCandidates = (roomId: string): DutyCandidate[] => {
+export const getRoomMealCandidates = (roomId: string): MealCandidate[] => {
   const data = seatAssignments as Record<string, Record<string, string>>;
   const seats = data[roomId];
   if (!seats) return [];
 
-  const candidates: DutyCandidate[] = [];
+  const candidates: MealCandidate[] = [];
   for (const [seatLabel, name] of Object.entries(seats)) {
     const trimmed = name?.trim();
     if (trimmed) {
@@ -65,20 +69,22 @@ export const getRoomDutyCandidates = (roomId: string): DutyCandidate[] => {
   return candidates;
 };
 
+export const getRoomDutyCandidates = getRoomMealCandidates;
+
 /**
  * Randomly samples `count` candidates from a pool, optionally excluding specific names.
  * When allowDuplicate is false (default), it strictly draws only from eligible candidates.
  * If eligible candidates are fewer than count, it returns only the remaining eligible ones (or empty).
  */
 export const pickRandomCandidates = (
-  pool: readonly DutyCandidate[],
+  pool: readonly MealCandidate[],
   count: number,
   excludeNames: readonly string[] = [],
   allowDuplicate = false,
-): DutyCandidate[] => {
+): MealCandidate[] => {
   if (count <= 0 || pool.length === 0) return [];
 
-  let candidatePool: DutyCandidate[];
+  let candidatePool: MealCandidate[];
   if (allowDuplicate) {
     candidatePool = [...pool];
   } else {

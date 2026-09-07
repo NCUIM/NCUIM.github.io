@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useMemo } from "react";
 import {
   IonModal,
   IonHeader,
@@ -10,7 +10,6 @@ import {
   IonIcon,
   IonSegment,
   IonSegmentButton,
-  useIonToast,
 } from "@ionic/react";
 import {
   diceOutline,
@@ -23,19 +22,17 @@ import {
   chevronUpOutline,
   restaurantOutline,
 } from "ionicons/icons";
-import {
-  getAllDutyCandidates,
-  getRoomDutyCandidates,
-  pickRandomCandidates,
-  getSecureRandomFloat,
-  type DutyCandidate,
-} from "../../utils/duty-lottery";
+import { type MealCandidate } from "../../utils/meal-lottery";
+import { isIosHeaderMode } from "../../services/platform";
+import { useMealLottery } from "./useMealLottery";
 
-interface DutyLotteryModalProps {
+export interface MealLotteryModalProps {
   readonly isOpen: boolean;
   readonly defaultRoomId?: string;
   readonly onDismiss: () => void;
 }
+
+export type DutyLotteryModalProps = MealLotteryModalProps;
 
 const ROOM_OPTIONS = [
   { id: "all", label: "全班" },
@@ -55,12 +52,12 @@ const CandidateResultCard = ({
   candidate,
   index,
 }: Readonly<{
-  candidate: DutyCandidate;
+  candidate: MealCandidate;
   index: number;
 }>) => (
   <div
     style={{
-      padding: "12px 16px",
+      padding: "10px 12px",
       borderRadius: "var(--ncu-radius-md)",
       border: "2px solid var(--ncu-ink)",
       background: "var(--ncu-star-light)",
@@ -68,31 +65,38 @@ const CandidateResultCard = ({
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
+      flexWrap: "wrap",
+      gap: 8,
+      boxSizing: "border-box",
+      width: "100%",
     }}
   >
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flex: "1 1 auto" }}>
       <span
         style={{
-          width: 26,
-          height: 26,
+          width: 24,
+          height: 24,
+          minWidth: 24,
           borderRadius: 999,
           background: "var(--ncu-primary)",
           color: "#fff",
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: 800,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          flexShrink: 0,
         }}
       >
         {index + 1}
       </span>
       <span
         style={{
-          fontSize: 18,
+          fontSize: 16,
           fontWeight: 800,
           color: "var(--ncu-ink)",
           letterSpacing: 1,
+          wordBreak: "break-word",
         }}
       >
         {candidate.name}
@@ -104,9 +108,11 @@ const CandidateResultCard = ({
         fontWeight: 700,
         color: "var(--ncu-muted)",
         background: "var(--ncu-surface)",
-        padding: "4px 8px",
+        padding: "3px 8px",
         borderRadius: "var(--ncu-radius-sm)",
         border: "1px solid var(--ncu-border)",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
       }}
     >
       {candidate.roomId} 室 · 座位 {candidate.seatLabel}
@@ -123,27 +129,30 @@ const RollingDisplay = ({
 }>) => (
   <div
     style={{
-      padding: "28px 16px",
+      padding: "20px 14px",
       borderRadius: "var(--ncu-radius-md)",
       border: "2px dashed var(--ncu-primary)",
       background: "var(--ncu-primary-light)",
       textAlign: "center",
+      boxSizing: "border-box",
+      width: "100%",
     }}
   >
     <div
       style={{
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: 800,
         color: "var(--ncu-primary)",
         letterSpacing: 2,
-        minHeight: 38,
+        minHeight: 34,
+        wordBreak: "break-word",
       }}
     >
       {displayName}
     </div>
     <div
       style={{
-        fontSize: 13,
+        fontSize: 12.5,
         fontWeight: 600,
         color: "var(--ncu-muted)",
         marginTop: 6,
@@ -159,10 +168,10 @@ const ExcludedListDrawer = ({
   allCandidates,
 }: Readonly<{
   names: readonly string[];
-  allCandidates: readonly DutyCandidate[];
+  allCandidates: readonly MealCandidate[];
 }>) => {
   const candidateMap = useMemo(() => {
-    const map = new Map<string, DutyCandidate>();
+    const map = new Map<string, MealCandidate>();
     for (const c of allCandidates) {
       map.set(c.name, c);
     }
@@ -179,6 +188,8 @@ const ExcludedListDrawer = ({
         display: "flex",
         flexWrap: "wrap",
         gap: 6,
+        maxHeight: 140,
+        overflowY: "auto",
       }}
     >
       {names.map((name) => {
@@ -204,194 +215,119 @@ const ExcludedListDrawer = ({
   );
 };
 
+export interface MealLotteryHeaderProps {
+  readonly isIos: boolean;
+  readonly autoNoRepeat: boolean;
+  readonly onToggleAutoNoRepeat: () => void;
+  readonly onDismiss: () => void;
+}
+
+export const MealLotteryHeader = ({
+  isIos,
+  autoNoRepeat,
+  onToggleAutoNoRepeat,
+  onDismiss,
+}: Readonly<MealLotteryHeaderProps>) => {
+  const repeatModeButton = (
+    <IonButton
+      fill={autoNoRepeat ? "solid" : "clear"}
+      color={autoNoRepeat ? "primary" : "medium"}
+      onClick={onToggleAutoNoRepeat}
+      aria-label={autoNoRepeat ? "自動不重複：開啟" : "自動不重複：關閉"}
+      title={autoNoRepeat ? "自動不重複 (點擊切換為可重複)" : "可重複抽取 (點擊切換為自動不重複)"}
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        marginRight: isIos ? 0 : 4,
+        marginLeft: isIos ? 4 : 0,
+        "--border-radius": "999px",
+        height: 28,
+      }}
+    >
+      <IonIcon slot="start" icon={repeatOutline} />
+      {autoNoRepeat ? "不重複" : "可重複"}
+    </IonButton>
+  );
+
+  return (
+    <IonHeader>
+      <IonToolbar>
+        {isIos && <IonButtons slot="start">{repeatModeButton}</IonButtons>}
+        <IonTitle style={{ paddingInline: 4 }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: isIos ? "center" : "flex-start",
+              gap: 6,
+            }}
+          >
+            <IonIcon icon={restaurantOutline} style={{ color: "var(--ncu-primary)" }} />
+            <span>今天跟誰一起吃~</span>
+          </div>
+        </IonTitle>
+        <IonButtons slot="end">
+          {!isIos && repeatModeButton}
+          <IonButton onClick={onDismiss}>
+            <IonIcon slot="icon-only" icon={closeOutline} />
+          </IonButton>
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+  );
+};
+
 // ---------------------------------------------------------------------------
 // Main Modal Component
 // ---------------------------------------------------------------------------
 
-export const DutyLotteryModal = ({
+export const MealLotteryModal = ({
   isOpen,
   defaultRoomId = "209",
   onDismiss,
-}: Readonly<DutyLotteryModalProps>) => {
-  const [selectedRoom, setSelectedRoom] = useState<string>("all");
-  const [pickCount, setPickCount] = useState<number>(1);
-  const [isRolling, setIsRolling] = useState(false);
-  const [autoNoRepeat, setAutoNoRepeat] = useState(false);
-  const [showExcluded, setShowExcluded] = useState(false);
-  const [rollingCandidate, setRollingCandidate] = useState<DutyCandidate | null>(null);
-  const [pickedResults, setPickedResults] = useState<DutyCandidate[]>([]);
-  const [excludedNames, setExcludedNames] = useState<string[]>([]);
-  const [presentToast] = useIonToast();
+}: Readonly<MealLotteryModalProps>) => {
+  const {
+    selectedRoom,
+    pickCount,
+    isRolling,
+    autoNoRepeat,
+    showExcluded,
+    rollingCandidate,
+    pickedResults,
+    excludedNames,
+    candidatesPool,
+    remainingCandidates,
+    scopeLabel,
+    drawButtonText,
+    handleSelectRoom,
+    handleSelectPickCount,
+    handleToggleAutoNoRepeat,
+    handleToggleShowExcluded,
+    handleStartDraw,
+    handleResetExclusions,
+    handleCopyResults,
+  } = useMealLottery({ isOpen, defaultRoomId });
 
-  const rollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isIos = isIosHeaderMode();
 
-  // Sync default room when modal opens
-  useEffect(() => {
-    if (isOpen && defaultRoomId) {
-      const isValid = ROOM_OPTIONS.some((r) => r.id === defaultRoomId);
-      if (isValid) {
-        setSelectedRoom(defaultRoomId);
-      }
+  const handleModalDismiss = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
     }
-  }, [isOpen, defaultRoomId]);
-
-  // Clean timers on unmount or when modal closes
-  useEffect(() => {
-    return () => {
-      if (rollTimerRef.current) clearInterval(rollTimerRef.current);
-      if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
-      setIsRolling(false);
-    };
-  }, [isOpen]);
-
-  const candidatesPool = useMemo(() => {
-    if (selectedRoom === "all") {
-      return getAllDutyCandidates();
-    }
-    return getRoomDutyCandidates(selectedRoom);
-  }, [selectedRoom]);
-
-  // Filter remaining eligible candidates based on autoNoRepeat
-  const remainingCandidates = useMemo(() => {
-    if (!autoNoRepeat) return candidatesPool;
-    const excludeSet = new Set(excludedNames);
-    return candidatesPool.filter((c) => !excludeSet.has(c.name));
-  }, [candidatesPool, autoNoRepeat, excludedNames]);
-
-  const handleStartDraw = () => {
-    if (candidatesPool.length === 0 || isRolling) return;
-
-    if (autoNoRepeat && remainingCandidates.length === 0) {
-      presentToast({
-        message: "名額已全數抽完！請先清除重置名單",
-        duration: 2000,
-        position: "top",
-        color: "warning",
-      });
-      return;
-    }
-
-    setIsRolling(true);
-    setPickedResults([]);
-
-    const finalCandidates = pickRandomCandidates(
-      candidatesPool,
-      pickCount,
-      excludedNames,
-      !autoNoRepeat,
-    );
-
-    // Rapidly cycle random names for rolling effect
-    if (rollTimerRef.current) clearInterval(rollTimerRef.current);
-    rollTimerRef.current = setInterval(() => {
-      const randIdx = Math.floor(getSecureRandomFloat() * candidatesPool.length);
-      setRollingCandidate(candidatesPool[randIdx]);
-    }, 60);
-
-    // Stop after animation completes
-    if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
-    finishTimerRef.current = setTimeout(() => {
-      if (rollTimerRef.current) clearInterval(rollTimerRef.current);
-      setIsRolling(false);
-      setRollingCandidate(null);
-      setPickedResults(finalCandidates);
-      if (autoNoRepeat) {
-        setExcludedNames((prev) => Array.from(new Set([...prev, ...finalCandidates.map((c) => c.name)])));
-      }
-    }, 1200);
-  };
-
-  const handleResetExclusions = () => {
-    setExcludedNames([]);
-    setPickedResults([]);
-    setShowExcluded(false);
-    presentToast({
-      message: "已重置已中籤名單",
-      duration: 1500,
-      position: "top",
-      color: "dark",
-    });
-  };
-
-  const handleCopyResults = async () => {
-    if (pickedResults.length === 0) return;
-    const roomText = selectedRoom === "all" ? "全班" : `${selectedRoom} 室`;
-    const names = pickedResults
-      .map((c) => `${c.name} (${c.roomId}室 ${c.seatLabel})`)
-      .join("、");
-    const text = `【${roomText}·今天跟誰一起吃~】${names}`;
-
-    if (navigator?.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(text);
-        presentToast({
-          message: "已複製名單到剪貼簿！",
-          duration: 1500,
-          position: "top",
-          color: "success",
-        });
-        return;
-      } catch {
-        // Fallback below
-      }
-    }
-
-    presentToast({
-      message: "無法存取剪貼簿，請手動複製！",
-      duration: 2000,
-      position: "top",
-      color: "warning",
-    });
-  };
-
-  const scopeLabel = autoNoRepeat
-    ? `抽籤範圍 (剩 ${remainingCandidates.length} / 共 ${candidatesPool.length} 人)`
-    : `抽籤範圍 (共 ${candidatesPool.length} 人)`;
-
-  const resolveDrawButtonText = (): string => {
-    if (isRolling) return "抽獎中...";
-    if (autoNoRepeat && remainingCandidates.length === 0) return "名額已抽完";
-    return "開始抽籤";
+    onDismiss();
   };
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <IonIcon icon={restaurantOutline} style={{ color: "var(--ncu-primary)" }} />
-              <span>今天跟誰一起吃~</span>
-            </div>
-          </IonTitle>
-          <IonButtons slot="end">
-            <IonButton
-              fill={autoNoRepeat ? "solid" : "clear"}
-              color={autoNoRepeat ? "primary" : "medium"}
-              onClick={() => setAutoNoRepeat((prev) => !prev)}
-              aria-label={autoNoRepeat ? "自動不重複：開啟" : "自動不重複：關閉"}
-              title={autoNoRepeat ? "自動不重複 (點擊切換為可重複)" : "可重複抽取 (點擊切換為自動不重複)"}
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                marginRight: 4,
-                "--border-radius": "999px",
-                height: 28,
-              }}
-            >
-              <IonIcon slot="start" icon={repeatOutline} />
-              {autoNoRepeat ? "不重複" : "可重複"}
-            </IonButton>
-            <IonButton onClick={onDismiss}>
-              <IonIcon slot="icon-only" icon={closeOutline} />
-            </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+    <IonModal isOpen={isOpen} onDidDismiss={handleModalDismiss}>
+      <MealLotteryHeader
+        isIos={isIos}
+        autoNoRepeat={autoNoRepeat}
+        onToggleAutoNoRepeat={handleToggleAutoNoRepeat}
+        onDismiss={handleModalDismiss}
+      />
 
       <IonContent className="ion-padding">
-        <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ maxWidth: 480, margin: "0 auto", display: "flex", flexDirection: "column", gap: 18, paddingBottom: 48 }}>
           {/* Scope Selector */}
           <div>
             <div
@@ -399,6 +335,8 @@ export const DutyLotteryModal = ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 6,
                 marginBottom: 6,
               }}
             >
@@ -411,7 +349,7 @@ export const DutyLotteryModal = ({
                     <IonButton
                       fill="clear"
                       size="small"
-                      onClick={() => setShowExcluded((prev) => !prev)}
+                      onClick={handleToggleShowExcluded}
                       disabled={isRolling}
                       style={{
                         fontSize: 12,
@@ -455,15 +393,28 @@ export const DutyLotteryModal = ({
               </div>
             )}
             <IonSegment
+              className="meal-lottery-segment"
               value={selectedRoom}
-              onIonChange={(e) => {
-                setSelectedRoom(e.detail.value as string);
-                setPickedResults([]);
-              }}
+              onIonChange={(e) => handleSelectRoom(e.detail.value as string)}
               disabled={isRolling}
+              style={{
+                width: "100%",
+                "--min-width": "0px",
+              } as React.CSSProperties}
             >
               {ROOM_OPTIONS.map((opt) => (
-                <IonSegmentButton key={opt.id} value={opt.id}>
+                <IonSegmentButton
+                  key={opt.id}
+                  value={opt.id}
+                  style={{
+                    minWidth: 0,
+                    "--min-width": "0px",
+                    "--padding-start": "2px",
+                    "--padding-end": "2px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                  } as React.CSSProperties}
+                >
                   {opt.label}
                 </IonSegmentButton>
               ))}
@@ -476,12 +427,28 @@ export const DutyLotteryModal = ({
               抽出名額
             </div>
             <IonSegment
+              className="meal-lottery-segment"
               value={String(pickCount)}
-              onIonChange={(e) => setPickCount(Number(e.detail.value))}
+              onIonChange={(e) => handleSelectPickCount(Number(e.detail.value))}
               disabled={isRolling}
+              style={{
+                width: "100%",
+                "--min-width": "0px",
+              } as React.CSSProperties}
             >
               {COUNT_OPTIONS.map((num) => (
-                <IonSegmentButton key={num} value={String(num)}>
+                <IonSegmentButton
+                  key={num}
+                  value={String(num)}
+                  style={{
+                    minWidth: 0,
+                    "--min-width": "0px",
+                    "--padding-start": "2px",
+                    "--padding-end": "2px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                  } as React.CSSProperties}
+                >
                   {num} 位
                 </IonSegmentButton>
               ))}
@@ -502,7 +469,7 @@ export const DutyLotteryModal = ({
             }}
           >
             <IonIcon slot="start" icon={diceOutline} />
-            {resolveDrawButtonText()}
+            {drawButtonText}
           </IonButton>
 
           {/* Rolling State */}
@@ -553,4 +520,6 @@ export const DutyLotteryModal = ({
   );
 };
 
-export default DutyLotteryModal;
+export const DutyLotteryModal = MealLotteryModal;
+
+export default MealLotteryModal;

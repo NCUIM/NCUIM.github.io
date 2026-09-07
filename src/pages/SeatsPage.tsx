@@ -19,7 +19,7 @@ import { diceOutline } from "ionicons/icons";
 import { useState } from "react";
 import { ROOM_LAYOUTS, type RoomLayout } from "../data/room-layouts";
 import SeatGrid from "../components/seats/SeatGrid";
-import DutyLotteryModal from "../components/seats/DutyLotteryModal";
+import MealLotteryModal from "../components/seats/MealLotteryModal";
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -78,7 +78,13 @@ const SeatsHeader = ({ onOpenLottery }: Readonly<{ onOpenLottery: () => void }>)
       <IonButtons slot="end">
         <IonButton
           fill="clear"
-          onClick={onOpenLottery}
+          onClick={(e) => {
+            (e.currentTarget as HTMLElement)?.blur();
+            if (document.activeElement instanceof HTMLElement) {
+              document.activeElement.blur();
+            }
+            onOpenLottery();
+          }}
           aria-label="今天跟誰一起吃~"
           title="今天跟誰一起吃~"
         >
@@ -134,7 +140,7 @@ const SeatsPage = () => {
         currentLayout={currentLayout}
         onSelectRoom={setSelectedRoom}
       />
-      <DutyLotteryModal
+      <MealLotteryModal
         isOpen={isLotteryOpen}
         defaultRoomId={selectedRoom}
         onDismiss={() => setIsLotteryOpen(false)}
