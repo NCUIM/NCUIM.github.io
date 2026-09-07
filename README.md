@@ -6,6 +6,7 @@
   <p>
     <a href="https://github.com/NCUIM/NCUIM.github.io/actions/workflows/deploy-pages.yml"><img src="https://img.shields.io/github/actions/workflow/status/NCUIM/NCUIM.github.io/deploy-pages.yml?branch=main&label=Deploy&style=flat-square" alt="Deploy" /></a>
     <a href="https://ncuim.github.io/"><img src="https://img.shields.io/badge/Online-ncuim.github.io-blue?style=flat-square" alt="Online" /></a>
+    <a href="https://sonarcloud.io/summary/new_code?id=NCUIM_NCUIM.github.io"><img src="https://sonarcloud.io/api/project_badges/measure?project=NCUIM_NCUIM.github.io&metric=alert_status" alt="Quality Gate Status" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License: MIT" /></a>
   </p>
 
@@ -34,6 +35,14 @@
 ### 研究室座位圖 (`/seats`)
 - **座位平面圖**：收錄 209（20席）、310（27席）、313（23席）、919（9席）平面配置。
 - **座位與成員搜尋**：支援依學生姓名或指導教授即時搜尋與定位座位。
+
+### 個人名片與名牌 (`/cards`)
+- **個人數位名片**：提供所屬研究室、座位編號標籤，支援綁定個人 GitHub 檔案連結。
+- **活動簽到條碼**：內建專屬 QR Code 與活動報到打卡功能。
+
+### 活動打卡與排行榜 (`/leaderboard`)
+- **即時活動看板**：統計新生迎新闖關與活動簽到進度。
+- **榮譽排行榜**：即時呈現各組別與成員挑戰成就排行。
 
 ### 新生指南與校園生活 (`/guide`, `/food`)
 - **入學時程與資源清單**：包含選課時程、校園授權軟體與常用系統連結。
