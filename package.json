@@ -1,6 +1,15 @@
 {
   "name": "ncuim2026-fresher",
   "version": "0.1.0",
+  "description": "CIM-Life (中央資管通) · 國立中央大學資訊管理學系碩士班綜合服務與生活入口平台",
+  "homepage": "https://ncuim.github.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NCUIM/NCUIM.github.io.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NCUIM/NCUIM.github.io/issues"
+  },
   "private": true,
   "license": "MIT",
   "type": "module",
