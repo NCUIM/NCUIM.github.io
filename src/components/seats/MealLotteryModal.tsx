@@ -249,13 +249,6 @@ export const MealLotteryHeader = ({
     </IonButton>
   );
 
-  const handleDismiss = () => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-    onDismiss();
-  };
-
   return (
     <IonHeader>
       <IonToolbar>
@@ -275,7 +268,7 @@ export const MealLotteryHeader = ({
         </IonTitle>
         <IonButtons slot="end">
           {!isIos && repeatModeButton}
-          <IonButton onClick={handleDismiss}>
+          <IonButton onClick={onDismiss}>
             <IonIcon slot="icon-only" icon={closeOutline} />
           </IonButton>
         </IonButtons>
