@@ -1,0 +1,29 @@
+name: 💡 功能建議 (Feature Request)
+description: 建議新功能、介面優化或資料更新需求
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您提出新功能或改進想法！歡迎與我們分享您的需求。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 需求或問題背景 (Problem or Motivation)
+      description: 目前在使用上有什麼痛點，或希望解決什麼問題？
+      placeholder: 例如：希望在研究室座位圖可以加入座位照片...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 建議解決方案 (Proposed Solution)
+      description: 請具體描述您期望的新功能樣貌或實作方式
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 其他替代方案 (Alternatives Considered)
+      description: 您是否曾考慮過其他替代做法？

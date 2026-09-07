@@ -1,0 +1,54 @@
+name: 🐛 問題回報 (Bug Report)
+description: 回報 CIM-Life 功能異常、課表解析錯誤或顯示異常問題
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您協助改善 CIM-Life！請提供盡可能詳細的資訊以利排查。
+  - type: textarea
+    id: description
+    attributes:
+      label: 問題描述 (Problem Description)
+      description: 請清楚描述遇到的問題或非預期的行為
+      placeholder: 例如：在課表頁面同步書籤後，管理溝通班級顯示為 I1-002 而非 I1-404...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟 (Steps to Reproduce)
+      description: 請條列如何重現此問題
+      placeholder: |
+        1. 開啟首頁並進入「課表」頁面
+        2. 點擊「連結課表」並執行書籤小工具
+        3. 回到網頁後觀察...
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: 預期結果 (Expected Behavior)
+      placeholder: 例如：應正確顯示為 I1-404 何迪亞班
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 作業系統與瀏覽器 (Environment)
+      description: 發生問題時使用的裝置環境
+      options:
+        - Desktop - Chrome / Edge
+        - Desktop - Safari
+        - Desktop - Firefox
+        - Mobile - iOS Safari
+        - Mobile - Android Chrome
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: 補充資訊 (Additional Context / Screenshots)
+      description: 可貼上錯誤截圖或額外資訊（請勿包含任何帳號密碼等機敏個資）
