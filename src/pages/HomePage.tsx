@@ -22,7 +22,7 @@ import {
   calculator,
   sparkles,
   chevronForwardOutline,
-  planetOutline,
+  schoolOutline,
 } from "ionicons/icons";
 import {
   AnnouncementItem,
@@ -406,15 +406,15 @@ const HomeHeader = ({ onOpenQuiz }: Readonly<{ onOpenQuiz: () => void }>) => (
           fill="clear"
           size="small"
           onClick={onOpenQuiz}
-          aria-label="3D 雲點猜教授"
+          aria-label="教授"
           style={{
             fontWeight: 700,
             fontSize: 13,
             color: "var(--ncu-primary)",
           }}
         >
-          <IonIcon slot="start" icon={planetOutline} />
-          <span className="responsive-label">3D 雲點</span>
+          <IonIcon slot="start" icon={schoolOutline} />
+          <span className="responsive-label">教授</span>
         </IonButton>
       </IonButtons>
     </IonToolbar>
