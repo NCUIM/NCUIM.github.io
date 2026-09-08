@@ -74,23 +74,50 @@ function downloadFile(url, destPath) {
 }
 
 function stripHtml(input) {
-  // Remove entire script/style blocks (including their content) before
-  // character-level tag stripping, so dangerous payloads are never included.
-  const withoutBlocks = input
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<style[\s\S]*?<\/style>/gi, "");
-
+  // State-machine HTML text extractor.
+  // Tracks open tag names and suppresses all content inside script/style
+  // elements, avoiding regex-based tag filtering that CodeQL flags.
+  const SKIP_TAGS = new Set(["script", "style"]);
   let text = "";
-  let insideTag = false;
-  for (const ch of withoutBlocks) {
-    if (ch === "<") {
-      insideTag = true;
-    } else if (ch === ">") {
-      insideTag = false;
-    } else if (!insideTag) {
-      text += ch;
+  let i = 0;
+  const len = input.length;
+
+  while (i < len) {
+    if (input[i] !== "<") {
+      text += input[i++];
+      continue;
     }
+    // Inside a tag — collect the tag name to decide whether to skip content.
+    const tagStart = i;
+    i++; // skip '<'
+    const isClose = i < len && input[i] === "/";
+    if (isClose) i++; // skip '/'
+    let tagName = "";
+    while (i < len && input[i] !== ">" && input[i] !== " " && input[i] !== "\t" && input[i] !== "\n" && input[i] !== "\r") {
+      tagName += input[i++];
+    }
+    // Advance past '>'
+    while (i < len && input[i] !== ">") i++;
+    if (i < len) i++; // skip '>'
+
+    tagName = tagName.toLowerCase();
+    if (!isClose && SKIP_TAGS.has(tagName)) {
+      // Skip everything until the matching closing tag.
+      const closeTag = `</${tagName}`;
+      const closeIdx = input.toLowerCase().indexOf(closeTag, i);
+      if (closeIdx !== -1) {
+        i = closeIdx;
+        // Advance past the closing tag.
+        while (i < len && input[i] !== ">") i++;
+        if (i < len) i++;
+      } else {
+        i = len; // malformed — skip to end
+      }
+    }
+    // Other tags are simply discarded (tag start already skipped above).
+    void tagStart;
   }
+
   return text.replaceAll("&nbsp;", " ").replaceAll("&nbsp", " ").trim();
 }
 
