@@ -79,21 +79,28 @@ interface DesktopCourseSpan {
   totalCols: number;
 }
 
-// ── Constants ─────────────────────────────────────────────────
-
 const days: readonly string[] = ["一", "二", "三", "四", "五"];
-const periods: readonly Period[] = [
-  { id: "1", time: "08:10-09:00" },
-  { id: "2", time: "09:10-10:00" },
-  { id: "3", time: "10:10-11:00" },
-  { id: "4", time: "11:10-12:00" },
-  { id: "N", time: "12:10-13:00" },
-  { id: "5", time: "13:10-14:00" },
-  { id: "6", time: "14:10-15:00" },
-  { id: "7", time: "15:10-16:00" },
-  { id: "8", time: "16:10-17:00" },
-  { id: "9", time: "17:10-18:00" },
+
+export const NCU_PERIODS: readonly Period[] = [
+  { id: "1", time: "08:00-08:50" },
+  { id: "2", time: "09:00-09:50" },
+  { id: "3", time: "10:00-10:50" },
+  { id: "4", time: "11:00-11:50" },
+  { id: "Z", time: "12:00-12:50" },
+  { id: "5", time: "13:00-13:50" },
+  { id: "6", time: "14:00-14:50" },
+  { id: "7", time: "15:00-15:50" },
+  { id: "8", time: "16:00-16:50" },
+  { id: "9", time: "17:00-17:50" },
+  { id: "A", time: "18:00-18:50" },
+  { id: "B", time: "19:00-19:50" },
+  { id: "C", time: "20:00-20:50" },
+  { id: "D", time: "21:00-21:50" },
+  { id: "E", time: "22:00-22:50" },
+  { id: "F", time: "23:00-23:50" },
 ];
+
+export const periods: readonly Period[] = NCU_PERIODS;
 
 const DESKTOP_ROW_HEIGHT = 78;
 const DESKTOP_EMPTY_ROW_HEIGHT = 38;
@@ -113,8 +120,8 @@ const getDefaultDayIndex = (): number => {
   return dayNum >= 1 && dayNum <= 5 ? dayNum - 1 : 0;
 };
 
-const getPeriodTimeBounds = (timeStr: string): { start: number; end: number } => {
-  const [startStr, endStr] = timeStr.split("-");
+export const getPeriodTimeBounds = (timeStr: string): { start: number; end: number } => {
+  const [startStr, endStr] = timeStr.split(/[-~]/).map((s) => s.trim());
   const [sh, sm] = startStr.split(":").map(Number);
   const [eh, em] = endStr.split(":").map(Number);
   return { start: sh * 60 + sm, end: eh * 60 + em };
@@ -387,7 +394,8 @@ const addCisCourseToMap = (
   dayIdx: number,
   periodChars: string,
 ): void => {
-  for (const ch of periodChars) {
+  for (const rawCh of periodChars) {
+    const ch = rawCh === "N" ? "Z" : rawCh;
     const periodItem = periods.find((p) => p.id === ch);
     if (!periodItem) continue;
     const key = `${periodItem.id}-${dayIdx}`;
@@ -777,7 +785,7 @@ const PeriodTimeBadge = ({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        minWidth: "48px",
+        minWidth: "54px",
         textAlign: "center",
         flexShrink: 0,
       }}
