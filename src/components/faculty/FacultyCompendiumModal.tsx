@@ -309,129 +309,96 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
           </div>
 
           {/* Detail Modal for Selected Unlocked Teacher */}
-          {selectedTeacher && (
-            <dialog
-              open
-              aria-label="教授詳細資料"
-              onKeyDown={(e) => {
-                if (e.key === "Escape") setSelectedTeacher(null);
-              }}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setSelectedTeacher(null);
-              }}
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                width: "100%",
-                height: "100%",
-                maxWidth: "100%",
-                maxHeight: "100%",
-                margin: 0,
-                border: "none",
-                background: "rgba(0, 0, 0, 0.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 9999,
-                padding: 16,
-                boxSizing: "border-box",
-              }}
-            >
-              <div
-                style={{
-                  background: "var(--ncu-surface)",
-                  borderRadius: "var(--ncu-radius-lg, 16px)",
-                  padding: 20,
-                  maxWidth: 420,
-                  width: "100%",
-                  boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
-                  position: "relative",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => setSelectedTeacher(null)}
+          <IonModal
+            isOpen={selectedTeacher !== null}
+            onDidDismiss={() => setSelectedTeacher(null)}
+          >
+            <IonHeader>
+              <IonToolbar>
+                <IonTitle>{selectedTeacher?.name ?? "教授詳細資料"}</IonTitle>
+                <IonButtons slot="end">
+                  <IonButton fill="clear" onClick={() => setSelectedTeacher(null)} aria-label="關閉詳情">
+                    <IonIcon icon={closeOutline} />
+                  </IonButton>
+                </IonButtons>
+              </IonToolbar>
+            </IonHeader>
+            <IonContent className="ion-padding">
+              {selectedTeacher && (
+                <div
                   style={{
-                    position: "absolute",
-                    top: 14,
-                    right: 14,
-                    border: "none",
-                    background: "transparent",
-                    color: "var(--ncu-muted)",
-                    fontSize: 20,
-                    cursor: "pointer",
+                    background: "var(--ncu-surface)",
+                    borderRadius: "var(--ncu-radius-lg, 16px)",
+                    padding: 20,
+                    maxWidth: 480,
+                    margin: "20px auto",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
                   }}
-                  aria-label="關閉詳情"
                 >
-                  <IonIcon icon={closeOutline} />
-                </button>
-
-                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-                  <img
-                    src={selectedTeacher.localPhotoUrl || selectedTeacher.photoUrl}
-                    alt={selectedTeacher.name}
-                    style={{
-                      width: 80,
-                      height: 100,
-                      objectFit: "cover",
-                      borderRadius: 10,
-                      border: "2px solid #22c55e",
-                    }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 20, fontWeight: 800, color: "var(--ncu-ink)" }}>
-                        {selectedTeacher.name}
-                      </span>
-                      <IonBadge color="success" style={{ fontSize: 11 }}>
-                        {selectedTeacher.title}
-                      </IonBadge>
-                      {selectedTeacher.role && (
-                        <IonBadge color="medium" style={{ fontSize: 11 }}>
-                          {selectedTeacher.role}
+                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                    <img
+                      src={selectedTeacher.localPhotoUrl || selectedTeacher.photoUrl}
+                      alt={selectedTeacher.name}
+                      style={{
+                        width: 80,
+                        height: 100,
+                        objectFit: "cover",
+                        borderRadius: 10,
+                        border: "2px solid #22c55e",
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 20, fontWeight: 800, color: "var(--ncu-ink)" }}>
+                          {selectedTeacher.name}
+                        </span>
+                        <IonBadge color="success" style={{ fontSize: 11 }}>
+                          {selectedTeacher.title}
                         </IonBadge>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                      <IonIcon icon={businessOutline} /> 研究室：{selectedTeacher.office || "管理二館"}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
-                      <IonIcon icon={schoolOutline} /> {selectedTeacher.education}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--ncu-primary)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
-                      <IonIcon icon={mailOutline} /> {selectedTeacher.email}
+                        {selectedTeacher.role && (
+                          <IonBadge color="medium" style={{ fontSize: 11 }}>
+                            {selectedTeacher.role}
+                          </IonBadge>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
+                        <IonIcon icon={businessOutline} /> 研究室：{selectedTeacher.office || "管理二館"}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+                        <IonIcon icon={schoolOutline} /> {selectedTeacher.education}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ncu-primary)", marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
+                        <IonIcon icon={mailOutline} /> {selectedTeacher.email}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-                  <div style={{ fontSize: 12, color: "var(--ncu-ink)", fontWeight: 700, marginBottom: 6 }}>
-                    專長領域：
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {selectedTeacher.specialtyTags.map((tag) => (
-                      <span
-                        key={tag}
-                        style={{
-                          background: "rgba(34, 197, 94, 0.12)",
-                          color: "#166534",
-                          fontSize: 11,
-                          padding: "2px 6px",
-                          borderRadius: 4,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                  <div style={{ marginTop: 14, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontSize: 12, color: "var(--ncu-ink)", fontWeight: 700, marginBottom: 6 }}>
+                      專長領域：
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {selectedTeacher.specialtyTags.map((tag) => (
+                        <span
+                          key={tag}
+                          style={{
+                            background: "rgba(34, 197, 94, 0.12)",
+                            color: "#166534",
+                            fontSize: 11,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </dialog>
-          )}
+              )}
+            </IonContent>
+          </IonModal>
         </div>
       </IonContent>
     </IonModal>

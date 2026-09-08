@@ -18,6 +18,8 @@ interface Point3D {
   alpha: number;
 }
 
+type AnimationPhase = "orbit" | "implode" | "burst" | "settle";
+
 export interface ImageTargetItem {
   readonly id: string;
   readonly photoUrl?: string;
@@ -57,7 +59,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
   // No placeholder portrait: only the current loaded photo can be solved.
   const particlesRef = useRef<Point3D[]>([]);
-  const phaseRef = useRef<"orbit" | "implode" | "burst" | "settle">("orbit");
+  const phaseRef = useRef<AnimationPhase>("orbit");
   const phaseTimerRef = useRef(0);
 
   // Scatter source pixels in depth while preserving their front projection.
@@ -190,7 +192,7 @@ interface ProjectedPoint {
 function updateImplodePhase(
   particles: Point3D[],
   phaseTimerRef: React.MutableRefObject<number>,
-  phaseRef: React.MutableRefObject<"orbit" | "implode" | "burst" | "settle">,
+  phaseRef: React.MutableRefObject<AnimationPhase>,
   onBurstComplete?: () => void,
 ) {
   phaseTimerRef.current += 1;
@@ -216,7 +218,7 @@ function updateImplodePhase(
 function updateBurstPhase(
   particles: Point3D[],
   phaseTimerRef: React.MutableRefObject<number>,
-  phaseRef: React.MutableRefObject<"orbit" | "implode" | "burst" | "settle">,
+  phaseRef: React.MutableRefObject<AnimationPhase>,
 ) {
   phaseTimerRef.current += 1;
   for (const p of particles) {
@@ -257,7 +259,7 @@ function updateIdlePhase(particles: Point3D[], time: number) {
 
 function updateParticlesAnimation(
   particles: Point3D[],
-  phaseRef: React.MutableRefObject<"orbit" | "implode" | "burst" | "settle">,
+  phaseRef: React.MutableRefObject<AnimationPhase>,
   phaseTimerRef: React.MutableRefObject<number>,
   rotXRef: React.MutableRefObject<number>,
   rotYRef: React.MutableRefObject<number>,
