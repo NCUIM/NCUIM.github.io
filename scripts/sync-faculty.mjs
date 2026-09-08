@@ -74,9 +74,15 @@ function downloadFile(url, destPath) {
 }
 
 function stripHtml(input) {
+  // Remove entire script/style blocks (including their content) before
+  // character-level tag stripping, so dangerous payloads are never included.
+  const withoutBlocks = input
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "");
+
   let text = "";
   let insideTag = false;
-  for (const ch of input) {
+  for (const ch of withoutBlocks) {
     if (ch === "<") {
       insideTag = true;
     } else if (ch === ">") {
