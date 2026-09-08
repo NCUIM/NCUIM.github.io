@@ -324,8 +324,20 @@ export const FacultyQuizModal: React.FC<{
                 animation: "popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             >
-              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--ncu-ink)", marginBottom: 12 }}>
-                他是教授嗎？
+              <div
+                style={{
+                  fontSize: 17,
+                  fontWeight: 800,
+                  color: "var(--ncu-ink)",
+                  marginBottom: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                }}
+              >
+                <IonIcon icon={schoolOutline} style={{ color: "var(--ncu-primary)", fontSize: 20 }} />
+                <span>他是教授嗎？</span>
               </div>
               <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
                 <IonButton
@@ -432,7 +444,7 @@ export const FacultyQuizModal: React.FC<{
                       style={{ fontWeight: 700 }}
                     >
                       <IonIcon slot="end" icon={arrowForwardOutline} />
-                      挑戰下一位（連勝中 🔥）
+                      下一位
                     </IonButton>
                   </div>
                 </div>
@@ -471,7 +483,7 @@ export const FacultyQuizModal: React.FC<{
                         </IonBadge>
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", marginTop: 4, fontWeight: 600 }}>
-                        🎉 答對了！這不是教授，是趣味迷因貼圖！
+                        🎉 答對了，這是【{target.data.name}】！
                       </div>
                     </div>
                   </div>
@@ -483,7 +495,7 @@ export const FacultyQuizModal: React.FC<{
                       style={{ fontWeight: 700 }}
                     >
                       <IonIcon slot="end" icon={arrowForwardOutline} />
-                      挑戰下一張（連勝中 🔥）
+                      下一題
                     </IonButton>
                   </div>
                 </div>
@@ -527,8 +539,8 @@ export const FacultyQuizModal: React.FC<{
                   </div>
                   <div style={{ fontSize: 12, color: "#dc2626", marginTop: 4, fontWeight: 600 }}>
                     {target.type === "teacher"
-                      ? `這其實是系上的 ${target.data.name} 教授！未過關且不解鎖。`
-                      : `這不是教授，是【${target.data.name}】迷因啦！未過關。`}
+                      ? `這是 ${target.data.name} 教授啦！記住囉 😉`
+                      : `這不是教授，是【${target.data.name}】啦 🤣`}
                   </div>
                 </div>
               </div>
@@ -540,7 +552,7 @@ export const FacultyQuizModal: React.FC<{
                   style={{ fontWeight: 700 }}
                 >
                   <IonIcon slot="end" icon={refreshOutline} />
-                  重新挑戰（連勝已中斷）
+                  再試一次
                 </IonButton>
               </div>
             </div>

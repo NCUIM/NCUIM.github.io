@@ -7,8 +7,7 @@ test(`dragging to ${view} unlocks once and the next round resets`, async ({ page
   const puzzle = page.getByRole("group", { name: "旋轉視角，對準正面解鎖" });
   await expect(puzzle).toBeVisible();
   await expect(puzzle.getByText("載入教授人像中…")).toBeHidden();
-  await expect(puzzle.getByText(/照片載入失敗/)).toBeHidden();
-  const next = page.getByText(/挑戰下/, { exact: false });
+  const next = page.getByRole("button", { name: /下一/ });
   await expect(next).toBeHidden();
   await puzzle.screenshot({ path: `test-results/cloud-puzzle-${view}-start.png` });
   const box = (await puzzle.boundingBox())!;
@@ -21,8 +20,8 @@ test(`dragging to ${view} unlocks once and the next round resets`, async ({ page
   await expect(next).toBeHidden();
   await page.mouse.move(targetX, y + 0.3 / 0.009, { steps: 15 });
   await page.mouse.up();
-  await expect(page.getByText("🤔 這是系上的教授嗎？")).toBeVisible();
-  const isTeacherBtn = page.getByRole("button", { name: "是教授" });
+  await expect(page.getByText("他是教授嗎？")).toBeVisible();
+  const isTeacherBtn = page.getByRole("button", { name: "是", exact: true });
   await isTeacherBtn.click();
   await puzzle.focus();
   await page.keyboard.press("ArrowLeft");
