@@ -12,6 +12,8 @@ import {
   IonIcon,
   IonBadge,
   useIonAlert,
+  IonButtons,
+  IonButton,
 } from "@ionic/react";
 import {
   map,
@@ -20,6 +22,7 @@ import {
   calculator,
   sparkles,
   chevronForwardOutline,
+  planetOutline,
 } from "ionicons/icons";
 import {
   AnnouncementItem,
@@ -27,6 +30,7 @@ import {
   fetchAnnouncements,
 } from "../services/announcement-api";
 import AnnouncementModal from "../components/announcements/AnnouncementModal";
+import { FacultyQuizModal } from "../components/faculty/FacultyQuizModal";
 import homeModulesJson from "../data/home-modules.json";
 
 interface ModuleCardRaw {
@@ -393,10 +397,26 @@ const ModuleCardItem = ({
   );
 };
 
-const HomeHeader = () => (
+const HomeHeader = ({ onOpenQuiz }: Readonly<{ onOpenQuiz: () => void }>) => (
   <IonHeader>
     <IonToolbar>
       <IonTitle>CIM-Life</IonTitle>
+      <IonButtons slot="end">
+        <IonButton
+          fill="clear"
+          size="small"
+          onClick={onOpenQuiz}
+          aria-label="3D 雲點猜教授"
+          style={{
+            fontWeight: 700,
+            fontSize: 13,
+            color: "var(--ncu-primary)",
+          }}
+        >
+          <IonIcon slot="start" icon={planetOutline} />
+          <span className="responsive-label">3D 雲點</span>
+        </IonButton>
+      </IonButtons>
     </IonToolbar>
   </IonHeader>
 );
@@ -567,6 +587,7 @@ const isCtfEnded = (): boolean => {
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [showQuizModal, setShowQuizModal] = useState(false);
   const [announcements, setAnnouncements] = useState<readonly AnnouncementItem[]>(BUILTIN_ANNOUNCEMENTS);
   const [easterEggStage, setEasterEggStage] = useState(0);
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -726,7 +747,7 @@ const getCryptoRandom = (): number => {
 
   return (
     <IonPage>
-      <HomeHeader />
+      <HomeHeader onOpenQuiz={() => setShowQuizModal(true)} />
       <HomeBody
         stage={easterEggStage}
         isUnlocked={isUnlocked}
@@ -742,6 +763,10 @@ const getCryptoRandom = (): number => {
         isOpen={showAnnouncements}
         announcements={announcements}
         onDismiss={() => setShowAnnouncements(false)}
+      />
+      <FacultyQuizModal
+        isOpen={showQuizModal}
+        onDismiss={() => setShowQuizModal(false)}
       />
     </IonPage>
   );
