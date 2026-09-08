@@ -17,13 +17,18 @@ import {
   mailOutline,
   businessOutline,
   schoolOutline,
+  checkmarkCircle,
+  closeCircle,
+  refreshOutline,
 } from "ionicons/icons";
-import type { TeacherProfile, QuizQuestion } from "../../types/faculty";
+import type { TeacherProfile, MemeItem, QuizTarget, QuizQuestion } from "../../types/faculty";
 import teachersData from "../../data/im-teachers.json";
+import memesData from "../../data/memes.json";
 import { PointCloudCanvas } from "./PointCloudCanvas";
 import { FacultyCompendiumModal } from "./FacultyCompendiumModal";
 
 const allTeachers: readonly TeacherProfile[] = teachersData as readonly TeacherProfile[];
+const allMemes: readonly MemeItem[] = memesData as readonly MemeItem[];
 
 const STORAGE_KEY_UNLOCKED = "ncu_faculty_quiz_unlocked";
 const STORAGE_KEY_STREAK = "ncu_faculty_quiz_streak";
@@ -85,17 +90,35 @@ const triggerConfetti = (canvas: HTMLCanvasElement | null) => {
   requestAnimationFrame(animate);
 };
 
+export const pickNextTarget = (
+  teachers: readonly TeacherProfile[],
+  memes: readonly MemeItem[],
+  lastId?: string,
+): QuizTarget => {
+  const pickTeacher = Math.random() < 0.5;
+  if (pickTeacher && teachers.length > 0) {
+    const eligible = teachers.filter((t) => t.id !== lastId);
+    const chosen = eligible[Math.floor(Math.random() * eligible.length)] || teachers[0];
+    return { type: "teacher", data: chosen };
+  }
+  if (memes.length > 0) {
+    const eligible = memes.filter((m) => m.id !== lastId);
+    const chosen = eligible[Math.floor(Math.random() * eligible.length)] || memes[0];
+    return { type: "meme", data: chosen };
+  }
+  return { type: "teacher", data: teachers[0] };
+};
+
+// Kept for backward compatibility with existing tests
 export const generateQuestion = (
   teachers: readonly TeacherProfile[],
   lastId?: string,
 ): QuizQuestion => {
   const eligible = teachers.filter((t) => t.id !== lastId);
   const target = eligible[Math.floor(Math.random() * eligible.length)] || teachers[0];
-
   const others = teachers.filter((t) => t.id !== target.id);
   const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
   const distractors = shuffledOthers.slice(0, 3);
-
   const options = [target, ...distractors].sort(() => Math.random() - 0.5);
 
   return {
@@ -109,11 +132,14 @@ export const generateQuestion = (
   };
 };
 
+export type QuizPhase = "aligning" | "verifying" | "success" | "failed";
+
 export const FacultyQuizModal: React.FC<{
   isOpen: boolean;
   onDismiss: () => void;
 }> = ({ isOpen, onDismiss }) => {
-  const [question, setQuestion] = useState<QuizQuestion | null>(null);
+  const [target, setTarget] = useState<QuizTarget | null>(null);
+  const [phase, setPhase] = useState<QuizPhase>("aligning");
   const completedRef = useRef(false);
   const [streak, setStreak] = useState(() => {
     try {
@@ -134,53 +160,75 @@ export const FacultyQuizModal: React.FC<{
   const [showCompendium, setShowCompendium] = useState(false);
 
   const [isCelebrating, setIsCelebrating] = useState(false);
-  const [showProfileCard, setShowProfileCard] = useState(false);
   const confettiCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Start new round
   const nextRound = useCallback(() => {
-    if (allTeachers.length === 0) return;
-    const newQ = generateQuestion(allTeachers, question?.teacher.id);
-    setQuestion(newQ);
+    if (allTeachers.length === 0 && allMemes.length === 0) return;
+    const newTarget = pickNextTarget(allTeachers, allMemes, target?.data.id);
+    setTarget(newTarget);
     completedRef.current = false;
+    setPhase("aligning");
     setIsCelebrating(false);
-    setShowProfileCard(false);
-  }, [question?.teacher.id]);
+  }, [target?.data.id]);
 
   useEffect(() => {
     if (!isOpen) {
-      setQuestion(null);
+      setTarget(null);
       return;
     }
-    if (isOpen && !question) {
+    if (isOpen && !target) {
       nextRound();
     }
-  }, [isOpen, question, nextRound]);
+  }, [isOpen, target, nextRound]);
 
   const handleAligned = () => {
-    if (completedRef.current || !question || !isOpen) return;
+    if (completedRef.current || !target || !isOpen) return;
     completedRef.current = true;
-    setIsCelebrating(true);
-    setShowProfileCard(true);
-    const newStreak = streak + 1;
-    setStreak(newStreak);
-    try {
-      localStorage.setItem(STORAGE_KEY_STREAK, String(newStreak));
-      const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
-      const unlockedList: string[] = saved ? JSON.parse(saved) : [];
-      if (!unlockedList.includes(question.teacher.id)) {
-        unlockedList.push(question.teacher.id);
-        localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
-        setUnlockedIds(unlockedList);
-      }
-    } catch {
-      // Progress remains available for this session when storage is unavailable.
-    }
-    navigator.vibrate?.([30, 50, 60]);
-    triggerConfetti(confettiCanvasRef.current);
+    setPhase("verifying");
+    navigator.vibrate?.(30);
   };
 
-  if (!question || !isOpen) return null;
+  const handleAnswer = (answeredIsTeacher: boolean) => {
+    if (!target) return;
+    const isActualTeacher = target.type === "teacher";
+    const isCorrect = answeredIsTeacher === isActualTeacher;
+
+    if (isCorrect) {
+      setPhase("success");
+      setIsCelebrating(true);
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      try {
+        localStorage.setItem(STORAGE_KEY_STREAK, String(newStreak));
+        if (isActualTeacher) {
+          const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
+          const unlockedList: string[] = saved ? JSON.parse(saved) : [];
+          if (!unlockedList.includes(target.data.id)) {
+            unlockedList.push(target.data.id);
+            localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
+            setUnlockedIds(unlockedList);
+          }
+        }
+      } catch {
+        // Storage unavailable
+      }
+      navigator.vibrate?.([40, 60, 80]);
+      triggerConfetti(confettiCanvasRef.current);
+    } else {
+      setPhase("failed");
+      setIsCelebrating(false);
+      setStreak(0);
+      try {
+        localStorage.setItem(STORAGE_KEY_STREAK, "0");
+      } catch {
+        // Storage unavailable
+      }
+      navigator.vibrate?.([100, 50, 100]);
+    }
+  };
+
+  if (!target || !isOpen) return null;
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
@@ -250,102 +298,252 @@ export const FacultyQuizModal: React.FC<{
               </button>
             </div>
             <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
-              隨機抽取中大資管師資
+              隨機抽取系上教授或迷因貼圖
             </span>
           </div>
 
           {/* 3D Point Cloud Canvas */}
           <PointCloudCanvas
-            key={question.teacher.id}
-            teacher={question.teacher}
+            key={target.data.id}
+            item={target.data}
             isCelebrating={isCelebrating}
             onAligned={handleAligned}
           />
 
-          {/* Revealed Professor Card after Correct Answer */}
-          {showProfileCard && (
+          {/* Phase 2: Verification Prompt */}
+          {phase === "verifying" && (
             <div
               style={{
-                background: "linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)",
-                border: "2px solid #22c55e",
+                marginTop: 14,
+                background: "var(--ncu-surface)",
+                border: "2px solid var(--ncu-primary)",
+                borderRadius: "var(--ncu-radius-lg, 16px)",
+                padding: "16px 18px",
+                textAlign: "center",
+                boxShadow: "0 8px 24px rgba(59, 130, 246, 0.15)",
+                animation: "popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--ncu-ink)", marginBottom: 4 }}>
+                🤔 這是系上的教授嗎？
+              </div>
+              <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginBottom: 14 }}>
+                請確認正面成形的人像是系上教授還是迷因貼圖
+              </div>
+              <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+                <IonButton
+                  color="success"
+                  onClick={() => handleAnswer(true)}
+                  style={{ fontWeight: 800, flex: 1, maxWidth: 160 }}
+                >
+                  <IonIcon slot="start" icon={checkmarkCircle} />
+                  是教授
+                </IonButton>
+                <IonButton
+                  color="danger"
+                  onClick={() => handleAnswer(false)}
+                  style={{ fontWeight: 800, flex: 1, maxWidth: 160 }}
+                >
+                  <IonIcon slot="start" icon={closeCircle} />
+                  不是教授
+                </IonButton>
+              </div>
+            </div>
+          )}
+
+          {/* Phase 3: Success Result */}
+          {phase === "success" && (
+            <div style={{ marginTop: 14 }}>
+              {target.type === "teacher" ? (
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)",
+                    border: "2px solid #22c55e",
+                    borderRadius: "var(--ncu-radius-lg, 16px)",
+                    padding: 16,
+                    boxShadow: "0 10px 25px rgba(34, 197, 94, 0.2)",
+                    animation: "popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                    <img
+                      src={target.data.localPhotoUrl || target.data.photoUrl}
+                      alt={target.data.name}
+                      style={{
+                        width: 72,
+                        height: 90,
+                        objectFit: "cover",
+                        borderRadius: 10,
+                        border: "2px solid #22c55e",
+                        boxShadow: "var(--ncu-shadow-sm)",
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: "var(--ncu-ink)" }}>
+                          {target.data.name}
+                        </span>
+                        <IonBadge color="success" style={{ fontSize: 11 }}>
+                          {target.data.title}
+                        </IonBadge>
+                        {target.data.role && (
+                          <IonBadge color="medium" style={{ fontSize: 11 }}>
+                            {target.data.role}
+                          </IonBadge>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                        <IonIcon icon={businessOutline} /> 研究室：{target.data.office || "管理二館"}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                        <IonIcon icon={schoolOutline} /> {target.data.education}
+                      </div>
+                      <div style={{ fontSize: 12, color: "var(--ncu-primary)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                        <IonIcon icon={mailOutline} /> {target.data.email}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontSize: 12, color: "var(--ncu-ink)", fontWeight: 700, marginBottom: 4 }}>
+                      專長領域：
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                      {target.data.specialtyTags.map((tag) => (
+                        <span
+                          key={tag}
+                          style={{
+                            background: "rgba(34, 197, 94, 0.12)",
+                            color: "#166534",
+                            fontSize: 11,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 14, textAlign: "center" }}>
+                    <IonButton
+                      expand="block"
+                      color="success"
+                      onClick={nextRound}
+                      style={{ fontWeight: 700 }}
+                    >
+                      <IonIcon slot="end" icon={arrowForwardOutline} />
+                      挑戰下一位（連勝中 🔥）
+                    </IonButton>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)",
+                    border: "2px solid #3b82f6",
+                    borderRadius: "var(--ncu-radius-lg, 16px)",
+                    padding: 16,
+                    boxShadow: "0 10px 25px rgba(59, 130, 246, 0.2)",
+                    animation: "popIn 0.3s ease-out",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                    <img
+                      src={target.data.localPhotoUrl || target.data.photoUrl}
+                      alt={target.data.name}
+                      style={{
+                        width: 72,
+                        height: 72,
+                        objectFit: "contain",
+                        borderRadius: 10,
+                        background: "#f1f5f9",
+                        padding: 4,
+                        border: "2px solid #3b82f6",
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: "var(--ncu-ink)" }}>
+                          {target.data.name}
+                        </span>
+                        <IonBadge color="primary" style={{ fontSize: 11 }}>
+                          迷因貼圖
+                        </IonBadge>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#2563eb", marginTop: 4, fontWeight: 600 }}>
+                        🎉 答對了！這不是教授，是趣味迷因貼圖！
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 14, textAlign: "center" }}>
+                    <IonButton
+                      expand="block"
+                      color="primary"
+                      onClick={nextRound}
+                      style={{ fontWeight: 700 }}
+                    >
+                      <IonIcon slot="end" icon={arrowForwardOutline} />
+                      挑戰下一張（連勝中 🔥）
+                    </IonButton>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Phase 4: Failed Result */}
+          {phase === "failed" && (
+            <div
+              style={{
+                marginTop: 14,
+                background: "linear-gradient(135deg, #ffffff 0%, #fef2f2 100%)",
+                border: "2px solid #ef4444",
                 borderRadius: "var(--ncu-radius-lg, 16px)",
                 padding: 16,
-                boxShadow: "0 10px 25px rgba(34, 197, 94, 0.2)",
-                animation: "popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                marginBottom: 16,
+                boxShadow: "0 10px 25px rgba(239, 68, 68, 0.2)",
+                animation: "popIn 0.3s ease-out",
               }}
             >
               <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
                 <img
-                  src={question.teacher.localPhotoUrl || question.teacher.photoUrl}
-                  alt={question.teacher.name}
+                  src={target.data.localPhotoUrl || target.data.photoUrl}
+                  alt={target.data.name}
                   style={{
                     width: 72,
-                    height: 90,
-                    objectFit: "cover",
+                    height: 80,
+                    objectFit: target.type === "teacher" ? "cover" : "contain",
                     borderRadius: 10,
-                    border: "2px solid #22c55e",
-                    boxShadow: "var(--ncu-shadow-sm)",
+                    border: "2px solid #ef4444",
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 18, fontWeight: 800, color: "var(--ncu-ink)" }}>
-                      {question.teacher.name}
+                      {target.data.name}
                     </span>
-                    <IonBadge color="success" style={{ fontSize: 11 }}>
-                      {question.teacher.title}
+                    <IonBadge color="danger" style={{ fontSize: 11 }}>
+                      答錯了
                     </IonBadge>
-                    {question.teacher.role && (
-                      <IonBadge color="medium" style={{ fontSize: 11 }}>
-                        {question.teacher.role}
-                      </IonBadge>
-                    )}
                   </div>
-                  <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
-                    <IonIcon icon={businessOutline} /> 研究室：{question.teacher.office || "管理二館"}
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-                    <IonIcon icon={schoolOutline} /> {question.teacher.education}
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--ncu-primary)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
-                    <IonIcon icon={mailOutline} /> {question.teacher.email}
+                  <div style={{ fontSize: 12, color: "#dc2626", marginTop: 4, fontWeight: 600 }}>
+                    {target.type === "teacher"
+                      ? `這其實是系上的 ${target.data.name} 教授！未過關且不解鎖。`
+                      : `這不是教授，是【${target.data.name}】迷因啦！未過關。`}
                   </div>
                 </div>
               </div>
-
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
-                <div style={{ fontSize: 12, color: "var(--ncu-ink)", fontWeight: 700, marginBottom: 4 }}>
-                  專長領域：
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {question.teacher.specialtyTags.map((tag) => (
-                    <span
-                      key={tag}
-                      style={{
-                        background: "rgba(34, 197, 94, 0.12)",
-                        color: "#166534",
-                        fontSize: 11,
-                        padding: "2px 6px",
-                        borderRadius: 4,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
               <div style={{ marginTop: 14, textAlign: "center" }}>
                 <IonButton
                   expand="block"
-                  color="success"
+                  color="medium"
                   onClick={nextRound}
                   style={{ fontWeight: 700 }}
                 >
-                  <IonIcon slot="end" icon={arrowForwardOutline} />
-                  挑戰下一位教授（連勝中 🔥）
+                  <IonIcon slot="end" icon={refreshOutline} />
+                  重新挑戰（連勝已中斷）
                 </IonButton>
               </div>
             </div>
