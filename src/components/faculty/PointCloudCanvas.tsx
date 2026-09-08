@@ -22,6 +22,34 @@ interface PointCloudCanvasProps {
   onBurstComplete?: () => void;
 }
 
+// Generate initial placeholder points so canvas is never blank
+const createFallbackPoints = (): Point3D[] => {
+  const pts: Point3D[] = [];
+  for (let i = 0; i < 950; i++) {
+    const phi = Math.acos(1 - (2 * (i + 0.5)) / 950);
+    const theta = Math.PI * (1 + 5 ** 0.5) * i;
+    const radius = 75 + (Math.sin(i * 0.4) * 12) + (Math.random() - 0.5) * 15;
+    const x = radius * Math.sin(phi) * Math.cos(theta);
+    const y = radius * Math.cos(phi) * 1.15;
+    const z = radius * Math.sin(phi) * Math.sin(theta) * 0.7;
+    pts.push({
+      x,
+      y,
+      z,
+      baseX: x,
+      baseY: y,
+      baseZ: z,
+      vx: 0,
+      vy: 0,
+      vz: 0,
+      color: i % 2 === 0 ? "#38bdf8" : "#fbbf24",
+      size: 1.8,
+      alpha: 0.85,
+    });
+  }
+  return pts;
+};
+
 export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   teacher,
   isCelebrating,
@@ -31,15 +59,15 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   const animFrameRef = useRef<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Rotation angles: start at a 3D perspective angle so it's a 3D bust initially
-  const rotYRef = useRef(0.45);
-  const rotXRef = useRef(0.08);
+  // Rotation angles: start at slight angle so user sees it is a 3D bust
+  const rotYRef = useRef(0.35);
+  const rotXRef = useRef(0.06);
   const isDraggingRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
-  const velocityRotRef = useRef({ x: 0, y: 0.003 });
+  const velocityRotRef = useRef({ x: 0, y: 0.002 });
 
-  // Particles & phase
-  const particlesRef = useRef<Point3D[]>([]);
+  // Particles initialized with immediate fallback points so it's NEVER empty
+  const particlesRef = useRef<Point3D[]>(createFallbackPoints());
   const phaseRef = useRef<"orbit" | "implode" | "burst" | "settle">("orbit");
   const phaseTimerRef = useRef(0);
 
@@ -47,101 +75,85 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   const generatePointCloudFromImage = useCallback((imgSrc: string) => {
     setLoading(true);
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (imgSrc.startsWith("http")) {
+      img.crossOrigin = "anonymous";
+    }
 
     img.onload = () => {
-      const sampleW = 54;
-      const sampleH = 68;
-      const offscreen = document.createElement("canvas");
-      offscreen.width = sampleW;
-      offscreen.height = sampleH;
-      const oCtx = offscreen.getContext("2d");
+      try {
+        const sampleW = 54;
+        const sampleH = 68;
+        const offscreen = document.createElement("canvas");
+        offscreen.width = sampleW;
+        offscreen.height = sampleH;
+        const oCtx = offscreen.getContext("2d", { willReadFrequently: true });
 
-      if (!oCtx) {
-        setLoading(false);
-        return;
-      }
-
-      oCtx.drawImage(img, 0, 0, sampleW, sampleH);
-      const imgData = oCtx.getImageData(0, 0, sampleW, sampleH).data;
-
-      const pts: Point3D[] = [];
-
-      for (let y = 0; y < sampleH; y++) {
-        for (let x = 0; x < sampleW; x++) {
-          const idx = (y * sampleW + x) * 4;
-          const r = imgData[idx];
-          const g = imgData[idx + 1];
-          const b = imgData[idx + 2];
-          const a = imgData[idx + 3];
-
-          // Skip transparent or near-blank white corners
-          if (a < 80) continue;
-          if (r > 245 && g > 245 && b > 245 && (x < 4 || x > sampleW - 5 || y < 4)) continue;
-
-          // Normalized coordinates [-1, 1]
-          const nx = (x / (sampleW - 1) - 0.5) * 2;
-          const ny = (y / (sampleH - 1) - 0.5) * 2;
-
-          // Luminance for relief carving
-          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-          // 3D head curvature: center is convex, cheeks curve back
-          const curveZ = Math.sqrt(Math.max(0, 1 - nx * nx * 0.85)) * 38;
-          const reliefZ = (lum / 255) * 16;
-          const noiseZ = (Math.random() - 0.5) * 4;
-          const pz = curveZ + reliefZ - 30 + noiseZ;
-
-          const px = nx * 86;
-          const py = ny * 108;
-
-          pts.push({
-            x: px,
-            y: py,
-            z: pz,
-            baseX: px,
-            baseY: py,
-            baseZ: pz,
-            vx: 0,
-            vy: 0,
-            vz: 0,
-            color: `rgb(${r},${g},${b})`,
-            size: 1.8 + (1 - Math.abs(nx)) * 0.6,
-            alpha: 0.92,
-          });
+        if (!oCtx) {
+          setLoading(false);
+          return;
         }
-      }
 
-      particlesRef.current = pts;
-      setLoading(false);
+        oCtx.drawImage(img, 0, 0, sampleW, sampleH);
+        const imgData = oCtx.getImageData(0, 0, sampleW, sampleH).data;
+
+        const pts: Point3D[] = [];
+
+        for (let y = 0; y < sampleH; y++) {
+          for (let x = 0; x < sampleW; x++) {
+            const idx = (y * sampleW + x) * 4;
+            const r = imgData[idx];
+            const g = imgData[idx + 1];
+            const b = imgData[idx + 2];
+            const a = imgData[idx + 3];
+
+            // Skip transparent or background edge white pixels
+            if (a < 80) continue;
+            if (r > 240 && g > 240 && b > 240 && (x < 3 || x > sampleW - 4 || y < 3)) continue;
+
+            // Normalized coordinates [-1, 1]
+            const nx = (x / (sampleW - 1) - 0.5) * 2;
+            const ny = (y / (sampleH - 1) - 0.5) * 2;
+
+            // Luminance for relief carving
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+            // 3D head curvature: center is convex, cheeks curve back
+            const curveZ = Math.sqrt(Math.max(0, 1 - nx * nx * 0.82)) * 36;
+            const reliefZ = (lum / 255) * 16;
+            const noiseZ = (Math.random() - 0.5) * 3;
+            const pz = curveZ + reliefZ - 28 + noiseZ;
+
+            const px = nx * 80;
+            const py = ny * 102;
+
+            pts.push({
+              x: px,
+              y: py,
+              z: pz,
+              baseX: px,
+              baseY: py,
+              baseZ: pz,
+              vx: 0,
+              vy: 0,
+              vz: 0,
+              color: `rgb(${r},${g},${b})`,
+              size: 1.8 + (1 - Math.abs(nx)) * 0.5,
+              alpha: 0.95,
+            });
+          }
+        }
+
+        if (pts.length > 200) {
+          particlesRef.current = pts;
+        }
+      } catch (err) {
+        console.warn("Could not sample point cloud from image:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     img.onerror = () => {
-      // Fallback if local image fails
-      const pts: Point3D[] = [];
-      for (let i = 0; i < 900; i++) {
-        const phi = Math.acos(1 - (2 * i) / 900);
-        const theta = Math.PI * (1 + 5 ** 0.5) * i;
-        const radius = 80 + (Math.random() - 0.5) * 20;
-        const x = radius * Math.sin(phi) * Math.cos(theta);
-        const y = radius * Math.cos(phi);
-        const z = radius * Math.sin(phi) * Math.sin(theta);
-        pts.push({
-          x,
-          y,
-          z,
-          baseX: x,
-          baseY: y,
-          baseZ: z,
-          vx: 0,
-          vy: 0,
-          vz: 0,
-          color: "#3b82f6",
-          size: 2,
-          alpha: 0.8,
-        });
-      }
-      particlesRef.current = pts;
       setLoading(false);
     };
 
@@ -150,8 +162,8 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
   // Reload point cloud whenever teacher changes
   useEffect(() => {
-    rotYRef.current = 0.45;
-    rotXRef.current = 0.08;
+    rotYRef.current = 0.35;
+    rotXRef.current = 0.06;
     phaseRef.current = "orbit";
     phaseTimerRef.current = 0;
     const targetSrc = teacher.localPhotoUrl || teacher.photoUrl;
@@ -188,7 +200,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
     isDraggingRef.current = false;
   };
 
-  // Main Render Loop
+  // Main Render Loop: always active
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -199,16 +211,17 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
     const render = () => {
       time += 0.02;
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      const width = canvas.clientWidth || 320;
+      const height = canvas.clientHeight || 280;
 
-      if (canvas.width !== width * (window.devicePixelRatio || 1) || canvas.height !== height * (window.devicePixelRatio || 1)) {
-        canvas.width = width * (window.devicePixelRatio || 1);
-        canvas.height = height * (window.devicePixelRatio || 1);
+      const dpr = window.devicePixelRatio || 1;
+      if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
       }
 
       ctx.save();
-      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, width, height);
 
       // Camera auto-rotation with gentle damping
@@ -310,7 +323,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         const z2 = p.y * sinX + z1 * cosX;
 
         // Perspective Projection
-        const scale = fov / (fov + z2 + 180);
+        const scale = fov / (fov + z2 + 200);
         const x2d = cx + x1 * scale;
         const y2d = cy + y2 * scale;
 
@@ -330,7 +343,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
       // Render dots
       for (const pt of projected) {
         ctx.beginPath();
-        ctx.arc(pt.x2d, pt.y2d, Math.max(0.6, pt.size), 0, Math.PI * 2);
+        ctx.arc(pt.x2d, pt.y2d, Math.max(0.7, pt.size), 0, Math.PI * 2);
         ctx.fillStyle = pt.color;
         ctx.globalAlpha = pt.alpha;
         ctx.fill();
@@ -372,31 +385,31 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
       }}
       onTouchEnd={handlePointerUp}
     >
-      {loading ? (
+      {/* Canvas is ALWAYS mounted so render loop never dies */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "block",
+        }}
+      />
+      {loading && (
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
+            top: 10,
+            right: 10,
+            fontSize: 11,
             color: "rgba(255, 255, 255, 0.7)",
-            fontSize: 13,
-            gap: 8,
+            background: "rgba(0,0,0,0.5)",
+            padding: "2px 8px",
+            borderRadius: 12,
+            pointerEvents: "none",
           }}
         >
-          <div>正在構建教授 3D 雲點模型…</div>
+          載入照片點雲中…
         </div>
-      ) : (
-        <canvas
-          ref={canvasRef}
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "block",
-          }}
-        />
       )}
       <div
         style={{
