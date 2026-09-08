@@ -37,7 +37,7 @@ describe("sync-faculty HTML parser", () => {
 
   it("extracts teacher attributes accurately from HTML snippet", () => {
     const parsed = parseFacultyHtml(sampleHtml);
-    expect(parsed.length).toBe(1);
+    expect(parsed).toHaveLength(1);
 
     const teacher = parsed[0];
     expect(teacher.id).toBe("testprof");

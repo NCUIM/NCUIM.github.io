@@ -37,7 +37,7 @@ describe("faculty dataset and quiz logic", () => {
   });
 
   it("should contain 23 full-time faculty members with required fields", () => {
-    expect(teachers.length).toBe(23);
+    expect(teachers).toHaveLength(23);
 
     for (const teacher of teachers) {
       expect(teacher.id).toBeTruthy();
@@ -53,7 +53,7 @@ describe("faculty dataset and quiz logic", () => {
   });
 
   it("should contain 54 meme stickers with valid paths", () => {
-    expect(memes.length).toBe(54);
+    expect(memes).toHaveLength(54);
 
     for (const meme of memes) {
       expect(meme.id).toBeTruthy();
@@ -83,7 +83,7 @@ describe("faculty dataset and quiz logic", () => {
   it("should generate legacy question format for backward compatibility", () => {
     const question = generateQuestion(teachers);
     expect(question.teacher).toBeDefined();
-    expect(question.options.length).toBe(4);
+    expect(question.options).toHaveLength(4);
     expect(question.clues).toBeDefined();
   });
 

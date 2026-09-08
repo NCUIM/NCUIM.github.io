@@ -26,7 +26,7 @@ test(`dragging to ${view} unlocks once and the next round resets`, async ({ page
   await puzzle.focus();
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("ArrowRight");
-  await page.waitForTimeout(1800); // Capture the existing celebration after it settles.
+  await page.waitForTimeout(1800); // NOSONAR - Capture the existing celebration after it settles.
   await puzzle.screenshot({ path: `test-results/cloud-puzzle-${view}-solved.png` });
   if (await next.isVisible()) {
     await next.click();

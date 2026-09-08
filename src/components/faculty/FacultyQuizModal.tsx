@@ -24,14 +24,8 @@ import { PointCloudCanvas } from "./PointCloudCanvas";
 import { FacultyCompendiumModal } from "./FacultyCompendiumModal";
 import { QuizResultCard } from "./QuizResultCard";
 import { triggerConfetti } from "../../utils/confetti";
-import {
-  useFacultyQuiz,
-  pickNextTarget,
-  generateQuestion,
-  type QuizPhase,
-} from "./useFacultyQuiz";
-
-export { pickNextTarget, generateQuestion, type QuizPhase };
+import { useFacultyQuiz } from "./useFacultyQuiz";
+export { pickNextTarget, generateQuestion, type QuizPhase } from "./useFacultyQuiz";
 
 const allTeachers: readonly TeacherProfile[] = teachersData as readonly TeacherProfile[];
 const allMemes: readonly MemeItem[] = memesData as readonly MemeItem[];

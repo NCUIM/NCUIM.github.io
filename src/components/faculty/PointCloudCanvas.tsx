@@ -331,8 +331,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   }, [onBurstComplete]);
 
   return (
-    <div
-      role="group"
+    <fieldset
       aria-label="旋轉視角，對準正面解鎖"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -351,6 +350,9 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         height: 290,
         background: "radial-gradient(circle at center, #1e293b 0%, #090d16 100%)",
         borderRadius: "var(--ncu-radius-lg, 16px)",
+        border: "none",
+        margin: 0,
+        padding: 0,
         overflow: "hidden",
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
         touchAction: "none",
@@ -407,6 +409,6 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           {loadError ? "照片載入失敗，請關閉後重試" : "👆 拖曳或方向鍵旋轉"}
         </div>
       )}
-    </div>
+    </fieldset>
   );
 };

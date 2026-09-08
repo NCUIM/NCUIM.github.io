@@ -64,7 +64,7 @@ describe("FacultyCompendiumModal", () => {
     expect(getByText(teachers[0].name)).toBeDefined();
 
     // Locked professors should display placeholder
-    expect(getAllByText("？？？").length).toBe(teachers.length - 1);
+    expect(getAllByText("？？？")).toHaveLength(teachers.length - 1);
   });
 
   it("should filter teachers when filter pills are clicked", () => {
@@ -106,7 +106,7 @@ describe("FacultyCompendiumModal", () => {
     );
 
     // Click unlocked teacher card
-    const teacherCard = getByText(unlockedTeacher.name).closest('[role="button"]')!;
+    const teacherCard = getByText(unlockedTeacher.name).closest("button")!;
     fireEvent.click(teacherCard);
 
     // Detail card should display email and education

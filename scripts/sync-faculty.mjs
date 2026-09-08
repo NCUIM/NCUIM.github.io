@@ -73,10 +73,22 @@ function downloadFile(url, destPath) {
   });
 }
 
+function extractField(html, header) {
+  const marker = `<th>${header}</th>`;
+  const idx = html.indexOf(marker);
+  if (idx === -1) return "";
+  const sub = html.slice(idx);
+  const tdStart = sub.indexOf('<td class="ba_comment">');
+  if (tdStart === -1) return "";
+  const contentStart = tdStart + '<td class="ba_comment">'.length;
+  const tdEnd = sub.indexOf("</td>", contentStart);
+  if (tdEnd === -1) return "";
+  return sub.slice(contentStart, tdEnd).replace(/<[^>]+>/g, "").replace(/&nbsp;?/g, " ").trim();
+}
+
 export function parseFacultyHtml(html) {
   const teacherTableRegex = /<table class="table table-striped table-dark teacher-table"[\s\S]*?<\/table>/g;
   const tables = html.match(teacherTableRegex) || [];
-
   const teachers = [];
 
   for (const tableHtml of tables) {
@@ -95,20 +107,15 @@ export function parseFacultyHtml(html) {
       photoUrl = new URL(photoUrl, "https://im.mgt.ncu.edu.tw/").href;
     }
 
-    const educationMatch = /<th[^>]*>[\s\S]*?學歷[\s\S]*?<\/th>\s*<td class="ba_comment">([\s\S]*?)<\/td>/i.exec(tableHtml);
-    const education = educationMatch ? educationMatch[1].replace(/<[^>]+>/g, "").replace(/&nbsp;?/g, " ").trim() : "";
-
-    const specMatch = /<th[^>]*>[\s\S]*?專長[\s\S]*?<\/th>\s*<td class="ba_comment">([\s\S]*?)<\/td>/i.exec(tableHtml);
-    const specialty = specMatch ? specMatch[1].replace(/<[^>]+>/g, "").replace(/&nbsp;?/g, " ").trim() : "";
-
-    const officeMatch = /<th[^>]*>[\s\S]*?辦公室[\s\S]*?<\/th>\s*<td class="ba_comment">([\s\S]*?)<\/td>/i.exec(tableHtml);
-    const office = officeMatch ? officeMatch[1].replace(/<[^>]+>/g, "").replace(/&nbsp;?/g, " ").trim() : "";
+    const education = extractField(tableHtml, "學歷");
+    const specialty = extractField(tableHtml, "專長");
+    const office = extractField(tableHtml, "辦公室");
 
     const emailMatch = /mailto:([^"]+)"/i.exec(tableHtml);
     const email = emailMatch ? emailMatch[1].trim() : "";
 
     const specialtyTags = specialty
-      ? specialty.split(/[,、，\/\s]+/).map((s) => s.trim()).filter(Boolean)
+      ? specialty.split(/[,、，/\s]+/).map((s) => s.trim()).filter(Boolean)
       : [];
 
     const id = email ? email.split("@")[0].split(/[；;]/)[0].trim() : name;
@@ -136,61 +143,35 @@ export function parseFacultyHtml(html) {
   return teachers;
 }
 
-async function main() {
-  console.log(`[sync-faculty] Fetching faculty list from ${FACULTY_URL}...`);
-  const html = await fetchHtml(FACULTY_URL);
-  const liveTeachers = parseFacultyHtml(html);
-
-  console.log(`[sync-faculty] Parsed ${liveTeachers.length} teachers from live site.`);
-
-  if (liveTeachers.length === 0) {
-    console.error("[sync-faculty] ERROR: No faculty parsed from page. Selector may have changed.");
-    process.exit(1);
-  }
-
-  // Load existing snapshot
-  let existingTeachers = [];
-  if (existsSync(SNAPSHOT_PATH)) {
-    existingTeachers = JSON.parse(readFileSync(SNAPSHOT_PATH, "utf-8"));
-  }
-
+function verifyDrift(existingTeachers, liveTeachers) {
   const existingMap = new Map(existingTeachers.map((t) => [t.id, t]));
   const liveMap = new Map(liveTeachers.map((t) => [t.id, t]));
 
   const added = liveTeachers.filter((t) => !existingMap.has(t.id));
   const removed = existingTeachers.filter((t) => !liveMap.has(t.id));
 
-  if (CHECK_MODE) {
-    let hasDrift = false;
-    if (added.length > 0) {
-      console.warn(`[sync-faculty] DRIFT DETECTED: ${added.length} new teacher(s):`, added.map((t) => t.name).join(", "));
-      hasDrift = true;
-    }
-    if (removed.length > 0) {
-      console.warn(`[sync-faculty] DRIFT DETECTED: ${removed.length} removed/retired teacher(s):`, removed.map((t) => t.name).join(", "));
-      hasDrift = true;
-    }
-    if (existingTeachers.length !== liveTeachers.length) {
-      hasDrift = true;
-    }
-
-    if (hasDrift) {
-      console.error("[sync-faculty] FAIL: Committed im-teachers.json is out of date. Run 'npm run sync:faculty' to update.");
-      process.exit(1);
-    } else {
-      console.log("[sync-faculty] PASS: Committed im-teachers.json is up to date with live faculty site.");
-      process.exit(0);
-    }
+  let hasDrift = false;
+  if (added.length > 0) {
+    console.warn(`[sync-faculty] DRIFT DETECTED: ${added.length} new teacher(s):`, added.map((t) => t.name).join(", "));
+    hasDrift = true;
   }
+  if (removed.length > 0) {
+    console.warn(`[sync-faculty] DRIFT DETECTED: ${removed.length} removed/retired teacher(s):`, removed.map((t) => t.name).join(", "));
+    hasDrift = true;
+  }
+  if (existingTeachers.length !== liveTeachers.length) {
+    hasDrift = true;
+  }
+  return { hasDrift, added, removed };
+}
 
-  // Write mode: Ensure photo directory exists
+async function syncPortraits(teachers) {
   if (!existsSync(PHOTO_DIR)) {
     mkdirSync(PHOTO_DIR, { recursive: true });
   }
 
-  // Download missing images
   let downloadCount = 0;
-  for (const t of liveTeachers) {
+  for (const t of teachers) {
     if (!t.photoUrl) continue;
     const localFileName = path.basename(t.localPhotoUrl);
     const dest = path.join(PHOTO_DIR, localFileName);
@@ -205,8 +186,38 @@ async function main() {
       }
     }
   }
+  return downloadCount;
+}
 
-  // Update snapshot file
+async function main() {
+  console.log(`[sync-faculty] Fetching faculty list from ${FACULTY_URL}...`);
+  const html = await fetchHtml(FACULTY_URL);
+  const liveTeachers = parseFacultyHtml(html);
+
+  console.log(`[sync-faculty] Parsed ${liveTeachers.length} teachers from live site.`);
+
+  if (liveTeachers.length === 0) {
+    console.error("[sync-faculty] ERROR: No faculty parsed from page. Selector may have changed.");
+    process.exit(1);
+  }
+
+  let existingTeachers = [];
+  if (existsSync(SNAPSHOT_PATH)) {
+    existingTeachers = JSON.parse(readFileSync(SNAPSHOT_PATH, "utf-8"));
+  }
+
+  const { hasDrift, added, removed } = verifyDrift(existingTeachers, liveTeachers);
+
+  if (CHECK_MODE) {
+    if (hasDrift) {
+      console.error("[sync-faculty] FAIL: Committed im-teachers.json is out of date. Run 'npm run sync:faculty' to update.");
+      process.exit(1);
+    }
+    console.log("[sync-faculty] PASS: Committed im-teachers.json is up to date with live faculty site.");
+    return;
+  }
+
+  const downloadCount = await syncPortraits(liveTeachers);
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(liveTeachers, null, 2) + "\n", "utf-8");
 
   console.log(`[sync-faculty] Successfully synced ${liveTeachers.length} teachers.`);
@@ -222,8 +233,5 @@ async function main() {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  main().catch((err) => {
-    console.error("[sync-faculty] Fatal error:", err);
-    process.exit(1);
-  });
+  await main();
 }

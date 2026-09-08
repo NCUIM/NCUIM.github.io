@@ -198,13 +198,13 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
               const isUnlocked = unlockedSet.has(teacher.id);
 
               return (
-                <div
+                <button
+                  type="button"
                   key={teacher.id}
+                  disabled={!isUnlocked}
                   onClick={() => {
                     if (isUnlocked) setSelectedTeacher(teacher);
                   }}
-                  role={isUnlocked ? "button" : undefined}
-                  tabIndex={isUnlocked ? 0 : undefined}
                   style={{
                     background: "var(--ncu-surface)",
                     border: isUnlocked ? "1.5px solid rgba(16, 185, 129, 0.35)" : "1.5px dashed var(--ncu-border)",
@@ -219,6 +219,7 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
                     transition: "transform 0.15s ease, box-shadow 0.15s ease",
                     boxShadow: isUnlocked ? "var(--ncu-shadow-sm)" : "none",
                     opacity: isUnlocked ? 1 : 0.72,
+                    width: "100%",
                   }}
                 >
                   {/* Photo / Silhouette Container */}
@@ -302,7 +303,7 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
                       </span>
                     )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -310,7 +311,16 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
           {/* Detail Modal for Selected Unlocked Teacher */}
           {selectedTeacher && (
             <div
-              onClick={() => setSelectedTeacher(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label="教授詳細資料"
+              tabIndex={-1}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setSelectedTeacher(null);
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setSelectedTeacher(null);
+              }}
               style={{
                 position: "fixed",
                 top: 0,
@@ -326,7 +336,6 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
               }}
             >
               <div
-                onClick={(e) => e.stopPropagation()}
                 style={{
                   background: "var(--ncu-surface)",
                   borderRadius: "var(--ncu-radius-lg, 16px)",
