@@ -9,15 +9,11 @@ import {
   IonIcon,
   IonContent,
   IonBadge,
-  IonSpinner,
 } from "@ionic/react";
 import {
   closeOutline,
   trophyOutline,
-  sparkles,
-  bulbOutline,
   arrowForwardOutline,
-  checkmarkCircle,
   mailOutline,
   businessOutline,
   schoolOutline,
@@ -118,8 +114,6 @@ export const FacultyQuizModal: React.FC<{
 }> = ({ isOpen, onDismiss }) => {
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
   const completedRef = useRef(false);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [clueStep, setClueStep] = useState(1);
   const [streak, setStreak] = useState(() => {
     try {
       return Number(localStorage.getItem(STORAGE_KEY_STREAK) || 0);
@@ -146,8 +140,6 @@ export const FacultyQuizModal: React.FC<{
     const newQ = generateQuestion(allTeachers, question?.teacher.id);
     setQuestion(newQ);
     completedRef.current = false;
-    setIsCorrect(null);
-    setClueStep(1);
     setIsCelebrating(false);
     setShowProfileCard(false);
   }, [question?.teacher.id]);
@@ -165,7 +157,6 @@ export const FacultyQuizModal: React.FC<{
   const handleAligned = () => {
     if (completedRef.current || !question || !isOpen) return;
     completedRef.current = true;
-    setIsCorrect(true);
     setIsCelebrating(true);
     setShowProfileCard(true);
     const newStreak = streak + 1;
@@ -249,76 +240,6 @@ export const FacultyQuizModal: React.FC<{
             isCelebrating={isCelebrating}
             onAligned={handleAligned}
           />
-
-          {/* Clues Section */}
-          <div
-            style={{
-              margin: "14px 0",
-              background: "var(--ncu-surface)",
-              border: "1.5px solid var(--ncu-border)",
-              borderRadius: "var(--ncu-radius-md, 12px)",
-              padding: "12px 14px",
-              boxShadow: "var(--ncu-shadow-sm)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <strong style={{ fontSize: 14, color: "var(--ncu-ink)", display: "flex", alignItems: "center", gap: 4 }}>
-                <IonIcon icon={bulbOutline} style={{ color: "#f59e0b" }} /> 關鍵線索
-              </strong>
-              {clueStep < 3 && !isCorrect && (
-                <button
-                  type="button"
-                  onClick={() => setClueStep((s) => s + 1)}
-                  style={{
-                    border: "none",
-                    background: "rgba(59, 130, 246, 0.1)",
-                    color: "var(--ncu-primary)",
-                    borderRadius: 6,
-                    padding: "3px 8px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  解鎖更多線索 (+1)
-                </button>
-              )}
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
-              {/* Clue 1 */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-                <span style={{ color: "var(--ncu-muted)", flexShrink: 0 }}>💡 專長領域：</span>
-                <span style={{ fontWeight: 600, color: "var(--ncu-ink)" }}>
-                  {question.clues.specialties.join("、") || "資訊科技、管理決策"}
-                </span>
-              </div>
-
-              {/* Clue 2 */}
-              {clueStep >= 2 ? (
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-                  <span style={{ color: "var(--ncu-muted)", flexShrink: 0 }}>🎓 最高學歷：</span>
-                  <span style={{ color: "var(--ncu-ink)" }}>{question.clues.education || "國立大學博士"}</span>
-                </div>
-              ) : (
-                <div style={{ color: "var(--ncu-muted)", fontSize: 12, fontStyle: "italic" }}>
-                  🔒 線索 2：點擊上方解鎖學歷提示
-                </div>
-              )}
-
-              {/* Clue 3 */}
-              {clueStep >= 3 ? (
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
-                  <span style={{ color: "var(--ncu-muted)", flexShrink: 0 }}>🏢 研究室號：</span>
-                  <span style={{ color: "var(--ncu-ink)" }}>{question.clues.office || "管理二館"}</span>
-                </div>
-              ) : (
-                <div style={{ color: "var(--ncu-muted)", fontSize: 12, fontStyle: "italic" }}>
-                  🔒 線索 3：點擊上方解鎖研究室位置
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Revealed Professor Card after Correct Answer */}
           {showProfileCard && (
