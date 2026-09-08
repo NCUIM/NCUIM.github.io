@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { TeacherProfile } from "../../types/faculty";
+import { createPortraitCloud, isFrontAligned } from "./portrait-cloud";
 
 interface Point3D {
   x: number;
@@ -20,73 +21,49 @@ interface PointCloudCanvasProps {
   teacher: TeacherProfile;
   isCelebrating: boolean;
   onBurstComplete?: () => void;
+  onAligned: () => void;
 }
-
-// Generate initial 3D bust point cloud placeholder
-const createFallbackBust = (): Point3D[] => {
-  const pts: Point3D[] = [];
-  for (let i = 0; i < 1100; i++) {
-    const phi = Math.acos(1 - (2 * (i + 0.5)) / 1100);
-    const theta = Math.PI * (1 + 5 ** 0.5) * i;
-    const isHead = i < 750;
-
-    const rx = isHead ? 45 : 75;
-    const ry = isHead ? 55 : 45;
-    const rz = isHead ? 50 : 35;
-    const yOffset = isHead ? -20 : 50;
-
-    const x = rx * Math.sin(phi) * Math.cos(theta);
-    const y = ry * Math.cos(phi) + yOffset;
-    const z = rz * Math.sin(phi) * Math.sin(theta);
-
-    pts.push({
-      x,
-      y,
-      z,
-      baseX: x,
-      baseY: y,
-      baseZ: z,
-      vx: 0,
-      vy: 0,
-      vz: 0,
-      color: isHead ? "#60a5fa" : "#3b82f6",
-      size: 1.8,
-      alpha: 0.85,
-    });
-  }
-  return pts;
-};
 
 export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   teacher,
   isCelebrating,
   onBurstComplete,
+  onAligned,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const readyRef = useRef(false);
+  const solvedRef = useRef(false);
+  const onAlignedRef = useRef(onAligned);
+  useEffect(() => { onAlignedRef.current = onAligned; }, [onAligned]);
 
-  // Rotation angles: start at a gentle 25-degree perspective angle
-  const rotYRef = useRef(0.35);
-  const rotXRef = useRef(0.06);
+  // Begin away from the target view; the player must align both axes.
+  const rotYRef = useRef(1.05);
+  const rotXRef = useRef(0.3);
   const isDraggingRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
-  const velocityRotRef = useRef({ x: 0, y: 0.002 });
 
-  // Initialize with 3D bust points so canvas is never empty
-  const particlesRef = useRef<Point3D[]>(createFallbackBust());
+
+  // No placeholder portrait: only the current loaded photo can be solved.
+  const particlesRef = useRef<Point3D[]>([]);
   const phaseRef = useRef<"orbit" | "implode" | "burst" | "settle">("orbit");
   const phaseTimerRef = useRef(0);
 
-  // Load teacher photo and extract true 3D volumetric bust point cloud
+  // Scatter source pixels in depth while preserving their front projection.
   const generatePointCloudFromImage = useCallback((imgSrc: string) => {
     setLoading(true);
+    setLoadError(false);
+    readyRef.current = false;
     const img = new Image();
+    let cancelled = false;
     if (imgSrc.startsWith("http")) {
       img.crossOrigin = "anonymous";
     }
 
     img.onload = () => {
+      if (cancelled) return;
       try {
         const sampleW = 52;
         const sampleH = 65;
@@ -96,6 +73,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         const oCtx = offscreen.getContext("2d", { willReadFrequently: true });
 
         if (!oCtx) {
+          setLoadError(true);
           setLoading(false);
           return;
         }
@@ -103,117 +81,49 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         oCtx.drawImage(img, 0, 0, sampleW, sampleH);
         const imgData = oCtx.getImageData(0, 0, sampleW, sampleH).data;
 
-        // Sample corner pixels to detect background color
-        const bgR = imgData[0];
-        const bgG = imgData[1];
-        const bgB = imgData[2];
-
-        const pts: Point3D[] = [];
-
-        for (let y = 0; y < sampleH; y++) {
-          for (let x = 0; x < sampleW; x++) {
-            const idx = (y * sampleW + x) * 4;
-            const r = imgData[idx];
-            const g = imgData[idx + 1];
-            const b = imgData[idx + 2];
-            const a = imgData[idx + 3];
-
-            if (a < 60) continue;
-
-            // Filter out flat photo background so only the person remains
-            const distFromBg = Math.hypot(r - bgR, g - bgG, b - bgB);
-            const isNearWhiteBg = r > 220 && g > 220 && b > 220 && (x < 6 || x > sampleW - 7 || y < 6);
-            if (distFromBg < 28 || isNearWhiteBg) continue;
-
-            // Normalized coordinates [-1, 1]
-            const nx = (x / (sampleW - 1) - 0.5) * 2;
-            const ny = (y / (sampleH - 1) - 0.5) * 2;
-
-            // Luminance detail for nose / eye relief
-            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-
-            // True 3D head and torso volumetric depth:
-            // Center of face protrudes outward, edges curve smoothly around
-            const isHead = ny < 0.25;
-            const curveZ = isHead
-              ? Math.sqrt(Math.max(0, 1 - (nx / 0.88) ** 2)) * 62
-              : Math.sqrt(Math.max(0, 1 - (nx / 0.95) ** 2)) * 40;
-
-            const reliefZ = (lum / 255) * 14;
-            const noiseZ = (Math.random() - 0.5) * 2.5;
-
-            // Front surface particle
-            const frontZ = curveZ + reliefZ - 32 + noiseZ;
-            const px = nx * 82;
-            const py = ny * 105;
-
-            pts.push({
-              x: px,
-              y: py,
-              z: frontZ,
-              baseX: px,
-              baseY: py,
-              baseZ: frontZ,
-              vx: 0,
-              vy: 0,
-              vz: 0,
-              color: `rgb(${r},${g},${b})`,
-              size: 1.8 + (1 - Math.abs(nx)) * 0.5,
-              alpha: 0.96,
-            });
-
-            // For the head region, add back-of-head particles so the 3D model
-            // has realistic head volume from side and back angles!
-            if (isHead && Math.abs(nx) < 0.8 && (x + y) % 3 === 0) {
-              const backZ = -curveZ * 0.7 - 8 + (Math.random() - 0.5) * 6;
-              // Slightly darker tone for back of hair/shadow
-              const darkR = Math.max(15, Math.floor(r * 0.5));
-              const darkG = Math.max(15, Math.floor(g * 0.5));
-              const darkB = Math.max(20, Math.floor(b * 0.5));
-
-              pts.push({
-                x: px * 0.95,
-                y: py,
-                z: backZ,
-                baseX: px * 0.95,
-                baseY: py,
-                baseZ: backZ,
-                vx: 0,
-                vy: 0,
-                vz: 0,
-                color: `rgb(${darkR},${darkG},${darkB})`,
-                size: 1.7,
-                alpha: 0.85,
-              });
-            }
-          }
-        }
+        const pts: Point3D[] = createPortraitCloud(imgData, sampleW, sampleH).map((point) => ({
+          ...point,
+          baseX: point.x,
+          baseY: point.y,
+          baseZ: point.z,
+          vx: 0, vy: 0, vz: 0,
+          size: 1.05,
+          alpha: 1,
+        }));
 
         if (pts.length > 250) {
           particlesRef.current = pts;
+          readyRef.current = true;
+        } else {
+          setLoadError(true);
         }
       } catch (err) {
         console.warn("Could not sample point cloud from image:", err);
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
     };
 
     img.onerror = () => {
-      setLoading(false);
+      if (!cancelled) { setLoading(false); setLoadError(true); }
     };
 
     img.src = imgSrc;
+    return () => { cancelled = true; };
   }, []);
 
   // Reload point cloud whenever teacher changes
   useEffect(() => {
-    rotYRef.current = 0.35;
-    rotXRef.current = 0.06;
+    rotYRef.current = 1.05;
+    rotXRef.current = 0.3;
+    solvedRef.current = false;
     phaseRef.current = "orbit";
     phaseTimerRef.current = 0;
+    isDraggingRef.current = false;
+    particlesRef.current = [];
     const targetSrc = teacher.localPhotoUrl || teacher.photoUrl;
-    generatePointCloudFromImage(targetSrc);
+    return generatePointCloudFromImage(targetSrc);
   }, [teacher.id, teacher.localPhotoUrl, teacher.photoUrl, generatePointCloudFromImage]);
 
   // Handle celebration trigger
@@ -226,9 +136,9 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
   // Pointer drag to rotate 3D view
   const handlePointerDown = (clientX: number, clientY: number) => {
+    if (!readyRef.current || solvedRef.current) return;
     isDraggingRef.current = true;
     lastMousePosRef.current = { x: clientX, y: clientY };
-    velocityRotRef.current = { x: 0, y: 0 };
   };
 
   const handlePointerMove = (clientX: number, clientY: number) => {
@@ -239,7 +149,16 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
     rotYRef.current += dx * 0.009;
     rotXRef.current -= dy * 0.009;
-    velocityRotRef.current = { x: -dy * 0.004, y: dx * 0.004 };
+    checkAlignment();
+  };
+
+  const checkAlignment = () => {
+    if (!readyRef.current || solvedRef.current || !isFrontAligned(rotXRef.current, rotYRef.current)) return;
+    solvedRef.current = true;
+    isDraggingRef.current = false;
+    rotXRef.current = 0;
+    rotYRef.current = 0;
+    onAlignedRef.current();
   };
 
   const handlePointerUp = () => {
@@ -270,20 +189,11 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, width, height);
 
-      // Camera auto-rotation with gentle damping
-      if (!isDraggingRef.current) {
-        rotYRef.current += velocityRotRef.current.y;
-        rotXRef.current += velocityRotRef.current.x;
-        velocityRotRef.current.y *= 0.94;
-        velocityRotRef.current.x *= 0.94;
-      }
-
       // Constrain vertical rotation
       rotXRef.current = Math.max(-0.6, Math.min(0.6, rotXRef.current));
 
       const cx = width / 2;
       const cy = height / 2;
-      const fov = 380;
 
       const cosY = Math.cos(rotYRef.current);
       const sinY = Math.sin(rotYRef.current);
@@ -369,7 +279,8 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         const z2 = p.y * sinX + z1 * cosX;
 
         // Perspective Projection
-        const scale = fov / (fov + z2 + 220);
+        const fit = Math.min(width / 260, height / 280) * 1.45;
+        const scale = fit * 0.7;
         const x2d = cx + x1 * scale;
         const y2d = cy + y2 * scale;
 
@@ -379,12 +290,12 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           z: z2,
           size: p.size * scale,
           color: p.color,
-          alpha: Math.min(1, Math.max(0.2, p.alpha * (scale * 1.15))),
+          alpha: p.alpha,
         });
       }
 
       // Depth sort so closer points draw over distant ones
-      projected.sort((a, b) => a.z - b.z);
+      projected.sort((a, b) => b.z - a.z);
 
       // Render dots
       for (const pt of projected) {
@@ -408,6 +319,19 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
   return (
     <div
+      role="group"
+      aria-label="旋轉點雲，讓人像成形通關"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (!readyRef.current || solvedRef.current) return;
+        if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+        e.preventDefault();
+        if (e.key === "ArrowLeft") rotYRef.current -= 0.05;
+        if (e.key === "ArrowRight") rotYRef.current += 0.05;
+        if (e.key === "ArrowUp") rotXRef.current += 0.05;
+        if (e.key === "ArrowDown") rotXRef.current -= 0.05;
+        checkAlignment();
+      }}
       style={{
         position: "relative",
         width: "100%",
@@ -419,17 +343,14 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         touchAction: "none",
         cursor: "grab",
       }}
-      onMouseDown={(e) => handlePointerDown(e.clientX, e.clientY)}
-      onMouseMove={(e) => handlePointerMove(e.clientX, e.clientY)}
-      onMouseUp={handlePointerUp}
-      onMouseLeave={handlePointerUp}
-      onTouchStart={(e) => {
-        if (e.touches[0]) handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        handlePointerDown(e.clientX, e.clientY);
       }}
-      onTouchMove={(e) => {
-        if (e.touches[0]) handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
-      }}
-      onTouchEnd={handlePointerUp}
+      onPointerMove={(e) => handlePointerMove(e.clientX, e.clientY)}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onLostPointerCapture={handlePointerUp}
     >
       <canvas
         ref={canvasRef}
@@ -453,7 +374,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
             pointerEvents: "none",
           }}
         >
-          載入 3D 點雲模型中…
+          載入人像點雲中…
         </div>
       )}
       <div
@@ -469,7 +390,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           userSelect: "none",
         }}
       >
-        👆 手指拖曳可 360° 旋轉立體胸像！
+        {loadError ? "照片載入失敗，請關閉後重試" : isCelebrating ? "🎉 人像已成形，通關！" : "👆 拖曳旋轉，讓人像成形即可通關（鏡像也算，可用方向鍵）"}
       </div>
     </div>
   );
