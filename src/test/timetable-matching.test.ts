@@ -1,4 +1,6 @@
+import React from "react";
 import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
 import {
   extractCourseCodeAndSection,
   isSerialMatch,
@@ -7,6 +9,9 @@ import {
   isCourseMatch,
   matchCisCourse,
   buildTimetableFromCisCourses,
+  NCU_PERIODS,
+  getPeriodTimeBounds,
+  DesktopRulerItem,
 } from "../pages/TimetablePage";
 import { buildTimetableMapFromMasterCourses, type MasterCourseItem } from "../services/all-courses-api";
 import type { CisCourse } from "../services/cis-course-api";
@@ -205,6 +210,104 @@ describe("timetable-matching logic", () => {
       expect(match.matchedTeacher).toBe("何迪亞");
       expect(match.matchedRoom).toBe("I1-404");
       expect(match.room).toBe("I1-404");
+    });
+  });
+
+  describe("NCU timetable official periods and time bounds", () => {
+    it("defines 16 periods matching official NCU bell schedule", () => {
+      expect(NCU_PERIODS).toHaveLength(16);
+      expect(NCU_PERIODS.map((p) => p.id)).toEqual([
+        "1", "2", "3", "4", "Z", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F",
+      ]);
+      expect(NCU_PERIODS[0]).toEqual({ id: "1", time: "08:00-08:50" });
+      expect(NCU_PERIODS[4]).toEqual({ id: "Z", time: "12:00-12:50" });
+      expect(NCU_PERIODS[10]).toEqual({ id: "A", time: "18:00-18:50" });
+      expect(NCU_PERIODS[15]).toEqual({ id: "F", time: "23:00-23:50" });
+    });
+
+    it("calculates time bounds correctly for hyphen and tilde formats", () => {
+      const p1 = getPeriodTimeBounds("08:00-08:50");
+      expect(p1).toEqual({ start: 480, end: 530 });
+
+      const pZ = getPeriodTimeBounds("12:00 ~ 12:50");
+      expect(pZ).toEqual({ start: 720, end: 770 });
+
+      const pA = getPeriodTimeBounds("18:00-18:50");
+      expect(pA).toEqual({ start: 1080, end: 1130 });
+    });
+
+    it("maps noon period Z and evening period A correctly in timetable", () => {
+      const mockCourses: CisCourse[] = [
+        {
+          serialNo: "99001",
+          classNo: "IM9001",
+          name: "中午研討課",
+          teacher: "胡雅涵",
+          room: "I1-002",
+          credit: 1,
+          classTimes: ["3-Z"],
+          classTimesAlt: "",
+          status: "已選",
+          admitCnt: 0,
+          limitCnt: 0,
+          waitCnt: 0,
+        },
+        {
+          serialNo: "99002",
+          classNo: "IM9002",
+          name: "夜間論壇",
+          teacher: "何迪亞",
+          room: "I1-404",
+          credit: 2,
+          classTimes: ["4-A", "4-B"],
+          classTimesAlt: "",
+          status: "已選",
+          admitCnt: 0,
+          limitCnt: 0,
+          waitCnt: 0,
+        },
+        {
+          serialNo: "99003",
+          classNo: "IM9003",
+          name: "相容舊版節次",
+          teacher: "黃子菱",
+          room: "I1-002",
+          credit: 1,
+          classTimes: ["2-N"],
+          classTimesAlt: "",
+          status: "已選",
+          admitCnt: 0,
+          limitCnt: 0,
+          waitCnt: 0,
+        },
+      ];
+
+      const timetable = buildTimetableFromCisCourses(mockCourses);
+      expect(timetable["Z-2"]).toBeDefined();
+      expect(timetable["Z-2"][0].name).toBe("中午研討課");
+
+      expect(timetable["A-3"]).toBeDefined();
+      expect(timetable["A-3"][0].name).toBe("夜間論壇");
+      expect(timetable["B-3"]).toBeDefined();
+      expect(timetable["B-3"][0].name).toBe("夜間論壇");
+
+      // Legacy 'N' normalized to 'Z'
+      expect(timetable["Z-1"]).toBeDefined();
+      expect(timetable["Z-1"][0].name).toBe("相容舊版節次");
+    });
+
+    it("renders DesktopRulerItem with noon styling for period Z", () => {
+      const { container } = render(
+        React.createElement(DesktopRulerItem, {
+          period: { id: "Z", time: "12:00-12:50" },
+          rowHeight: 38,
+          isLast: false,
+        }),
+      );
+      expect(container.textContent).toContain("午休");
+      expect(container.textContent).toContain("12:00-12:50");
+      const div = container.firstElementChild as HTMLElement;
+      expect(div.style.background).toBe("rgba(0, 0, 0, 0.03)");
     });
   });
 });

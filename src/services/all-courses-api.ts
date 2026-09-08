@@ -229,7 +229,9 @@ const parseDayAndPeriod = (ct: string): { dayIdx: number; periodId: string } | n
   if (parts.length !== 2) return null;
   const dayNum = Number.parseInt(parts[0], 10);
   if (dayNum < 1 || dayNum > 5) return null;
-  return { dayIdx: dayNum - 1, periodId: parts[1] };
+  const rawPeriod = parts[1]?.trim() || "";
+  const periodId = rawPeriod === "N" ? "Z" : rawPeriod;
+  return { dayIdx: dayNum - 1, periodId };
 };
 
 const toMasterCourseSection = (item: MasterCourseItem): MasterCourseSection => ({
