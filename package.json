@@ -28,7 +28,9 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:zap": "bash scripts/zap-scan.sh",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "sync:faculty": "node scripts/sync-faculty.mjs",
+    "check:faculty": "node scripts/sync-faculty.mjs --check"
   },
   "dependencies": {
     "@ionic/react": "^8.0.0",

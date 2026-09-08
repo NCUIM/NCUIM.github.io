@@ -8,18 +8,9 @@ export interface MealCandidate {
 
 export type DutyCandidate = MealCandidate;
 
-/**
- * Generates a random float in [0, 1) using crypto.getRandomValues if available,
- * falling back to Math.random().
- */
-export const getSecureRandomFloat = (): number => {
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-    const buffer = new Uint32Array(1);
-    crypto.getRandomValues(buffer);
-    return buffer[0] / (0xffffffff + 1);
-  }
-  return Math.random(); // NOSONAR
-};
+import { getSecureRandomFloat } from "./random";
+
+export { getSecureRandomFloat };
 
 /**
  * Extracts all valid student candidates across all laboratory rooms.
