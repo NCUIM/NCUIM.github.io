@@ -73,11 +73,37 @@ function downloadFile(url, destPath) {
   });
 }
 
+const SKIP_TAGS = new Set(["script", "style"]);
+
+/** Collect tag name starting at position i; returns { tagName, isClose, nextI }. */
+function parseTagName(input, i) {
+  const len = input.length;
+  i++; // skip '<'
+  const isClose = i < len && input[i] === "/";
+  if (isClose) i++; // skip '/'
+  let tagName = "";
+  while (i < len && input[i] !== ">" && input[i] !== " " && input[i] !== "\t" && input[i] !== "\n" && input[i] !== "\r") {
+    tagName += input[i++];
+  }
+  while (i < len && input[i] !== ">") i++; // advance past '>'
+  if (i < len) i++; // skip '>'
+  return { tagName: tagName.toLowerCase(), isClose, nextI: i };
+}
+
+/** Skip past the closing </tagName> and return the index after it. */
+function skipBlockContent(input, tagName, i) {
+  const closeTag = `</${tagName}`;
+  const closeIdx = input.toLowerCase().indexOf(closeTag, i);
+  if (closeIdx === -1) return input.length; // malformed — skip to end
+  let j = closeIdx;
+  while (j < input.length && input[j] !== ">") j++;
+  return j < input.length ? j + 1 : j;
+}
+
 function stripHtml(input) {
   // State-machine HTML text extractor.
   // Tracks open tag names and suppresses all content inside script/style
   // elements, avoiding regex-based tag filtering that CodeQL flags.
-  const SKIP_TAGS = new Set(["script", "style"]);
   let text = "";
   let i = 0;
   const len = input.length;
@@ -87,35 +113,12 @@ function stripHtml(input) {
       text += input[i++];
       continue;
     }
-    // Inside a tag — collect the tag name to decide whether to skip content.
-    const tagStart = i;
-    i++; // skip '<'
-    const isClose = i < len && input[i] === "/";
-    if (isClose) i++; // skip '/'
-    let tagName = "";
-    while (i < len && input[i] !== ">" && input[i] !== " " && input[i] !== "\t" && input[i] !== "\n" && input[i] !== "\r") {
-      tagName += input[i++];
-    }
-    // Advance past '>'
-    while (i < len && input[i] !== ">") i++;
-    if (i < len) i++; // skip '>'
-
-    tagName = tagName.toLowerCase();
+    const { tagName, isClose, nextI } = parseTagName(input, i);
+    i = nextI;
     if (!isClose && SKIP_TAGS.has(tagName)) {
-      // Skip everything until the matching closing tag.
-      const closeTag = `</${tagName}`;
-      const closeIdx = input.toLowerCase().indexOf(closeTag, i);
-      if (closeIdx !== -1) {
-        i = closeIdx;
-        // Advance past the closing tag.
-        while (i < len && input[i] !== ">") i++;
-        if (i < len) i++;
-      } else {
-        i = len; // malformed — skip to end
-      }
+      i = skipBlockContent(input, tagName, i);
     }
-    // Other tags are simply discarded (tag start already skipped above).
-    void tagStart;
+    // Other tags are simply discarded (already advanced past '>').
   }
 
   return text.replaceAll("&nbsp;", " ").replaceAll("&nbsp", " ").trim();
