@@ -21,6 +21,7 @@ import {
 import type { TeacherProfile, QuizQuestion } from "../../types/faculty";
 import teachersData from "../../data/im-teachers.json";
 import { PointCloudCanvas } from "./PointCloudCanvas";
+import { FacultyCompendiumModal } from "./FacultyCompendiumModal";
 
 const allTeachers: readonly TeacherProfile[] = teachersData as readonly TeacherProfile[];
 
@@ -121,14 +122,16 @@ export const FacultyQuizModal: React.FC<{
       return 0;
     }
   });
-  const [unlockedCount, setUnlockedCount] = useState(() => {
+  const [unlockedIds, setUnlockedIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
-      return saved ? JSON.parse(saved).length : 0;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return 0;
+      return [];
     }
   });
+  const unlockedCount = unlockedIds.length;
+  const [showCompendium, setShowCompendium] = useState(false);
 
   const [isCelebrating, setIsCelebrating] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
@@ -168,7 +171,7 @@ export const FacultyQuizModal: React.FC<{
       if (!unlockedList.includes(question.teacher.id)) {
         unlockedList.push(question.teacher.id);
         localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
-        setUnlockedCount(unlockedList.length);
+        setUnlockedIds(unlockedList);
       }
     } catch {
       // Progress remains available for this session when storage is unavailable.
@@ -223,10 +226,28 @@ export const FacultyQuizModal: React.FC<{
               <IonBadge color="warning" style={{ fontSize: 13, padding: "4px 8px" }}>
                 🔥 連勝 {streak}
               </IonBadge>
-              <IonBadge color="primary" style={{ fontSize: 13, padding: "4px 8px" }}>
-                <IonIcon icon={trophyOutline} style={{ verticalAlign: "middle", marginRight: 3 }} />
-                圖鑑 {unlockedCount} / {allTeachers.length}
-              </IonBadge>
+              <button
+                type="button"
+                onClick={() => setShowCompendium(true)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  background: "var(--ncu-primary)",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: 16,
+                  padding: "4px 10px",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(59, 130, 246, 0.3)",
+                }}
+                aria-label="展開師資圖鑑"
+              >
+                <IonIcon icon={trophyOutline} style={{ verticalAlign: "middle" }} />
+                <span>圖鑑 {unlockedCount} / {allTeachers.length}</span>
+              </button>
             </div>
             <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
               隨機抽取中大資管師資
@@ -331,6 +352,13 @@ export const FacultyQuizModal: React.FC<{
           )}
         </div>
       </IonContent>
+
+      <FacultyCompendiumModal
+        isOpen={showCompendium}
+        onDismiss={() => setShowCompendium(false)}
+        teachers={allTeachers}
+        unlockedIds={unlockedIds}
+      />
     </IonModal>
   );
 };
