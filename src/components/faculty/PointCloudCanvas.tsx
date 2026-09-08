@@ -17,14 +17,22 @@ interface Point3D {
   alpha: number;
 }
 
+export interface ImageTargetItem {
+  readonly id: string;
+  readonly photoUrl?: string;
+  readonly localPhotoUrl?: string;
+}
+
 interface PointCloudCanvasProps {
-  teacher: TeacherProfile;
+  item?: ImageTargetItem;
+  teacher?: TeacherProfile;
   isCelebrating: boolean;
   onBurstComplete?: () => void;
   onAligned: () => void;
 }
 
 export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
+  item,
   teacher,
   isCelebrating,
   onBurstComplete,
@@ -113,7 +121,11 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
     return () => { cancelled = true; };
   }, []);
 
-  // Reload point cloud whenever teacher changes
+  // Reload point cloud whenever target item changes
+  const targetItem = item || teacher;
+  const targetId = targetItem?.id;
+  const targetSrc = targetItem?.localPhotoUrl || targetItem?.photoUrl || "";
+
   useEffect(() => {
     rotYRef.current = 1.05;
     rotXRef.current = 0.3;
@@ -122,9 +134,9 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
     phaseTimerRef.current = 0;
     isDraggingRef.current = false;
     particlesRef.current = [];
-    const targetSrc = teacher.localPhotoUrl || teacher.photoUrl;
+    if (!targetSrc) return;
     return generatePointCloudFromImage(targetSrc);
-  }, [teacher.id, teacher.localPhotoUrl, teacher.photoUrl, generatePointCloudFromImage]);
+  }, [targetId, targetSrc, generatePointCloudFromImage]);
 
   // Handle celebration trigger
   useEffect(() => {
