@@ -1,3 +1,5 @@
+import { getSecureRandomFloat } from "../../utils/random";
+
 export interface PortraitPoint {
   x: number;
   y: number;
@@ -17,7 +19,7 @@ export function createPortraitCloud(data: Uint8ClampedArray, width: number, heig
       points.push({
         x: (x - (width - 1) / 2) * spacing,
         y: (y - (height - 1) / 2) * spacing,
-        z: (Math.random() - 0.5) * 180,
+        z: (getSecureRandomFloat() - 0.5) * 180,
         color: `rgb(${data[index]},${data[index + 1]},${data[index + 2]})`,
       });
     }

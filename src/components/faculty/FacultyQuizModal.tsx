@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   IonModal,
   IonHeader,
@@ -41,7 +41,21 @@ export const FacultyQuizModal: React.FC<{
   onDismiss: () => void;
 }> = ({ isOpen, onDismiss }) => {
   const confettiCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const confettiCancelRef = useRef<(() => void) | null>(null);
   const [showCompendium, setShowCompendium] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      confettiCancelRef.current?.();
+      confettiCancelRef.current = null;
+    };
+  }, []);
+
+  const handleDismiss = () => {
+    confettiCancelRef.current?.();
+    confettiCancelRef.current = null;
+    onDismiss();
+  };
 
   const {
     target,
@@ -57,18 +71,21 @@ export const FacultyQuizModal: React.FC<{
     teachers: allTeachers,
     memes: allMemes,
     isOpen,
-    onSuccessReward: () => triggerConfetti(confettiCanvasRef.current),
+    onSuccessReward: () => {
+      confettiCancelRef.current?.();
+      confettiCancelRef.current = triggerConfetti(confettiCanvasRef.current);
+    },
   });
 
   if (!target || !isOpen) return null;
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
+    <IonModal isOpen={isOpen} onDidDismiss={handleDismiss}>
       <IonHeader>
         <IonToolbar>
           <IonTitle>這是誰~</IonTitle>
           <IonButtons slot="end">
-            <IonButton fill="clear" onClick={onDismiss} aria-label="關閉">
+            <IonButton fill="clear" onClick={handleDismiss} aria-label="關閉">
               <IonIcon icon={closeOutline} />
             </IonButton>
           </IonButtons>

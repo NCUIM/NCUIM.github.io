@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { TeacherProfile } from "../../types/faculty";
 import { createPortraitCloud, isFrontAligned } from "./portrait-cloud";
+import { getSecureRandomFloat } from "../../utils/random";
 
 interface Point3D {
   x: number;
@@ -227,11 +228,11 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           phaseRef.current = "burst";
           phaseTimerRef.current = 0;
           for (const p of particles) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 7 + Math.random() * 14;
+            const angle = getSecureRandomFloat() * Math.PI * 2;
+            const speed = 7 + getSecureRandomFloat() * 14;
             p.vx = Math.cos(angle) * speed;
             p.vy = Math.sin(angle) * speed;
-            p.vz = (Math.random() - 0.5) * speed;
+            p.vz = (getSecureRandomFloat() - 0.5) * speed;
           }
           if (onBurstComplete) onBurstComplete();
         }

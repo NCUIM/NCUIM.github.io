@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { TeacherProfile, MemeItem, QuizTarget, QuizQuestion } from "../../types/faculty";
+import { getSecureRandomFloat } from "../../utils/random";
 
 export const STORAGE_KEY_UNLOCKED = "ncu_faculty_quiz_unlocked";
 export const STORAGE_KEY_STREAK = "ncu_faculty_quiz_streak";
@@ -11,15 +12,17 @@ export const pickNextTarget = (
   memes: readonly MemeItem[],
   lastId?: string,
 ): QuizTarget => {
-  const pickTeacher = Math.random() < 0.5;
+  const pickTeacher = getSecureRandomFloat() < 0.5;
   if (pickTeacher && teachers.length > 0) {
     const eligible = teachers.filter((t) => t.id !== lastId);
-    const chosen = eligible[Math.floor(Math.random() * eligible.length)] || teachers[0];
+    const pool = eligible.length > 0 ? eligible : teachers;
+    const chosen = pool[Math.floor(getSecureRandomFloat() * pool.length)];
     return { type: "teacher", data: chosen };
   }
   if (memes.length > 0) {
     const eligible = memes.filter((m) => m.id !== lastId);
-    const chosen = eligible[Math.floor(Math.random() * eligible.length)] || memes[0];
+    const pool = eligible.length > 0 ? eligible : memes;
+    const chosen = pool[Math.floor(getSecureRandomFloat() * pool.length)];
     return { type: "meme", data: chosen };
   }
   return { type: "teacher", data: teachers[0] };
@@ -30,12 +33,33 @@ export const generateQuestion = (
   teachers: readonly TeacherProfile[],
   lastId?: string,
 ): QuizQuestion => {
+  if (!teachers || teachers.length === 0) {
+    const fallback: TeacherProfile = {
+      id: "unknown",
+      name: "未知教授",
+      title: "教授",
+      photoUrl: "",
+      localPhotoUrl: "",
+      education: "",
+      specialty: "",
+      specialtyTags: [],
+      office: "",
+      email: "",
+    };
+    return {
+      teacher: fallback,
+      options: [fallback],
+      clues: { specialties: [], education: "", office: "" },
+    };
+  }
+
   const eligible = teachers.filter((t) => t.id !== lastId);
-  const target = eligible[Math.floor(Math.random() * eligible.length)] || teachers[0];
+  const pool = eligible.length > 0 ? eligible : teachers;
+  const target = pool[Math.floor(getSecureRandomFloat() * pool.length)];
   const others = teachers.filter((t) => t.id !== target.id);
-  const shuffledOthers = [...others].sort(() => Math.random() - 0.5);
+  const shuffledOthers = [...others].sort(() => getSecureRandomFloat() - 0.5);
   const distractors = shuffledOthers.slice(0, 3);
-  const options = [target, ...distractors].sort(() => Math.random() - 0.5);
+  const options = [target, ...distractors].sort(() => getSecureRandomFloat() - 0.5);
 
   return {
     teacher: target,
