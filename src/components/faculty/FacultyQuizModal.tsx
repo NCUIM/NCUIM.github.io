@@ -117,7 +117,7 @@ export const FacultyQuizModal: React.FC<{
   onDismiss: () => void;
 }> = ({ isOpen, onDismiss }) => {
   const [question, setQuestion] = useState<QuizQuestion | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const completedRef = useRef(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [clueStep, setClueStep] = useState(1);
   const [streak, setStreak] = useState(() => {
@@ -145,7 +145,7 @@ export const FacultyQuizModal: React.FC<{
     if (allTeachers.length === 0) return;
     const newQ = generateQuestion(allTeachers, question?.teacher.id);
     setQuestion(newQ);
-    setSelectedId(null);
+    completedRef.current = false;
     setIsCorrect(null);
     setClueStep(1);
     setIsCelebrating(false);
@@ -153,66 +153,46 @@ export const FacultyQuizModal: React.FC<{
   }, [question?.teacher.id]);
 
   useEffect(() => {
+    if (!isOpen) {
+      setQuestion(null);
+      return;
+    }
     if (isOpen && !question) {
       nextRound();
     }
   }, [isOpen, question, nextRound]);
 
-  const handleSelectOption = (chosen: TeacherProfile) => {
-    if (isCorrect || !question) return;
-
-    setSelectedId(chosen.id);
-
-    if (chosen.id === question.teacher.id) {
-      setIsCorrect(true);
-      setIsCelebrating(true);
-
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      try {
-        localStorage.setItem(STORAGE_KEY_STREAK, String(newStreak));
-        const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
-        const unlockedList: string[] = saved ? JSON.parse(saved) : [];
-        if (!unlockedList.includes(chosen.id)) {
-          unlockedList.push(chosen.id);
-          localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
-          setUnlockedCount(unlockedList.length);
-        }
-      } catch {
-        // ignore
+  const handleAligned = () => {
+    if (completedRef.current || !question || !isOpen) return;
+    completedRef.current = true;
+    setIsCorrect(true);
+    setIsCelebrating(true);
+    setShowProfileCard(true);
+    const newStreak = streak + 1;
+    setStreak(newStreak);
+    try {
+      localStorage.setItem(STORAGE_KEY_STREAK, String(newStreak));
+      const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
+      const unlockedList: string[] = saved ? JSON.parse(saved) : [];
+      if (!unlockedList.includes(question.teacher.id)) {
+        unlockedList.push(question.teacher.id);
+        localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
+        setUnlockedCount(unlockedList.length);
       }
-
-      // Haptic
-      if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate([30, 50, 60]);
-      }
-
-      // Confetti
-      setTimeout(() => {
-        triggerConfetti(confettiCanvasRef.current);
-        setShowProfileCard(true);
-      }, 500);
-    } else {
-      setIsCorrect(false);
-      setStreak(0);
-      try {
-        localStorage.setItem(STORAGE_KEY_STREAK, "0");
-      } catch {
-        // ignore
-      }
-      if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate(80);
-      }
+    } catch {
+      // Progress remains available for this session when storage is unavailable.
     }
+    navigator.vibrate?.([30, 50, 60]);
+    triggerConfetti(confettiCanvasRef.current);
   };
 
-  if (!question) return null;
+  if (!question || !isOpen) return null;
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>3D 雲點猜教授</IonTitle>
+          <IonTitle>點雲對準挑戰</IonTitle>
           <IonButtons slot="end">
             <IonButton fill="clear" onClick={onDismiss} aria-label="關閉">
               <IonIcon icon={closeOutline} />
@@ -264,8 +244,10 @@ export const FacultyQuizModal: React.FC<{
 
           {/* 3D Point Cloud Canvas */}
           <PointCloudCanvas
+            key={question.teacher.id}
             teacher={question.teacher}
             isCelebrating={isCelebrating}
+            onAligned={handleAligned}
           />
 
           {/* Clues Section */}
@@ -337,77 +319,6 @@ export const FacultyQuizModal: React.FC<{
               )}
             </div>
           </div>
-
-          {/* Answer Choice Buttons */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-            {question.options.map((opt) => {
-              const isPicked = selectedId === opt.id;
-              const isTheTarget = opt.id === question.teacher.id;
-
-              let btnBorder = "1.5px solid var(--ncu-border)";
-              let btnBg = "var(--ncu-surface)";
-              let btnColor = "var(--ncu-ink)";
-
-              if (isPicked) {
-                if (isCorrect) {
-                  btnBg = "#dcfce7";
-                  btnBorder = "2px solid #16a34a";
-                  btnColor = "#15803d";
-                } else {
-                  btnBg = "#fee2e2";
-                  btnBorder = "2px solid #dc2626";
-                  btnColor = "#b91c1c";
-                }
-              } else if (isCorrect && isTheTarget) {
-                btnBg = "#dcfce7";
-                btnBorder = "2px solid #16a34a";
-                btnColor = "#15803d";
-              }
-
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => handleSelectOption(opt)}
-                  disabled={Boolean(isCorrect)}
-                  style={{
-                    border: btnBorder,
-                    background: btnBg,
-                    color: btnColor,
-                    borderRadius: "var(--ncu-radius-md, 10px)",
-                    padding: "12px 10px",
-                    fontWeight: 700,
-                    fontSize: 15,
-                    cursor: isCorrect ? "default" : "pointer",
-                    boxShadow: "var(--ncu-shadow-sm)",
-                    transition: "all 0.15s ease",
-                    textAlign: "center",
-                  }}
-                >
-                  {opt.name} {opt.title}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Feedback & Result Card */}
-          {selectedId && !isCorrect && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "8px 12px",
-                background: "#fef2f2",
-                border: "1px solid #fca5a5",
-                borderRadius: 8,
-                color: "#b91c1c",
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: 12,
-              }}
-            >
-              ❌ 猜錯囉！連勝歸零，再看仔細線索試試看！
-            </div>
-          )}
 
           {/* Revealed Professor Card after Correct Answer */}
           {showProfileCard && (
