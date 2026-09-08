@@ -76,8 +76,7 @@ function downloadFile(url, destPath) {
 function stripHtml(input) {
   let text = "";
   let insideTag = false;
-  for (let i = 0; i < input.length; i++) {
-    const ch = input[i];
+  for (const ch of input) {
     if (ch === "<") {
       insideTag = true;
     } else if (ch === ">") {
@@ -102,58 +101,65 @@ function extractField(html, header) {
   return stripHtml(sub.slice(contentStart, tdEnd));
 }
 
+function parseTeacherFromTable(tableHtml) {
+  const anMatch = /<div class\s*=\s*"an"[^>]*>([\s\S]*?)<\/div>/i.exec(tableHtml);
+  if (!anMatch) return null;
+
+  const text = stripHtml(anMatch[1]);
+  const parts = text.split(/\s+/).filter(Boolean);
+  const name = parts[0];
+  const title = parts[1] || "教授";
+  const role = parts.slice(2).join(" ");
+
+  const imgMatch = /<img class="t_img"\s+src="([^"]+)"/i.exec(tableHtml);
+  let photoUrl = imgMatch ? imgMatch[1].trim() : "";
+  if (photoUrl && !photoUrl.startsWith("http")) {
+    photoUrl = new URL(photoUrl, "https://im.mgt.ncu.edu.tw/").href;
+  }
+
+  const education = extractField(tableHtml, "學歷");
+  const specialty = extractField(tableHtml, "專長");
+  const office = extractField(tableHtml, "辦公室");
+
+  const emailMatch = /mailto:([^"]+)"/i.exec(tableHtml);
+  const email = emailMatch ? emailMatch[1].trim() : "";
+
+  const specialtyTags = specialty
+    ? specialty.split(/[,、，/\s]+/).map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const id = email ? email.split("@")[0].split(/[；;]/)[0].trim() : name;
+
+  const parsedUrl = photoUrl ? new URL(photoUrl) : null;
+  const rawExt = parsedUrl ? path.extname(parsedUrl.pathname) : "";
+  const ext = rawExt && rawExt.length <= 5 ? rawExt : ".jpg";
+  const localFileName = `${id}${ext}`;
+
+  return {
+    id,
+    name,
+    title,
+    role: role || undefined,
+    photoUrl,
+    education,
+    specialty,
+    specialtyTags,
+    office,
+    email,
+    localPhotoUrl: `/teachers/${localFileName}`,
+  };
+}
+
 export function parseFacultyHtml(html) {
   const teacherTableRegex = /<table class="table table-striped table-dark teacher-table"[\s\S]*?<\/table>/g;
   const tables = html.match(teacherTableRegex) || [];
   const teachers = [];
 
   for (const tableHtml of tables) {
-    const anMatch = /<div class\s*=\s*"an"[^>]*>([\s\S]*?)<\/div>/i.exec(tableHtml);
-    if (!anMatch) continue;
-
-    const text = stripHtml(anMatch[1]);
-    const parts = text.split(/\s+/).filter(Boolean);
-    const name = parts[0];
-    const title = parts[1] || "教授";
-    const role = parts.slice(2).join(" ");
-
-    const imgMatch = /<img class="t_img"\s+src="([^"]+)"/i.exec(tableHtml);
-    let photoUrl = imgMatch ? imgMatch[1].trim() : "";
-    if (photoUrl && !photoUrl.startsWith("http")) {
-      photoUrl = new URL(photoUrl, "https://im.mgt.ncu.edu.tw/").href;
+    const teacher = parseTeacherFromTable(tableHtml);
+    if (teacher) {
+      teachers.push(teacher);
     }
-
-    const education = extractField(tableHtml, "學歷");
-    const specialty = extractField(tableHtml, "專長");
-    const office = extractField(tableHtml, "辦公室");
-
-    const emailMatch = /mailto:([^"]+)"/i.exec(tableHtml);
-    const email = emailMatch ? emailMatch[1].trim() : "";
-
-    const specialtyTags = specialty
-      ? specialty.split(/[,、，/\s]+/).map((s) => s.trim()).filter(Boolean)
-      : [];
-
-    const id = email ? email.split("@")[0].split(/[；;]/)[0].trim() : name;
-
-    const parsedUrl = photoUrl ? new URL(photoUrl) : null;
-    const rawExt = parsedUrl ? path.extname(parsedUrl.pathname) : "";
-    const ext = rawExt && rawExt.length <= 5 ? rawExt : ".jpg";
-    const localFileName = `${id}${ext}`;
-
-    teachers.push({
-      id,
-      name,
-      title,
-      role: role || undefined,
-      photoUrl,
-      education,
-      specialty,
-      specialtyTags,
-      office,
-      email,
-      localPhotoUrl: `/teachers/${localFileName}`,
-    });
   }
 
   return teachers;

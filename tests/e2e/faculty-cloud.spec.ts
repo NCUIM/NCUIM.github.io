@@ -4,7 +4,7 @@ for (const [view, targetYaw] of [["front", 0], ["mirrored", Math.PI]] as const) 
 test(`dragging to ${view} unlocks once and the next round resets`, async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "教授" }).click();
-  const puzzle = page.getByRole("group", { name: "旋轉視角，對準正面解鎖" });
+  const puzzle = page.getByRole("button", { name: "旋轉視角，對準正面解鎖" });
   await expect(puzzle).toBeVisible();
   await expect(puzzle.getByText("載入教授人像中…")).toBeHidden();
   const next = page.getByRole("button", { name: /下一/ });

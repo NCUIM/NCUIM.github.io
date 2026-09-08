@@ -178,6 +178,151 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
     isDraggingRef.current = false;
   };
 
+interface ProjectedPoint {
+  x2d: number;
+  y2d: number;
+  z: number;
+  size: number;
+  color: string;
+  alpha: number;
+}
+
+function updateImplodePhase(
+  particles: Point3D[],
+  phaseTimerRef: React.MutableRefObject<number>,
+  phaseRef: React.MutableRefObject<"orbit" | "implode" | "burst" | "settle">,
+  onBurstComplete?: () => void,
+) {
+  phaseTimerRef.current += 1;
+  for (const p of particles) {
+    p.x *= 0.85;
+    p.y *= 0.85;
+    p.z *= 0.85;
+  }
+  if (phaseTimerRef.current > 16) {
+    phaseRef.current = "burst";
+    phaseTimerRef.current = 0;
+    for (const p of particles) {
+      const angle = getSecureRandomFloat() * Math.PI * 2;
+      const speed = 7 + getSecureRandomFloat() * 14;
+      p.vx = Math.cos(angle) * speed;
+      p.vy = Math.sin(angle) * speed;
+      p.vz = (getSecureRandomFloat() - 0.5) * speed;
+    }
+    if (onBurstComplete) onBurstComplete();
+  }
+}
+
+function updateBurstPhase(
+  particles: Point3D[],
+  phaseTimerRef: React.MutableRefObject<number>,
+  phaseRef: React.MutableRefObject<"orbit" | "implode" | "burst" | "settle">,
+) {
+  phaseTimerRef.current += 1;
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.z += p.vz;
+    p.vx *= 0.91;
+    p.vy *= 0.91;
+    p.vz *= 0.91;
+  }
+  if (phaseTimerRef.current > 35) {
+    phaseRef.current = "settle";
+  }
+}
+
+function updateSettlePhase(
+  particles: Point3D[],
+  rotXRef: React.MutableRefObject<number>,
+  rotYRef: React.MutableRefObject<number>,
+) {
+  rotYRef.current += (0 - rotYRef.current) * 0.06;
+  rotXRef.current += (0 - rotXRef.current) * 0.06;
+  for (const p of particles) {
+    p.x += (p.baseX - p.x) * 0.08;
+    p.y += (p.baseY - p.y) * 0.08;
+    p.z += (p.baseZ - p.z) * 0.08;
+  }
+}
+
+function updateIdlePhase(particles: Point3D[], time: number) {
+  for (const p of particles) {
+    const subtleWave = Math.sin(time + p.baseX * 0.05) * 0.8;
+    p.x = p.baseX;
+    p.y = p.baseY + subtleWave;
+    p.z = p.baseZ;
+  }
+}
+
+function updateParticlesAnimation(
+  particles: Point3D[],
+  phaseRef: React.MutableRefObject<"orbit" | "implode" | "burst" | "settle">,
+  phaseTimerRef: React.MutableRefObject<number>,
+  rotXRef: React.MutableRefObject<number>,
+  rotYRef: React.MutableRefObject<number>,
+  time: number,
+  onBurstComplete?: () => void,
+) {
+  const phase = phaseRef.current;
+  if (phase === "implode") {
+    updateImplodePhase(particles, phaseTimerRef, phaseRef, onBurstComplete);
+  } else if (phase === "burst") {
+    updateBurstPhase(particles, phaseTimerRef, phaseRef);
+  } else if (phase === "settle") {
+    updateSettlePhase(particles, rotXRef, rotYRef);
+  } else {
+    updateIdlePhase(particles, time);
+  }
+}
+
+function projectAndDrawParticles(
+  ctx: CanvasRenderingContext2D,
+  particles: Point3D[],
+  width: number,
+  height: number,
+  rotX: number,
+  rotY: number,
+) {
+  const cx = width / 2;
+  const cy = height / 2;
+  const cosY = Math.cos(rotY);
+  const sinY = Math.sin(rotY);
+  const cosX = Math.cos(rotX);
+  const sinX = Math.sin(rotX);
+
+  const fit = Math.min(width / 260, height / 280) * 1.45;
+  const scale = fit * 0.7;
+
+  const projected: ProjectedPoint[] = [];
+
+  for (const p of particles) {
+    const x1 = p.x * cosY + p.z * sinY;
+    const z1 = -p.x * sinY + p.z * cosY;
+    const y2 = p.y * cosX - z1 * sinX;
+    const z2 = p.y * sinX + z1 * cosX;
+
+    projected.push({
+      x2d: cx + x1 * scale,
+      y2d: cy + y2 * scale,
+      z: z2,
+      size: p.size * scale,
+      color: p.color,
+      alpha: p.alpha,
+    });
+  }
+
+  projected.sort((a, b) => b.z - a.z);
+
+  for (const pt of projected) {
+    ctx.beginPath();
+    ctx.arc(pt.x2d, pt.y2d, Math.max(0.7, pt.size), 0, Math.PI * 2);
+    ctx.fillStyle = pt.color;
+    ctx.globalAlpha = pt.alpha;
+    ctx.fill();
+  }
+}
+
   // Main Render Loop
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -202,122 +347,26 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, width, height);
 
-      // Constrain vertical rotation
       rotXRef.current = Math.max(-0.6, Math.min(0.6, rotXRef.current));
 
-      const cx = width / 2;
-      const cy = height / 2;
+      updateParticlesAnimation(
+        particlesRef.current,
+        phaseRef,
+        phaseTimerRef,
+        rotXRef,
+        rotYRef,
+        time,
+        onBurstComplete,
+      );
 
-      const cosY = Math.cos(rotYRef.current);
-      const sinY = Math.sin(rotYRef.current);
-      const cosX = Math.cos(rotXRef.current);
-      const sinX = Math.sin(rotXRef.current);
-
-      const particles = particlesRef.current;
-      const phase = phaseRef.current;
-
-      // Animation phase management
-      if (phase === "implode") {
-        phaseTimerRef.current += 1;
-        for (const p of particles) {
-          p.x *= 0.85;
-          p.y *= 0.85;
-          p.z *= 0.85;
-        }
-        if (phaseTimerRef.current > 16) {
-          phaseRef.current = "burst";
-          phaseTimerRef.current = 0;
-          for (const p of particles) {
-            const angle = getSecureRandomFloat() * Math.PI * 2;
-            const speed = 7 + getSecureRandomFloat() * 14;
-            p.vx = Math.cos(angle) * speed;
-            p.vy = Math.sin(angle) * speed;
-            p.vz = (getSecureRandomFloat() - 0.5) * speed;
-          }
-          if (onBurstComplete) onBurstComplete();
-        }
-      } else if (phase === "burst") {
-        phaseTimerRef.current += 1;
-        for (const p of particles) {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.z += p.vz;
-          p.vx *= 0.91;
-          p.vy *= 0.91;
-          p.vz *= 0.91;
-        }
-        if (phaseTimerRef.current > 35) {
-          phaseRef.current = "settle";
-        }
-      } else if (phase === "settle") {
-        // Rotate smoothly towards perfect front angle on settle
-        rotYRef.current += (0 - rotYRef.current) * 0.06;
-        rotXRef.current += (0 - rotXRef.current) * 0.06;
-
-        for (const p of particles) {
-          p.x += (p.baseX - p.x) * 0.08;
-          p.y += (p.baseY - p.y) * 0.08;
-          p.z += (p.baseZ - p.z) * 0.08;
-        }
-      } else {
-        // Subtle floating living breathing vibration in 3D
-        for (let i = 0; i < particles.length; i++) {
-          const p = particles[i];
-          const subtleWave = Math.sin(time + p.baseX * 0.05) * 0.8;
-          p.x = p.baseX;
-          p.y = p.baseY + subtleWave;
-          p.z = p.baseZ;
-        }
-      }
-
-      // 3D Matrix Projection & Depth Sorting
-      interface ProjectedPoint {
-        x2d: number;
-        y2d: number;
-        z: number;
-        size: number;
-        color: string;
-        alpha: number;
-      }
-
-      const projected: ProjectedPoint[] = [];
-
-      for (const p of particles) {
-        // Rotate Y
-        const x1 = p.x * cosY + p.z * sinY;
-        const z1 = -p.x * sinY + p.z * cosY;
-
-        // Rotate X
-        const y2 = p.y * cosX - z1 * sinX;
-        const z2 = p.y * sinX + z1 * cosX;
-
-        // Perspective Projection
-        const fit = Math.min(width / 260, height / 280) * 1.45;
-        const scale = fit * 0.7;
-        const x2d = cx + x1 * scale;
-        const y2d = cy + y2 * scale;
-
-        projected.push({
-          x2d,
-          y2d,
-          z: z2,
-          size: p.size * scale,
-          color: p.color,
-          alpha: p.alpha,
-        });
-      }
-
-      // Depth sort so closer points draw over distant ones
-      projected.sort((a, b) => b.z - a.z);
-
-      // Render dots
-      for (const pt of projected) {
-        ctx.beginPath();
-        ctx.arc(pt.x2d, pt.y2d, Math.max(0.7, pt.size), 0, Math.PI * 2);
-        ctx.fillStyle = pt.color;
-        ctx.globalAlpha = pt.alpha;
-        ctx.fill();
-      }
+      projectAndDrawParticles(
+        ctx,
+        particlesRef.current,
+        width,
+        height,
+        rotXRef.current,
+        rotYRef.current,
+      );
 
       ctx.restore();
       animFrameRef.current = requestAnimationFrame(render);
@@ -331,11 +380,15 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   }, [onBurstComplete]);
 
   return (
-    <fieldset
+    <button
+      type="button"
       aria-label="旋轉視角，對準正面解鎖"
-      tabIndex={0}
       onKeyDown={(e) => {
         if (!readyRef.current || solvedRef.current) return;
+        if (e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          return;
+        }
         if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
         e.preventDefault();
         if (e.key === "ArrowLeft") rotYRef.current -= 0.05;
@@ -345,6 +398,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         checkAlignment();
       }}
       style={{
+        display: "block",
         position: "relative",
         width: "100%",
         height: 290,
@@ -357,6 +411,8 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.4)",
         touchAction: "none",
         cursor: "grab",
+        boxSizing: "border-box",
+        textAlign: "inherit",
       }}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
@@ -409,6 +465,6 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           {loadError ? "照片載入失敗，請關閉後重試" : "👆 拖曳或方向鍵旋轉"}
         </div>
       )}
-    </fieldset>
+    </button>
   );
 };

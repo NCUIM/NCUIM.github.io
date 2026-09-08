@@ -310,11 +310,9 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
 
           {/* Detail Modal for Selected Unlocked Teacher */}
           {selectedTeacher && (
-            <div
-              role="dialog"
-              aria-modal="true"
+            <dialog
+              open
               aria-label="教授詳細資料"
-              tabIndex={-1}
               onKeyDown={(e) => {
                 if (e.key === "Escape") setSelectedTeacher(null);
               }}
@@ -327,12 +325,19 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
                 left: 0,
                 right: 0,
                 bottom: 0,
+                width: "100%",
+                height: "100%",
+                maxWidth: "100%",
+                maxHeight: "100%",
+                margin: 0,
+                border: "none",
                 background: "rgba(0, 0, 0, 0.5)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 zIndex: 9999,
                 padding: 16,
+                boxSizing: "border-box",
               }}
             >
               <div
@@ -425,7 +430,7 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
+            </dialog>
           )}
         </div>
       </IonContent>
