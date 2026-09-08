@@ -73,6 +73,22 @@ function downloadFile(url, destPath) {
   });
 }
 
+function stripHtml(input) {
+  let text = "";
+  let insideTag = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === "<") {
+      insideTag = true;
+    } else if (ch === ">") {
+      insideTag = false;
+    } else if (!insideTag) {
+      text += ch;
+    }
+  }
+  return text.replaceAll("&nbsp;", " ").replaceAll("&nbsp", " ").trim();
+}
+
 function extractField(html, header) {
   const marker = `<th>${header}</th>`;
   const idx = html.indexOf(marker);
@@ -83,7 +99,7 @@ function extractField(html, header) {
   const contentStart = tdStart + '<td class="ba_comment">'.length;
   const tdEnd = sub.indexOf("</td>", contentStart);
   if (tdEnd === -1) return "";
-  return sub.slice(contentStart, tdEnd).replace(/<[^>]+>/g, "").replace(/&nbsp;?/g, " ").trim();
+  return stripHtml(sub.slice(contentStart, tdEnd));
 }
 
 export function parseFacultyHtml(html) {
@@ -95,7 +111,7 @@ export function parseFacultyHtml(html) {
     const anMatch = /<div class\s*=\s*"an"[^>]*>([\s\S]*?)<\/div>/i.exec(tableHtml);
     if (!anMatch) continue;
 
-    const text = anMatch[1].replace(/<[^>]+>/g, "").replace(/&nbsp;?/g, " ").trim();
+    const text = stripHtml(anMatch[1]);
     const parts = text.split(/\s+/).filter(Boolean);
     const name = parts[0];
     const title = parts[1] || "教授";
