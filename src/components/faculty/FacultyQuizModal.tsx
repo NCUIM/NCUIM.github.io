@@ -297,9 +297,6 @@ export const FacultyQuizModal: React.FC<{
                 <span>圖鑑 {unlockedCount} / {allTeachers.length}</span>
               </button>
             </div>
-            <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
-              隨機抽取教授或迷因貼圖
-            </span>
           </div>
 
           {/* 3D Point Cloud Canvas */}
