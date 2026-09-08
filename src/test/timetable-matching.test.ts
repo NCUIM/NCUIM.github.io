@@ -1,4 +1,6 @@
+import React from "react";
 import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
 import {
   extractCourseCodeAndSection,
   isSerialMatch,
@@ -9,6 +11,7 @@ import {
   buildTimetableFromCisCourses,
   NCU_PERIODS,
   getPeriodTimeBounds,
+  DesktopRulerItem,
 } from "../pages/TimetablePage";
 import { buildTimetableMapFromMasterCourses, type MasterCourseItem } from "../services/all-courses-api";
 import type { CisCourse } from "../services/cis-course-api";
@@ -291,6 +294,20 @@ describe("timetable-matching logic", () => {
       // Legacy 'N' normalized to 'Z'
       expect(timetable["Z-1"]).toBeDefined();
       expect(timetable["Z-1"][0].name).toBe("相容舊版節次");
+    });
+
+    it("renders DesktopRulerItem with noon styling for period Z", () => {
+      const { container } = render(
+        React.createElement(DesktopRulerItem, {
+          period: { id: "Z", time: "12:00-12:50" },
+          rowHeight: 38,
+          isLast: false,
+        }),
+      );
+      expect(container.textContent).toContain("午休");
+      expect(container.textContent).toContain("12:00-12:50");
+      const div = container.firstElementChild as HTMLElement;
+      expect(div.style.background).toBe("rgba(0, 0, 0, 0.03)");
     });
   });
 });

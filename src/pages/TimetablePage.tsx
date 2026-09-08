@@ -953,7 +953,7 @@ const TimetableMobileView = ({
 // ── Desktop View Components ────────────────────────────────────
 
 // skipcq: JS-R1005
-const DesktopRulerItem = ({
+export const DesktopRulerItem = ({
   period,
   rowHeight,
   isLast,
@@ -963,8 +963,9 @@ const DesktopRulerItem = ({
   isLast: boolean;
 }>) => {
   const isSlim = rowHeight === DESKTOP_EMPTY_ROW_HEIGHT;
-  const title = period.id === "N" ? "午休" : `第 ${period.id} 節`;
-  const bg = period.id === "N" ? "rgba(0, 0, 0, 0.03)" : "var(--ncu-primary-light)";
+  const isNoon = period.id === "Z" || period.id === "N";
+  const title = isNoon ? "午休" : `第 ${period.id} 節`;
+  const bg = isNoon ? "rgba(0, 0, 0, 0.03)" : "var(--ncu-primary-light)";
   const borderBottomStyle = isLast ? "none" : "1px solid var(--ncu-border)";
 
   return (
