@@ -480,7 +480,7 @@ export const FacultyQuizModal: React.FC<{
                         </IonBadge>
                       </div>
                       <div style={{ fontSize: 12, color: "#2563eb", marginTop: 4, fontWeight: 600 }}>
-                        🎉 答對了，這是【{target.data.name}】！
+                        🎉 答對了！這不是教授
                       </div>
                     </div>
                   </div>
@@ -536,8 +536,8 @@ export const FacultyQuizModal: React.FC<{
                   </div>
                   <div style={{ fontSize: 12, color: "#dc2626", marginTop: 4, fontWeight: 600 }}>
                     {target.type === "teacher"
-                      ? `這是 ${target.data.name} 教授啦！記住囉 😉`
-                      : `這不是教授，是【${target.data.name}】啦 🤣`}
+                      ? "他是教授啦！記住囉 😉"
+                      : "這不是教授啦 🤣"}
                   </div>
                 </div>
               </div>
