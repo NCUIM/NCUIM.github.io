@@ -12,6 +12,17 @@ export interface TeacherProfile {
   readonly email: string;
 }
 
+export interface MemeItem {
+  readonly id: string;
+  readonly name: string;
+  readonly photoUrl: string;
+  readonly localPhotoUrl: string;
+}
+
+export type QuizTarget =
+  | { readonly type: "teacher"; readonly data: TeacherProfile }
+  | { readonly type: "meme"; readonly data: MemeItem };
+
 export interface QuizQuestion {
   readonly teacher: TeacherProfile;
   readonly options: readonly TeacherProfile[];
@@ -21,3 +32,4 @@ export interface QuizQuestion {
     readonly office: string;
   };
 }
+
