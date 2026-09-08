@@ -1,0 +1,398 @@
+[
+  {
+    "id": "hsuwc",
+    "name": "許文錦",
+    "title": "教授",
+    "role": "兼 系主任",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/hsuwc.jpg",
+    "education": "英國雪菲爾大學資訊管理博士",
+    "specialty": "醫療資訊管理、電子商務、人機互動、消費者行為、智慧型服務",
+    "specialtyTags": [
+      "醫療資訊管理",
+      "電子商務",
+      "人機互動",
+      "消費者行為",
+      "智慧型服務"
+    ],
+    "office": "I1-927-1",
+    "email": "hsuwc@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/hsuwc.jpg"
+  },
+  {
+    "id": "hychiu",
+    "name": "邱信瑜",
+    "title": "副教授",
+    "role": "兼 副系主任",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/Hsin-Yu Chiu.jpg",
+    "education": "國立政治大學金融學系博士",
+    "specialty": "財務管理, 應用計量, 投資組合及資產定價, 行為財務學, 金融科技",
+    "specialtyTags": [
+      "財務管理",
+      "應用計量",
+      "投資組合及資產定價",
+      "行為財務學",
+      "金融科技"
+    ],
+    "office": "I1-932",
+    "email": "hychiu@ncu.edu.tw；child300@gmail.com",
+    "localPhotoUrl": "/teachers/hychiu.jpg"
+  },
+  {
+    "id": "ewang",
+    "name": "王存國",
+    "title": "講座教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/ewang.jpg",
+    "education": "美國羅徹斯特大學資訊管理博士",
+    "specialty": "資訊經濟、電子商務、供應鍊管理、企業資源規劃",
+    "specialtyTags": [
+      "資訊經濟",
+      "電子商務",
+      "供應鍊管理",
+      "企業資源規劃"
+    ],
+    "office": "I1-909",
+    "email": "ewang@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/ewang.jpg"
+  },
+  {
+    "id": "ylchen",
+    "name": "陳彥良",
+    "title": "講座教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/ylchen.jpg",
+    "education": "國立清華大學資訊科學博士",
+    "specialty": "資料探勘、商業智慧、深度學習",
+    "specialtyTags": [
+      "資料探勘",
+      "商業智慧",
+      "深度學習"
+    ],
+    "office": "I1-931",
+    "email": "ylchen@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/ylchen.jpg"
+  },
+  {
+    "id": "yhhu",
+    "name": "胡雅涵",
+    "title": "教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/胡雅涵老師大頭照1121211.jpg",
+    "education": "國立中央大學資訊管理博士",
+    "specialty": "資料探勘、醫療資訊、文字探勘、商業智慧，電子病歷、健保資料庫",
+    "specialtyTags": [
+      "資料探勘",
+      "醫療資訊",
+      "文字探勘",
+      "商業智慧",
+      "電子病歷",
+      "健保資料庫"
+    ],
+    "office": "I1-913",
+    "email": "yhhu@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/yhhu.jpg"
+  },
+  {
+    "id": "ycchen",
+    "name": "陳以錚",
+    "title": "教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/ycchen.jpg",
+    "education": "國立交通大學資訊工程博士",
+    "specialty": "社群網路、資料探勘、深度學習、巨量資料",
+    "specialtyTags": [
+      "社群網路",
+      "資料探勘",
+      "深度學習",
+      "巨量資料"
+    ],
+    "office": "I1-927",
+    "email": "ycchen@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/ycchen.jpg"
+  },
+  {
+    "id": "cychen",
+    "name": "陳仲儼",
+    "title": "教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/Vinccent2.jpg",
+    "education": "美國亞歷桑那州立大學工業工程資訊系統工程組 博士",
+    "specialty": "軟體品質管理、專案管理、資訊品質",
+    "specialtyTags": [
+      "軟體品質管理",
+      "專案管理",
+      "資訊品質"
+    ],
+    "office": "I1-915",
+    "email": "cychen@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/cychen.jpg"
+  },
+  {
+    "id": "cym",
+    "name": "陳奕明",
+    "title": "教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/cym.jpg",
+    "education": "成功大學電機工程博士",
+    "specialty": "分散式資訊系統、電腦網路安全、資訊系統安全",
+    "specialtyTags": [
+      "分散式資訊系統",
+      "電腦網路安全",
+      "資訊系統安全"
+    ],
+    "office": "I1-911",
+    "email": "cym@cc.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/cym.jpg"
+  },
+  {
+    "id": "jmchen",
+    "name": "陳振明",
+    "title": "教授",
+    "role": "( 與工管所合聘 )",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/JMC21.jpg",
+    "education": "美國賓州州立大學工管博士",
+    "specialty": "人工智慧、物流系統、製造系統",
+    "specialtyTags": [
+      "人工智慧",
+      "物流系統",
+      "製造系統"
+    ],
+    "office": "I1-718",
+    "email": "jmchen@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/jmchen.jpg"
+  },
+  {
+    "id": "cftsai",
+    "name": "蔡志豐",
+    "title": "教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/chih_fong.jpg",
+    "education": "英國桑德蘭大學資訊系統博士",
+    "specialty": "資料探勘、機器學習、人工智慧",
+    "specialtyTags": [
+      "資料探勘",
+      "機器學習",
+      "人工智慧"
+    ],
+    "office": "I1-914",
+    "email": "cftsai@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/cftsai.jpg"
+  },
+  {
+    "id": "ychsieh",
+    "name": "謝依靜",
+    "title": "教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/20260122.png",
+    "education": "國立臺灣大學商學博士",
+    "specialty": "行銷管理、數位行銷、服務行銷與管理、網路消費者行為",
+    "specialtyTags": [
+      "行銷管理",
+      "數位行銷",
+      "服務行銷與管理",
+      "網路消費者行為"
+    ],
+    "office": "I1-918",
+    "email": "ychsieh@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/ychsieh.png"
+  },
+  {
+    "id": "eychou",
+    "name": "周恩頤",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/En Yi Chou.jpg",
+    "education": "國立臺灣大學國際企業博士",
+    "specialty": "行銷管理、品牌行銷、服務業行銷、網路行銷",
+    "specialtyTags": [
+      "行銷管理",
+      "品牌行銷",
+      "服務業行銷",
+      "網路行銷"
+    ],
+    "office": "I1-905",
+    "email": "eychou@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/eychou.jpg"
+  },
+  {
+    "id": "hc.shih",
+    "name": "施皇嘉",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/施皇嘉老師.jpg",
+    "education": "國立清華大學電機博士",
+    "specialty": "人工智慧物聯網、電腦視覺及多媒體內容分析、人機互動、運動數據分析",
+    "specialtyTags": [
+      "人工智慧物聯網",
+      "電腦視覺及多媒體內容分析",
+      "人機互動",
+      "運動數據分析"
+    ],
+    "office": "I1-928-1",
+    "email": "hc.shih@gmail.com；shih@ncu.edu.tw",
+    "localPhotoUrl": "/teachers/hc.shih.jpg"
+  },
+  {
+    "id": "jhangli",
+    "name": "張李治華",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/17061913美簽.jpg",
+    "education": "國立交通大學資訊管理博士",
+    "specialty": "資訊系統策略、資訊經濟、電子化企業",
+    "specialtyTags": [
+      "資訊系統策略",
+      "資訊經濟",
+      "電子化企業"
+    ],
+    "office": "I1-907",
+    "email": "jhangli@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/jhangli.jpg"
+  },
+  {
+    "id": "khsu",
+    "name": "許智誠",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/khsu_1.jpg",
+    "education": "美國加州大學洛杉磯分校電腦科學博士",
+    "specialty": "金融資料探勘，python建置資料探勘系統，軟體工程、系統整合、數位學習",
+    "specialtyTags": [
+      "金融資料探勘",
+      "python建置資料探勘系統",
+      "軟體工程",
+      "系統整合",
+      "數位學習"
+    ],
+    "office": "I1-904",
+    "email": "khsu@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/khsu.jpg"
+  },
+  {
+    "id": "httseng",
+    "name": "曾筱珽",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/官網.jpg",
+    "education": "國立交通大學資訊管理博士",
+    "specialty": "社群媒體與社群網路、電子商務、健康資訊系統、人機互動、服務科學、人工智慧應用與資料科學",
+    "specialtyTags": [
+      "社群媒體與社群網路",
+      "電子商務",
+      "健康資訊系統",
+      "人機互動",
+      "服務科學",
+      "人工智慧應用與資料科學"
+    ],
+    "office": "I1-906",
+    "email": "httseng@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/httseng.jpg"
+  },
+  {
+    "id": "yehloyao",
+    "name": "葉羅堯",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/IMG20201230073303-scale-1.jpg",
+    "education": "國立交通大學資訊科學與工程所博士",
+    "specialty": "區塊鏈、資訊安全、車載通訊網路、雲端計算安全",
+    "specialtyTags": [
+      "區塊鏈",
+      "資訊安全",
+      "車載通訊網路",
+      "雲端計算安全"
+    ],
+    "office": "管理二館 919室",
+    "email": "yehloyao@ncu.edu.tw",
+    "localPhotoUrl": "/teachers/yehloyao.jpg"
+  },
+  {
+    "id": "jtsai",
+    "name": "蔡家安",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/蔡家安 老師  網頁照1140901.jpg",
+    "education": "國立中正大學資訊管理博士",
+    "specialty": "專案管理、數位轉型與創新、行為科學量化分析",
+    "specialtyTags": [
+      "專案管理",
+      "數位轉型與創新",
+      "行為科學量化分析"
+    ],
+    "office": "I1-910",
+    "email": "jtsai@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/jtsai.jpg"
+  },
+  {
+    "id": "suesu",
+    "name": "蘇雅惠",
+    "title": "副教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/suesu.jpg",
+    "education": "國立臺灣大學商學博士",
+    "specialty": "創業家精神、經營模式創新與設計、技術創新",
+    "specialtyTags": [
+      "創業家精神",
+      "經營模式創新與設計",
+      "技術創新"
+    ],
+    "office": "I1-912",
+    "email": "suesu@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/suesu.jpg"
+  },
+  {
+    "id": "mhaq",
+    "name": "何迪亞",
+    "title": "助理教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/Photo_何迪亞老師.png",
+    "education": "國立中山大學資訊管理博士",
+    "specialty": "資訊系統、人工智慧與行銷、人工智慧與工作未來、數位／行動／服務創新、電子商務、數位行銷、線上實驗、混合方法縱貫研究與大規模問卷調查",
+    "specialtyTags": [
+      "資訊系統",
+      "人工智慧與行銷",
+      "人工智慧與工作未來",
+      "數位／行動／服務創新",
+      "電子商務",
+      "數位行銷",
+      "線上實驗",
+      "混合方法縱貫研究與大規模問卷調查"
+    ],
+    "office": "",
+    "email": "mhaq@ncu.edu.tw",
+    "localPhotoUrl": "/teachers/mhaq.png"
+  },
+  {
+    "id": "tlhuang",
+    "name": "黃子菱",
+    "title": "助理教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/130684.jpg",
+    "education": "長庚大學管理博士",
+    "specialty": "線上社群、電子商務、醫療照護中的人機互動",
+    "specialtyTags": [
+      "線上社群",
+      "電子商務",
+      "醫療照護中的人機互動"
+    ],
+    "office": "I1-916",
+    "email": "tlhuang@cc.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/tlhuang.jpg"
+  },
+  {
+    "id": "zyliu",
+    "name": "劉子源",
+    "title": "助理教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/系上網頁 _ 教師證照片(劉子源老師).jpg",
+    "education": "國立政治大學資訊科學系博士、日本金澤大學電子情報科學系博士",
+    "specialty": "資訊安全、密碼學、隱私保護技術、人工智慧安全",
+    "specialtyTags": [
+      "資訊安全",
+      "密碼學",
+      "隱私保護技術",
+      "人工智慧安全"
+    ],
+    "office": "I1-929",
+    "email": "zyliu@ncu.edu.tw",
+    "localPhotoUrl": "/teachers/zyliu.jpg"
+  },
+  {
+    "id": "klsue",
+    "name": "蘇坤良",
+    "title": "助理教授",
+    "photoUrl": "https://im.mgt.ncu.edu.tw/img/teacher/DCP_3940-1.jpg",
+    "education": "國立交通大學資訊管理博士",
+    "specialty": "資料探勘、機器學習、金融科技、資訊安全",
+    "specialtyTags": [
+      "資料探勘",
+      "機器學習",
+      "金融科技",
+      "資訊安全"
+    ],
+    "office": "I1-908",
+    "email": "klsue@mgt.ncu.edu.tw",
+    "localPhotoUrl": "/teachers/klsue.jpg"
+  }
+]
