@@ -389,21 +389,23 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           載入教授人像中…
         </div>
       )}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 8,
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          fontSize: 11,
-          color: "rgba(255, 255, 255, 0.65)",
-          pointerEvents: "none",
-          userSelect: "none",
-        }}
-      >
-        {loadError ? "照片載入失敗，請關閉後重試" : isCelebrating ? "🎉 人像已成形，通關！" : "👆 拖曳旋轉，讓人像成形即可通關（鏡像也算，可用方向鍵）"}
-      </div>
+      {!isCelebrating && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 8,
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            fontSize: 11,
+            color: "rgba(255, 255, 255, 0.65)",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          {loadError ? "照片載入失敗，請關閉後重試" : "👆 拖曳或方向鍵旋轉"}
+        </div>
+      )}
     </div>
   );
 };

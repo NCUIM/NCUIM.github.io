@@ -93,20 +93,20 @@ describe("faculty dataset and quiz logic", () => {
     );
 
     // Initial state: verifying prompt is not displayed
-    expect(queryByText("🤔 這是系上的教授嗎？")).toBeNull();
+    expect(queryByText("他是教授嗎？")).toBeNull();
 
     // Trigger alignment
     fireEvent.click(getByTestId("mock-align-btn"));
 
     // Verification prompt should appear with both options
-    expect(getByText("🤔 這是系上的教授嗎？")).toBeDefined();
-    expect(getByText("是教授")).toBeDefined();
-    expect(getByText("不是教授")).toBeDefined();
+    expect(getByText("他是教授嗎？")).toBeDefined();
+    expect(getByText("是")).toBeDefined();
+    expect(getByText("不是")).toBeDefined();
 
-    // Answer "是教授"
-    fireEvent.click(getByText("是教授"));
+    // Answer "是"
+    fireEvent.click(getByText("是"));
 
     // Prompt disappears and either success or failed card is revealed
-    expect(queryByText("🤔 這是系上的教授嗎？")).toBeNull();
+    expect(queryByText("他是教授嗎？")).toBeNull();
   });
 });

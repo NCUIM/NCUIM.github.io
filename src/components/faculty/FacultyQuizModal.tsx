@@ -298,7 +298,7 @@ export const FacultyQuizModal: React.FC<{
               </button>
             </div>
             <span style={{ fontSize: 12, color: "var(--ncu-muted)" }}>
-              隨機抽取系上教授或迷因貼圖
+              隨機抽取教授或迷因貼圖
             </span>
           </div>
 
@@ -324,28 +324,25 @@ export const FacultyQuizModal: React.FC<{
                 animation: "popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             >
-              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--ncu-ink)", marginBottom: 4 }}>
-                🤔 這是系上的教授嗎？
-              </div>
-              <div style={{ fontSize: 12, color: "var(--ncu-muted)", marginBottom: 14 }}>
-                請確認正面成形的人像是系上教授還是迷因貼圖
+              <div style={{ fontSize: 17, fontWeight: 800, color: "var(--ncu-ink)", marginBottom: 12 }}>
+                他是教授嗎？
               </div>
               <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
                 <IonButton
                   color="success"
                   onClick={() => handleAnswer(true)}
-                  style={{ fontWeight: 800, flex: 1, maxWidth: 160 }}
+                  style={{ fontWeight: 800, flex: 1, maxWidth: 140 }}
                 >
                   <IonIcon slot="start" icon={checkmarkCircle} />
-                  是教授
+                  是
                 </IonButton>
                 <IonButton
                   color="danger"
                   onClick={() => handleAnswer(false)}
-                  style={{ fontWeight: 800, flex: 1, maxWidth: 160 }}
+                  style={{ fontWeight: 800, flex: 1, maxWidth: 140 }}
                 >
                   <IonIcon slot="start" icon={closeCircle} />
-                  不是教授
+                  不是
                 </IonButton>
               </div>
             </div>
