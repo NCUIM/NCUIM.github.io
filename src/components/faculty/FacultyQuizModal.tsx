@@ -186,7 +186,7 @@ export const FacultyQuizModal: React.FC<{
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>點雲對準挑戰</IonTitle>
+          <IonTitle>這是誰~</IonTitle>
           <IonButtons slot="end">
             <IonButton fill="clear" onClick={onDismiss} aria-label="關閉">
               <IonIcon icon={closeOutline} />

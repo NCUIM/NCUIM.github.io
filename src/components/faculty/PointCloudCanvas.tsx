@@ -320,7 +320,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   return (
     <div
       role="group"
-      aria-label="旋轉點雲，讓人像成形通關"
+      aria-label="旋轉視角，對準正面解鎖"
       tabIndex={0}
       onKeyDown={(e) => {
         if (!readyRef.current || solvedRef.current) return;
@@ -374,7 +374,7 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
             pointerEvents: "none",
           }}
         >
-          載入人像點雲中…
+          載入教授人像中…
         </div>
       )}
       <div

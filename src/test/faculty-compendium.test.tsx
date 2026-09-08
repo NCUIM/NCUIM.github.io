@@ -44,7 +44,7 @@ describe("FacultyCompendiumModal", () => {
       />
     );
 
-    expect(getByText(`解鎖 2 / ${teachers.length} 位資管教授`)).toBeDefined();
+    expect(getByText(`解鎖 2 / ${teachers.length} 位教授`)).toBeDefined();
     const expectedPercent = `${Math.round((2 / teachers.length) * 100)}%`;
     expect(getByText(expectedPercent)).toBeDefined();
   });

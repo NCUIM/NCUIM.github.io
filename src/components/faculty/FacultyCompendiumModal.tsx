@@ -56,7 +56,7 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>中大資管師資圖鑑</IonTitle>
+          <IonTitle>圖鑑</IonTitle>
           <IonButtons slot="end">
             <IonButton fill="clear" onClick={onDismiss} aria-label="關閉圖鑑">
               <IonIcon icon={closeOutline} />
@@ -97,7 +97,7 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 800 }}>收集進度</div>
                   <div style={{ fontSize: 12, color: "#94a3b8" }}>
-                    解鎖 {unlockedCount} / {teachers.length} 位資管教授
+                    解鎖 {unlockedCount} / {teachers.length} 位教授
                   </div>
                 </div>
               </div>
