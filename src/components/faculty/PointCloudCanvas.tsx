@@ -76,8 +76,8 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
     img.onload = () => {
       if (cancelled) return;
       try {
-        const sampleW = 52;
-        const sampleH = 65;
+        const sampleW = 80;
+        const sampleH = 80;
         const offscreen = document.createElement("canvas");
         offscreen.width = sampleW;
         offscreen.height = sampleH;
@@ -89,7 +89,12 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           return;
         }
 
-        oCtx.drawImage(img, 0, 0, sampleW, sampleH);
+        // Preserve the photo's aspect ratio; the circular projection crops its corners.
+        oCtx.fillStyle = "#a8b4bd";
+        oCtx.fillRect(0, 0, sampleW, sampleH);
+        const scale = Math.max(sampleW / img.width, sampleH / img.height);
+        oCtx.drawImage(img, (sampleW - img.width * scale) / 2,
+          (sampleH - img.height * scale) / 2, img.width * scale, img.height * scale);
         const imgData = oCtx.getImageData(0, 0, sampleW, sampleH).data;
 
         const pts: Point3D[] = createPortraitCloud(imgData, sampleW, sampleH).map((point) => ({

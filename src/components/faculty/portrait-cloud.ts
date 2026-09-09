@@ -7,22 +7,24 @@ export interface PortraitPoint {
   color: string;
 }
 
-// An anamorphic puzzle: random depth scatters the image when rotated, while
-// orthographic front projection exactly restores each source pixel position.
+// Uniform volume, not a textured sphere: geometry has no flat faces or grid
+// to give away the answer. Only the front projection reconstructs the colors.
 export function createPortraitCloud(data: Uint8ClampedArray, width: number, height: number): PortraitPoint[] {
   const points: PortraitPoint[] = [];
-  const spacing = 210 / (height - 1);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const index = (y * width + x) * 4;
-      if (data[index + 3] < 60) continue;
-      points.push({
-        x: (x - (width - 1) / 2) * spacing,
-        y: (y - (height - 1) / 2) * spacing,
-        z: (getSecureRandomFloat() - 0.5) * 180,
-        color: `rgb(${data[index]},${data[index + 1]},${data[index + 2]})`,
-      });
-    }
+  if (width < 1 || height < 1) return points;
+  for (let i = 0; i < 6500; i++) {
+    const radius = 105 * Math.cbrt(getSecureRandomFloat());
+    const vertical = getSecureRandomFloat() * 2 - 1;
+    const angle = getSecureRandomFloat() * Math.PI * 2;
+    const ring = radius * Math.sqrt(1 - vertical * vertical);
+    const x = ring * Math.cos(angle);
+    const y = radius * vertical;
+    const z = ring * Math.sin(angle);
+    const pixelX = Math.min(width - 1, Math.floor((x / 210 + 0.5) * width));
+    const pixelY = Math.min(height - 1, Math.floor((y / 210 + 0.5) * height));
+    const index = (pixelY * width + pixelX) * 4;
+    if (data[index + 3] < 60) continue;
+    points.push({ x, y, z, color: `rgb(${data[index]},${data[index + 1]},${data[index + 2]})` });
   }
   return points;
 }
