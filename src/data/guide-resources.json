@@ -4,26 +4,26 @@
     "title": "教務課務",
     "items": [
       {
-        "title": "NCU Portal 入口網",
-        "description": "單一登入 · 成績、學籍與繳費單",
+        "title": "NCU Portal",
+        "description": "成績、學籍與單一登入",
         "url": "https://portal.ncu.edu.tw/",
         "tag": "入口"
       },
       {
-        "title": "課務系統 (CIS)",
-        "description": "排課模擬、選課登記與個人課表",
+        "title": "CIS 課務系統",
+        "description": "選課登記與個人課表",
         "url": "https://cis.ncu.edu.tw/Course/main/login",
         "tag": "選課"
       },
       {
-        "title": "新 ee-class 數位學習平台",
-        "description": "課程教材下載、作業繳交與測驗",
+        "title": "新 ee-class",
+        "description": "課程教材與作業繳交",
         "url": "https://ncueeclass.ncu.edu.tw/",
         "tag": "教學"
       },
       {
-        "title": "2026 新生知訊網",
-        "description": "註冊流程、新生體檢與宿舍申請",
+        "title": "新生知訊網",
+        "description": "註冊流程與宿舍指南",
         "url": "https://ncufresh.ncu.edu.tw/",
         "tag": "指南"
       }
@@ -35,37 +35,37 @@
     "items": [
       {
         "title": "校園生活地圖",
-        "description": "校園建築地標與周邊生活設施",
+        "description": "館舍地標與周邊設施",
         "url": "https://ncufresh.ncu.edu.tw/map",
         "tag": "地圖"
       },
       {
-        "title": "iNCU 整合服務首頁",
-        "description": "全校行政服務與重要公告通知",
+        "title": "iNCU 整合服務",
+        "description": "行政服務與公告通知",
         "url": "https://cis.ncu.edu.tw/iNCU/home",
         "tag": "行政"
       },
       {
-        "title": "iNCU 活動報名系統",
-        "description": "校園講座、企業參訪與工作坊",
+        "title": "iNCU 活動報名",
+        "description": "校園講座與實體活動",
         "url": "https://cis.ncu.edu.tw/iNCU/messageNotice/activityManagement/activity",
         "tag": "報名"
       },
       {
-        "title": "NCU TALK 臉書社團",
-        "description": "學生交流社群、尋物與選課評價",
+        "title": "NCU TALK 社團",
+        "description": "學生交流與選課討論",
         "url": "https://www.facebook.com/groups/NCUgroup/",
         "tag": "討論"
       },
       {
         "title": "復活福利社",
-        "description": "教科書、家具家電與用品出清",
+        "description": "二手教科書與生活用品",
         "url": "https://www.facebook.com/groups/209055389218793/",
         "tag": "二手"
       },
       {
         "title": "雲端租屋生活網",
-        "description": "校外租屋資訊與合格房東查詢",
+        "description": "校外租屋與房東資訊",
         "url": "https://house.nfu.edu.tw/NCU",
         "tag": "租屋"
       }
@@ -76,32 +76,32 @@
     "title": "學生福利",
     "items": [
       {
-        "title": "Google AI Plus 學生版",
-        "description": "信箱認證免費享 Gemini 與 400GB",
+        "title": "Google AI Plus",
+        "description": "免費 Gemini 與 400GB",
         "url": "https://one.google.com/ai-student",
         "tag": "AI"
       },
       {
-        "title": "Microsoft Azure 學生版",
-        "description": "免綁信用卡享 $100 額度與免費服務",
+        "title": "Microsoft Azure",
+        "description": "免信用卡享 100 美元額度",
         "url": "https://azure.microsoft.com/free/students/",
         "tag": "雲端"
       },
       {
-        "title": "Google Cloud 教育版",
-        "description": "免費雲端實作點數與免費試用額度",
+        "title": "Google Cloud",
+        "description": "免費雲端實作額度",
         "url": "https://cloud.google.com/edu/students",
         "tag": "雲端"
       },
       {
-        "title": "GitHub 學生開發者套件",
-        "description": "免費 GitHub Pro、Copilot 與雲端額度",
+        "title": "GitHub Student Pack",
+        "description": "免費 Pro 與 Copilot",
         "url": "https://education.github.com/pack",
         "tag": "開發"
       },
       {
-        "title": "JetBrains 學生專業版",
-        "description": "全套專業 IDE 免費教育授權",
+        "title": "JetBrains 學生版",
+        "description": "全套專業 IDE 免費授權",
         "url": "https://www.jetbrains.com/academy/student-pack/",
         "tag": "IDE"
       }
@@ -113,19 +113,19 @@
     "items": [
       {
         "title": "校園授權軟體庫",
-        "description": "正版 Windows、Office 與專業軟體",
+        "description": "正版 Windows 與 Office",
         "url": "https://software.ncu.edu.tw/",
         "tag": "軟體"
       },
       {
         "title": "GlobalProtect VPN",
-        "description": "校外存取期刊資料庫與校園內網",
+        "description": "校外存取期刊與內網",
         "url": "https://wiki.cc.ncu.edu.tw/",
         "tag": "連線"
       },
       {
-        "title": "圖書館館藏與電子資源",
-        "description": "論文期刊檢索、借書與空間預約",
+        "title": "圖書館電子資源",
+        "description": "期刊論文檢索與借書",
         "url": "https://www.lib.ncu.edu.tw/",
         "tag": "館藏"
       }
