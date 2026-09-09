@@ -12,7 +12,7 @@ export const pickNextTarget = (
   memes: readonly MemeItem[],
   lastId?: string,
 ): QuizTarget => {
-  const pickTeacher = getSecureRandomFloat() < 0.5;
+  const pickTeacher = getSecureRandomFloat() < 0.8;
   if (pickTeacher && teachers.length > 0) {
     const eligible = teachers.filter((t) => t.id !== lastId);
     const pool = eligible.length > 0 ? eligible : teachers;

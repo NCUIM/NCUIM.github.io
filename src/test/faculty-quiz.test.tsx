@@ -66,13 +66,12 @@ describe("faculty dataset and quiz logic", () => {
     }
   });
 
-  it("should support mixed random draw from teachers and memes", () => {
-    const draws = Array.from({ length: 100 }, () => pickNextTarget(teachers, memes));
-    const teacherCount = draws.filter((d) => d.type === "teacher").length;
-    const memeCount = draws.filter((d) => d.type === "meme").length;
-
-    expect(teacherCount).toBeGreaterThan(0);
-    expect(memeCount).toBeGreaterThan(0);
+  it("draws teachers for the first 80% of the random range", () => {
+    const rng = vi.spyOn(random, "getSecureRandomFloat");
+    rng.mockReturnValueOnce(0.799999).mockReturnValueOnce(0);
+    expect(pickNextTarget(teachers, memes).type).toBe("teacher");
+    rng.mockReturnValueOnce(0.8).mockReturnValueOnce(0);
+    expect(pickNextTarget(teachers, memes).type).toBe("meme");
   });
 
   it("should avoid immediate duplicate target when lastId is provided", () => {
