@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { TeacherProfile } from "../../types/faculty";
-import { createPortraitCloud, isFrontAligned } from "./portrait-cloud";
+import { createInitialRotation, createPortraitCloud, isFrontAligned } from "./portrait-cloud";
 import { getSecureRandomFloat } from "../../utils/random";
 
 interface Point3D {
@@ -51,8 +51,8 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   useEffect(() => { onAlignedRef.current = onAligned; }, [onAligned]);
 
   // Begin away from the target view; the player must align both axes.
-  const rotYRef = useRef(1.05);
-  const rotXRef = useRef(0.3);
+  const rotYRef = useRef(0);
+  const rotXRef = useRef(0);
   const isDraggingRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
 
@@ -76,8 +76,8 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
     img.onload = () => {
       if (cancelled) return;
       try {
-        const sampleW = 52;
-        const sampleH = 65;
+        const sampleW = 80;
+        const sampleH = 80;
         const offscreen = document.createElement("canvas");
         offscreen.width = sampleW;
         offscreen.height = sampleH;
@@ -89,7 +89,12 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
           return;
         }
 
-        oCtx.drawImage(img, 0, 0, sampleW, sampleH);
+        // Preserve the photo's aspect ratio; the circular projection crops its corners.
+        oCtx.fillStyle = "#a8b4bd";
+        oCtx.fillRect(0, 0, sampleW, sampleH);
+        const scale = Math.max(sampleW / img.width, sampleH / img.height);
+        oCtx.drawImage(img, (sampleW - img.width * scale) / 2,
+          (sampleH - img.height * scale) / 2, img.width * scale, img.height * scale);
         const imgData = oCtx.getImageData(0, 0, sampleW, sampleH).data;
 
         const pts: Point3D[] = createPortraitCloud(imgData, sampleW, sampleH).map((point) => ({
@@ -130,8 +135,9 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   const targetSrc = targetItem?.localPhotoUrl || targetItem?.photoUrl || "";
 
   useEffect(() => {
-    rotYRef.current = 1.05;
-    rotXRef.current = 0.3;
+    const rotation = createInitialRotation();
+    rotYRef.current = rotation.yaw;
+    rotXRef.current = rotation.pitch;
     solvedRef.current = false;
     phaseRef.current = "orbit";
     phaseTimerRef.current = 0;
@@ -164,7 +170,6 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
     rotYRef.current += dx * 0.009;
     rotXRef.current -= dy * 0.009;
-    checkAlignment();
   };
 
   const checkAlignment = () => {
@@ -177,6 +182,12 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   };
 
   const handlePointerUp = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    checkAlignment();
+  };
+
+  const cancelDrag = () => {
     isDraggingRef.current = false;
   };
 
@@ -386,7 +397,7 @@ function projectAndDrawParticles(
       type="button"
       aria-label="旋轉視角，對準正面解鎖"
       onKeyDown={(e) => {
-        if (!readyRef.current || solvedRef.current) return;
+        if (!readyRef.current || solvedRef.current || isDraggingRef.current) return;
         if (e.key === " " || e.key === "Enter") {
           e.preventDefault();
           return;
@@ -417,13 +428,14 @@ function projectAndDrawParticles(
         textAlign: "inherit",
       }}
       onPointerDown={(e) => {
+        if (!e.isPrimary || e.button !== 0) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         handlePointerDown(e.clientX, e.clientY);
       }}
       onPointerMove={(e) => handlePointerMove(e.clientX, e.clientY)}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onLostPointerCapture={handlePointerUp}
+      onPointerCancel={cancelDrag}
+      onLostPointerCapture={cancelDrag}
     >
       <canvas
         ref={canvasRef}
@@ -447,7 +459,7 @@ function projectAndDrawParticles(
             pointerEvents: "none",
           }}
         >
-          載入教授人像中…
+          載入人像中…
         </div>
       )}
       {!isCelebrating && (

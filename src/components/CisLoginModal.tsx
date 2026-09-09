@@ -16,6 +16,7 @@ import {
   openOutline,
   shieldCheckmarkOutline,
 } from "ionicons/icons";
+import { useModalHistorySync } from "../utils/useModalHistorySync";
 
 interface CisLoginModalProps {
   readonly isOpen: boolean;
@@ -125,6 +126,7 @@ const CisLoginModal = ({
   isOpen,
   onDismiss,
 }: Readonly<CisLoginModalProps>) => {
+  useModalHistorySync(isOpen, onDismiss, "cis-login-modal");
   const [presentToast] = useIonToast();
 
   const targetUrl = useMemo(() => {

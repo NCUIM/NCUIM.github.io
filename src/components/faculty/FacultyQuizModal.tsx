@@ -25,7 +25,8 @@ import { FacultyCompendiumModal } from "./FacultyCompendiumModal";
 import { QuizResultCard } from "./QuizResultCard";
 import { triggerConfetti } from "../../utils/confetti";
 import { useFacultyQuiz } from "./useFacultyQuiz";
-export { pickNextTarget, generateQuestion, type QuizPhase } from "./useFacultyQuiz";
+import { useModalHistorySync } from "../../utils/useModalHistorySync";
+export { pickNextTarget, pickClaimedTeacher, generateQuestion, type QuizPhase } from "./useFacultyQuiz";
 
 const allTeachers: readonly TeacherProfile[] = teachersData as readonly TeacherProfile[];
 const allMemes: readonly MemeItem[] = memesData as readonly MemeItem[];
@@ -34,6 +35,7 @@ export const FacultyQuizModal: React.FC<{
   isOpen: boolean;
   onDismiss: () => void;
 }> = ({ isOpen, onDismiss }) => {
+  useModalHistorySync(isOpen, onDismiss, "faculty-quiz-modal");
   const confettiCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const confettiCancelRef = useRef<(() => void) | null>(null);
   const [showCompendium, setShowCompendium] = useState(false);
@@ -53,6 +55,7 @@ export const FacultyQuizModal: React.FC<{
 
   const {
     target,
+    claimedTeacher,
     phase,
     streak,
     unlockedCount,
@@ -71,7 +74,9 @@ export const FacultyQuizModal: React.FC<{
     },
   });
 
-  if (!target || !isOpen) return null;
+  if (!target || !claimedTeacher || !isOpen) return null;
+
+  const isCompendiumComplete = allTeachers.every(teacher => unlockedIds.includes(teacher.id));
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={handleDismiss}>
@@ -124,20 +129,20 @@ export const FacultyQuizModal: React.FC<{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 4,
-                  background: "var(--ncu-primary)",
-                  color: "#ffffff",
+                  background: isCompendiumComplete ? "linear-gradient(135deg, #fde68a, #f59e0b)" : "var(--ncu-primary)",
+                  color: isCompendiumComplete ? "#78350f" : "#ffffff",
                   border: "none",
                   borderRadius: 16,
                   padding: "4px 10px",
                   fontSize: 13,
                   fontWeight: 700,
                   cursor: "pointer",
-                  boxShadow: "0 2px 6px rgba(59, 130, 246, 0.3)",
+                  boxShadow: isCompendiumComplete ? "0 2px 8px rgba(245, 158, 11, 0.4)" : "0 2px 6px rgba(59, 130, 246, 0.3)",
                 }}
-                aria-label="展開師資圖鑑"
+                aria-label={isCompendiumComplete ? "全圖鑑達成，展開師資圖鑑" : "展開師資圖鑑"}
               >
                 <IonIcon icon={trophyOutline} style={{ verticalAlign: "middle" }} />
-                <span>圖鑑 {unlockedCount} / {allTeachers.length}</span>
+                <span>{isCompendiumComplete ? "全圖鑑達成" : `圖鑑 ${unlockedCount} / ${allTeachers.length}`}</span>
               </button>
             </div>
           </div>
@@ -177,7 +182,7 @@ export const FacultyQuizModal: React.FC<{
                 }}
               >
                 <IonIcon icon={schoolOutline} style={{ color: "var(--ncu-primary)", fontSize: 20 }} />
-                <span>他是教授嗎？</span>
+                <span>這是{claimedTeacher.name}{claimedTeacher.title}嗎？</span>
               </div>
               <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
                 <IonButton
@@ -204,6 +209,7 @@ export const FacultyQuizModal: React.FC<{
           {(phase === "success" || phase === "failed") && (
             <QuizResultCard
               target={target}
+              claimedTeacher={claimedTeacher}
               phase={phase}
               onNext={nextRound}
             />
@@ -215,6 +221,7 @@ export const FacultyQuizModal: React.FC<{
         isOpen={showCompendium}
         onDismiss={() => setShowCompendium(false)}
         teachers={allTeachers}
+        memes={allMemes}
         unlockedIds={unlockedIds}
       />
     </IonModal>

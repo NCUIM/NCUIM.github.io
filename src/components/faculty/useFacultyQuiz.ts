@@ -12,7 +12,7 @@ export const pickNextTarget = (
   memes: readonly MemeItem[],
   lastId?: string,
 ): QuizTarget => {
-  const pickTeacher = getSecureRandomFloat() < 0.5;
+  const pickTeacher = getSecureRandomFloat() < 0.8;
   if (pickTeacher && teachers.length > 0) {
     const eligible = teachers.filter((t) => t.id !== lastId);
     const pool = eligible.length > 0 ? eligible : teachers;
@@ -26,6 +26,18 @@ export const pickNextTarget = (
     return { type: "meme", data: chosen };
   }
   return { type: "teacher", data: teachers[0] };
+};
+
+export const pickClaimedTeacher = (
+  target: QuizTarget,
+  teachers: readonly TeacherProfile[],
+): TeacherProfile => {
+  if (teachers.length === 0) throw new Error("Faculty quiz requires at least one teacher");
+  const isMatchingClaim = target.type === "teacher" && getSecureRandomFloat() < 0.5;
+  if (isMatchingClaim) return target.data;
+  const alternatives = teachers.filter((teacher) => teacher.id !== target.data.id);
+  const pool = alternatives.length > 0 ? alternatives : teachers;
+  return pool[Math.floor(getSecureRandomFloat() * pool.length)];
 };
 
 // Kept for backward compatibility with existing tests
@@ -86,6 +98,7 @@ export const useFacultyQuiz = ({
   onSuccessReward,
 }: UseFacultyQuizProps) => {
   const [target, setTarget] = useState<QuizTarget | null>(null);
+  const [claimedTeacher, setClaimedTeacher] = useState<TeacherProfile | null>(null);
   const [phase, setPhase] = useState<QuizPhase>("aligning");
   const completedRef = useRef(false);
   const [isCelebrating, setIsCelebrating] = useState(false);
@@ -111,6 +124,7 @@ export const useFacultyQuiz = ({
     if (teachers.length === 0 && memes.length === 0) return;
     const newTarget = pickNextTarget(teachers, memes, target?.data.id);
     setTarget(newTarget);
+    setClaimedTeacher(pickClaimedTeacher(newTarget, teachers));
     completedRef.current = false;
     setPhase("aligning");
     setIsCelebrating(false);
@@ -133,10 +147,11 @@ export const useFacultyQuiz = ({
     navigator.vibrate?.(30);
   }, [target, isOpen]);
 
-  const handleAnswer = useCallback((answeredIsTeacher: boolean) => {
-    if (!target) return;
+  const handleAnswer = useCallback((answeredIsClaimedTeacher: boolean) => {
+    if (!target || !claimedTeacher) return;
     const isActualTeacher = target.type === "teacher";
-    const isCorrect = answeredIsTeacher === isActualTeacher;
+    const claimMatches = isActualTeacher && target.data.id === claimedTeacher.id;
+    const isCorrect = answeredIsClaimedTeacher === claimMatches;
 
     if (isCorrect) {
       setPhase("success");
@@ -145,14 +160,13 @@ export const useFacultyQuiz = ({
       setStreak(newStreak);
       try {
         localStorage.setItem(STORAGE_KEY_STREAK, String(newStreak));
-        if (isActualTeacher) {
-          const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
-          const unlockedList: string[] = saved ? JSON.parse(saved) : [];
-          if (!unlockedList.includes(target.data.id)) {
-            unlockedList.push(target.data.id);
-            localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
-            setUnlockedIds(unlockedList);
-          }
+        const collectionId = isActualTeacher ? target.data.id : `meme:${target.data.id}`;
+        const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
+        const unlockedList: string[] = saved ? JSON.parse(saved) : [];
+        if (!unlockedList.includes(collectionId)) {
+          unlockedList.push(collectionId);
+          localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
+          setUnlockedIds(unlockedList);
         }
       } catch {
         // Storage unavailable
@@ -170,14 +184,15 @@ export const useFacultyQuiz = ({
       }
       navigator.vibrate?.([100, 50, 100]);
     }
-  }, [target, streak, onSuccessReward]);
+  }, [target, claimedTeacher, streak, onSuccessReward]);
 
   return {
     target,
+    claimedTeacher,
     phase,
     streak,
     unlockedIds,
-    unlockedCount: unlockedIds.length,
+    unlockedCount: teachers.filter(teacher => unlockedIds.includes(teacher.id)).length,
     isCelebrating,
     nextRound,
     handleAligned,

@@ -1,14 +1,50 @@
-import { describe, expect, it } from "vitest";
-import { createPortraitCloud, isFrontAligned } from "../components/faculty/portrait-cloud";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createInitialRotation, createPortraitCloud, isFrontAligned } from "../components/faculty/portrait-cloud";
+import * as random from "../utils/random";
+
+afterEach(() => vi.restoreAllMocks());
 
 describe("point-cloud alignment puzzle", () => {
-  it("keeps source pixels at their front projection without adding side/back surfaces", () => {
-    const pixels = new Uint8ClampedArray([255, 255, 255, 255, 10, 20, 30, 255, 0, 0, 0, 0, 40, 50, 60, 255]);
+  it("fills a sphere with colors sampled from its front projection, not six faces", () => {
+    let seed = 12345;
+    vi.spyOn(random, "getSecureRandomFloat").mockImplementation(() => {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      return seed / 2 ** 32;
+    });
+    const pixels = new Uint8ClampedArray([255, 255, 255, 255, 10, 20, 30, 255, 0, 0, 0, 255, 40, 50, 60, 255]);
     const points = createPortraitCloud(pixels, 2, 2);
-    expect(points).toHaveLength(3);
-    expect(points.map(p => [p.x, p.y])).toEqual([[-105, -105], [105, -105], [105, 105]]);
-    expect(points[0].color).toBe("rgb(255,255,255)");
-    expect(points.every(p => p.z >= -90 && p.z <= 90)).toBe(true);
+    expect(points).toHaveLength(6500);
+    expect(points.every(p => Math.hypot(p.x, p.y, p.z) <= 105.000001)).toBe(true);
+    for (const axis of ["x", "y", "z"] as const) {
+      expect(Math.max(...points.map(p => p[axis]))).toBeGreaterThan(100);
+      expect(Math.min(...points.map(p => p[axis]))).toBeLessThan(-100);
+      expect(points.reduce((sum, p) => sum + p[axis] ** 2, 0) / points.length / 105 ** 2).toBeCloseTo(0.2, 1);
+    }
+    for (const p of points) {
+      const color = p.y < 0 ? (p.x < 0 ? "rgb(255,255,255)" : "rgb(10,20,30)")
+        : (p.x < 0 ? "rgb(0,0,0)" : "rgb(40,50,60)");
+      expect(p.color).toBe(color);
+    }
+    expect(createPortraitCloud(new Uint8ClampedArray(16), 2, 2)).toEqual([]);
+    expect(createPortraitCloud(new Uint8ClampedArray(), 0, 0)).toEqual([]);
+  });
+  it("varies both starting axes and directions, never starting near an answer", () => {
+    const rng = vi.spyOn(random, "getSecureRandomFloat");
+    const starts = [0, 0.25, 0.5, 0.75, 0.999999].map(value => {
+      rng.mockReturnValue(value);
+      return createInitialRotation();
+    });
+    expect(new Set(starts.map(s => s.yaw)).size).toBe(5);
+    expect(new Set(starts.map(s => s.pitch)).size).toBe(5);
+    expect(starts.some(s => s.pitch < 0)).toBe(true);
+    expect(starts.some(s => s.pitch > 0)).toBe(true);
+    for (const s of starts) {
+      expect(Math.abs(s.pitch)).toBeLessThanOrEqual(0.55);
+      expect(Math.abs(s.pitch)).toBeGreaterThanOrEqual(0.2);
+      expect(isFrontAligned(0, s.yaw)).toBe(false);
+      expect(isFrontAligned(s.pitch, 0)).toBe(false);
+      expect(isFrontAligned(s.pitch - 0.3, s.yaw - 1.05)).toBe(false);
+    }
   });
   it("accepts front and mirrored views after rotations, but rejects sides and tilted views", () => {
     expect(isFrontAligned(0, 0)).toBe(true);
