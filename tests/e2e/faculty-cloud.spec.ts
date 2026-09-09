@@ -14,7 +14,7 @@ for (const [view, targetYaw] of [["front", 0], ["mirrored", Math.PI]] as const) 
     await page.goto("/");
     await page.getByRole("button", { name: "教授", exact: true }).click();
     const puzzle = page.getByRole("button", { name: "旋轉視角，對準正面解鎖" });
-    const question = page.getByText("他是教授嗎？");
+    const question = page.getByText(/^這是.+教授嗎？$/);
     await expect(puzzle).toBeVisible();
     await expect(puzzle.getByText("載入人像中…")).toBeHidden();
     await expect(puzzle.getByText(/載入失敗/)).toBeHidden();

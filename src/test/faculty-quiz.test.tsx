@@ -4,8 +4,10 @@ import { render, fireEvent, cleanup } from "@testing-library/react";
 import teachersData from "../data/im-teachers.json";
 import memesData from "../data/memes.json";
 import type { TeacherProfile, MemeItem } from "../types/faculty";
+import * as random from "../utils/random";
 import {
   generateQuestion,
+  pickClaimedTeacher,
   pickNextTarget,
   FacultyQuizModal,
 } from "../components/faculty/FacultyQuizModal";
@@ -32,6 +34,7 @@ const memes = memesData as readonly MemeItem[];
 
 describe("faculty dataset and quiz logic", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     cleanup();
     localStorage.clear();
   });
@@ -80,6 +83,22 @@ describe("faculty dataset and quiz logic", () => {
     }
   });
 
+  it("asks about either the pictured teacher or a different professor", () => {
+    const target = { type: "teacher", data: teachers[0] } as const;
+    const rng = vi.spyOn(random, "getSecureRandomFloat");
+    rng.mockReturnValueOnce(0);
+    const matching = pickClaimedTeacher(target, teachers);
+    expect(matching.id).toBe(target.data.id);
+
+    rng.mockReturnValueOnce(0.9).mockReturnValueOnce(0);
+    const different = pickClaimedTeacher(target, teachers);
+    expect(different.id).not.toBe(target.data.id);
+
+    rng.mockReturnValueOnce(0);
+    const memeClaim = pickClaimedTeacher({ type: "meme", data: memes[0] }, teachers);
+    expect(memeClaim.id).toBe(teachers[0].id);
+  });
+
   it("should generate legacy question format for backward compatibility", () => {
     const question = generateQuestion(teachers);
     expect(question.teacher).toBeDefined();
@@ -93,13 +112,13 @@ describe("faculty dataset and quiz logic", () => {
     );
 
     // Initial state: verifying prompt is not displayed
-    expect(queryByText("他是教授嗎？")).toBeNull();
+    expect(queryByText(/^這是.+教授嗎？$/)).toBeNull();
 
     // Trigger alignment
     fireEvent.click(getByTestId("mock-align-btn"));
 
     // Verification prompt should appear with both options
-    expect(getByText("他是教授嗎？")).toBeDefined();
+    expect(getByText(/^這是.+教授嗎？$/)).toBeDefined();
     expect(getByText("是")).toBeDefined();
     expect(getByText("不是")).toBeDefined();
 
@@ -107,6 +126,6 @@ describe("faculty dataset and quiz logic", () => {
     fireEvent.click(getByText("是"));
 
     // Prompt disappears and either success or failed card is revealed
-    expect(queryByText("他是教授嗎？")).toBeNull();
+    expect(queryByText(/^這是.+教授嗎？$/)).toBeNull();
   });
 });

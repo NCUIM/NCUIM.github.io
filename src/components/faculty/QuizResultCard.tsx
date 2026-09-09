@@ -7,16 +7,18 @@ import {
   refreshOutline,
   schoolOutline,
 } from "ionicons/icons";
-import type { QuizTarget } from "../../types/faculty";
+import type { QuizTarget, TeacherProfile } from "../../types/faculty";
 
 interface QuizResultCardProps {
   target: QuizTarget;
+  claimedTeacher: TeacherProfile;
   phase: "success" | "failed";
   onNext: () => void;
 }
 
 export const QuizResultCard: React.FC<QuizResultCardProps> = ({
   target,
+  claimedTeacher,
   phase,
   onNext,
 }) => {
@@ -203,8 +205,10 @@ export const QuizResultCard: React.FC<QuizResultCardProps> = ({
           </div>
           <div style={{ fontSize: 12, color: "#dc2626", marginTop: 4, fontWeight: 600 }}>
             {target.type === "teacher"
-              ? "他是教授啦！記住囉 😉"
-              : "這不是教授啦 🤣"}
+              ? target.data.id === claimedTeacher.id
+                ? `這位就是${claimedTeacher.name}${claimedTeacher.title} 😉`
+                : `這位是${target.data.name}${target.data.title}，不是${claimedTeacher.name}${claimedTeacher.title}`
+              : `這不是${claimedTeacher.name}${claimedTeacher.title} 🤣`}
           </div>
         </div>
       </div>
