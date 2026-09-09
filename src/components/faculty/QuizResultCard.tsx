@@ -16,6 +16,19 @@ interface QuizResultCardProps {
   onNext: () => void;
 }
 
+const getQuizFailedFeedback = (
+  target: QuizTarget,
+  claimedTeacher: TeacherProfile,
+): string => {
+  if (target.type !== "teacher") {
+    return `這不是${claimedTeacher.name}${claimedTeacher.title} 🤣`;
+  }
+  if (target.data.id === claimedTeacher.id) {
+    return `這位就是${claimedTeacher.name}${claimedTeacher.title} 😉`;
+  }
+  return `這位是${target.data.name}${target.data.title}，不是${claimedTeacher.name}${claimedTeacher.title}`;
+};
+
 export const QuizResultCard: React.FC<QuizResultCardProps> = ({
   target,
   claimedTeacher,
@@ -204,11 +217,7 @@ export const QuizResultCard: React.FC<QuizResultCardProps> = ({
             </IonBadge>
           </div>
           <div style={{ fontSize: 12, color: "#dc2626", marginTop: 4, fontWeight: 600 }}>
-            {target.type === "teacher"
-              ? target.data.id === claimedTeacher.id
-                ? `這位就是${claimedTeacher.name}${claimedTeacher.title} 😉`
-                : `這位是${target.data.name}${target.data.title}，不是${claimedTeacher.name}${claimedTeacher.title}`
-              : `這不是${claimedTeacher.name}${claimedTeacher.title} 🤣`}
+            {getQuizFailedFeedback(target, claimedTeacher)}
           </div>
         </div>
       </div>
