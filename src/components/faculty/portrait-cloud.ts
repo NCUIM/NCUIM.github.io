@@ -7,6 +7,13 @@ export interface PortraitPoint {
   color: string;
 }
 
+export function createInitialRotation(): { pitch: number; yaw: number } {
+  return {
+    pitch: (0.2 + getSecureRandomFloat() * 0.35) * (getSecureRandomFloat() < 0.5 ? -1 : 1),
+    yaw: 0.55 + getSecureRandomFloat() * (Math.PI - 1.1) + (getSecureRandomFloat() < 0.5 ? 0 : Math.PI),
+  };
+}
+
 // Uniform volume, not a textured sphere: geometry has no flat faces or grid
 // to give away the answer. Only the front projection reconstructs the colors.
 export function createPortraitCloud(data: Uint8ClampedArray, width: number, height: number): PortraitPoint[] {

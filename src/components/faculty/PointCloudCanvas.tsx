@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { TeacherProfile } from "../../types/faculty";
-import { createPortraitCloud, isFrontAligned } from "./portrait-cloud";
+import { createInitialRotation, createPortraitCloud, isFrontAligned } from "./portrait-cloud";
 import { getSecureRandomFloat } from "../../utils/random";
 
 interface Point3D {
@@ -51,8 +51,8 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   useEffect(() => { onAlignedRef.current = onAligned; }, [onAligned]);
 
   // Begin away from the target view; the player must align both axes.
-  const rotYRef = useRef(1.05);
-  const rotXRef = useRef(0.3);
+  const rotYRef = useRef(0);
+  const rotXRef = useRef(0);
   const isDraggingRef = useRef(false);
   const lastMousePosRef = useRef({ x: 0, y: 0 });
 
@@ -135,8 +135,9 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   const targetSrc = targetItem?.localPhotoUrl || targetItem?.photoUrl || "";
 
   useEffect(() => {
-    rotYRef.current = 1.05;
-    rotXRef.current = 0.3;
+    const rotation = createInitialRotation();
+    rotYRef.current = rotation.yaw;
+    rotXRef.current = rotation.pitch;
     solvedRef.current = false;
     phaseRef.current = "orbit";
     phaseTimerRef.current = 0;

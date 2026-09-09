@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPortraitCloud, isFrontAligned } from "../components/faculty/portrait-cloud";
+import { createInitialRotation, createPortraitCloud, isFrontAligned } from "../components/faculty/portrait-cloud";
 import * as random from "../utils/random";
 
 afterEach(() => vi.restoreAllMocks());
@@ -27,6 +27,24 @@ describe("point-cloud alignment puzzle", () => {
     }
     expect(createPortraitCloud(new Uint8ClampedArray(16), 2, 2)).toEqual([]);
     expect(createPortraitCloud(new Uint8ClampedArray(), 0, 0)).toEqual([]);
+  });
+  it("varies both starting axes and directions, never starting near an answer", () => {
+    const rng = vi.spyOn(random, "getSecureRandomFloat");
+    const starts = [0, 0.25, 0.5, 0.75, 0.999999].map(value => {
+      rng.mockReturnValue(value);
+      return createInitialRotation();
+    });
+    expect(new Set(starts.map(s => s.yaw)).size).toBe(5);
+    expect(new Set(starts.map(s => s.pitch)).size).toBe(5);
+    expect(starts.some(s => s.pitch < 0)).toBe(true);
+    expect(starts.some(s => s.pitch > 0)).toBe(true);
+    for (const s of starts) {
+      expect(Math.abs(s.pitch)).toBeLessThanOrEqual(0.55);
+      expect(Math.abs(s.pitch)).toBeGreaterThanOrEqual(0.2);
+      expect(isFrontAligned(0, s.yaw)).toBe(false);
+      expect(isFrontAligned(s.pitch, 0)).toBe(false);
+      expect(isFrontAligned(s.pitch - 0.3, s.yaw - 1.05)).toBe(false);
+    }
   });
   it("accepts front and mirrored views after rotations, but rejects sides and tilted views", () => {
     expect(isFrontAligned(0, 0)).toBe(true);
