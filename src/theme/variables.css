@@ -486,6 +486,20 @@ ion-segment.duty-lottery-segment ion-segment-button {
 .guide-filter-chip-label {
   display: inline-flex;
 }
+.guide-chips-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ncu-border) transparent;
+}
+.guide-chips-scroll::-webkit-scrollbar {
+  height: 5px;
+}
+.guide-chips-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.guide-chips-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--ncu-border);
+  border-radius: 999px;
+}
 .scrollbar-hide {
   scrollbar-width: none;
 }
