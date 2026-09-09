@@ -219,6 +219,7 @@ export const FacultyQuizModal: React.FC<{
         isOpen={showCompendium}
         onDismiss={() => setShowCompendium(false)}
         teachers={allTeachers}
+        memes={allMemes}
         unlockedIds={unlockedIds}
       />
     </IonModal>

@@ -150,7 +150,7 @@ export const QuizResultCard: React.FC<QuizResultCardProps> = ({
               </IonBadge>
             </div>
             <div style={{ fontSize: 12, color: "#2563eb", marginTop: 4, fontWeight: 600 }}>
-              🎉 答對了！這不是教授
+              🎉 答對了！
             </div>
           </div>
         </div>

@@ -160,14 +160,13 @@ export const useFacultyQuiz = ({
       setStreak(newStreak);
       try {
         localStorage.setItem(STORAGE_KEY_STREAK, String(newStreak));
-        if (isActualTeacher) {
-          const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
-          const unlockedList: string[] = saved ? JSON.parse(saved) : [];
-          if (!unlockedList.includes(target.data.id)) {
-            unlockedList.push(target.data.id);
-            localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
-            setUnlockedIds(unlockedList);
-          }
+        const collectionId = isActualTeacher ? target.data.id : `meme:${target.data.id}`;
+        const saved = localStorage.getItem(STORAGE_KEY_UNLOCKED);
+        const unlockedList: string[] = saved ? JSON.parse(saved) : [];
+        if (!unlockedList.includes(collectionId)) {
+          unlockedList.push(collectionId);
+          localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(unlockedList));
+          setUnlockedIds(unlockedList);
         }
       } catch {
         // Storage unavailable
@@ -193,7 +192,7 @@ export const useFacultyQuiz = ({
     phase,
     streak,
     unlockedIds,
-    unlockedCount: unlockedIds.length,
+    unlockedCount: teachers.filter(teacher => unlockedIds.includes(teacher.id)).length,
     isCelebrating,
     nextRound,
     handleAligned,

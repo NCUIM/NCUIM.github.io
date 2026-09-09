@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
-import { render, fireEvent, cleanup } from "@testing-library/react";
+import { render, fireEvent, cleanup, within } from "@testing-library/react";
+import { STORAGE_KEY_UNLOCKED } from "../components/faculty/useFacultyQuiz";
 import teachersData from "../data/im-teachers.json";
 import memesData from "../data/memes.json";
 import type { TeacherProfile, MemeItem } from "../types/faculty";
@@ -126,5 +127,25 @@ describe("faculty dataset and quiz logic", () => {
 
     // Prompt disappears and either success or failed card is revealed
     expect(queryByText(/^這是.+教授嗎？$/)).toBeNull();
+  });
+
+  it.each([0, 22, 23])("collects memes without changing %i collected professors or completion", (count) => {
+    localStorage.setItem(STORAGE_KEY_UNLOCKED, JSON.stringify(teachers.slice(0, count).map(t => t.id)));
+    vi.spyOn(random, "getSecureRandomFloat").mockReturnValue(0.99);
+    const view = render(<FacultyQuizModal isOpen={true} onDismiss={() => {}} />);
+    fireEvent.click(view.getByTestId("mock-align-btn"));
+    fireEvent.click(view.getByText("不是"));
+    expect(view.getByText("🎉 答對了！")).toBeDefined();
+    expect(view.queryByText(/答對了！這不是教授/)).toBeNull();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY_UNLOCKED)!)).toContain(`meme:${memes[2].id}`);
+    expect(view.getByText(count === 23 ? "全圖鑑達成" : `圖鑑 ${count} / 23`)).toBeDefined();
+    view.unmount();
+
+    const reopened = render(<FacultyQuizModal isOpen={true} onDismiss={() => {}} />);
+    fireEvent.click(reopened.getByRole("button", { name: /展開師資圖鑑/ }));
+    expect(reopened.getByText(`解鎖 ${count} / 23 位教授`)).toBeDefined();
+    const collection = within(reopened.getByRole("region", { name: "迷因收藏" }));
+    expect(collection.getByRole("img", { name: memes[2].name })).toBeDefined();
+    expect(collection.queryByRole("img", { name: memes[0].name })).toBeNull();
   });
 });

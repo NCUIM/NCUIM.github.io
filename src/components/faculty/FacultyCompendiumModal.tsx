@@ -19,12 +19,13 @@ import {
   schoolOutline,
   mailOutline,
 } from "ionicons/icons";
-import type { TeacherProfile } from "../../types/faculty";
+import type { TeacherProfile, MemeItem } from "../../types/faculty";
 
 export interface FacultyCompendiumModalProps {
   readonly isOpen: boolean;
   readonly onDismiss: () => void;
   readonly teachers: readonly TeacherProfile[];
+  readonly memes?: readonly MemeItem[];
   readonly unlockedIds: readonly string[];
 }
 
@@ -32,6 +33,7 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
   isOpen,
   onDismiss,
   teachers,
+  memes = [],
   unlockedIds,
 }) => {
   const [filter, setFilter] = useState<"all" | "unlocked" | "locked">("all");
@@ -307,6 +309,25 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
               );
             })}
           </div>
+
+          <section aria-label="迷因收藏" style={{ marginTop: 24 }}>
+            <h2 style={{ fontSize: 18, color: "var(--ncu-ink)" }}>迷因收藏</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 12 }}>
+              {memes.map(meme => {
+                const isUnlocked = unlockedSet.has(`meme:${meme.id}`);
+                return (
+                  <div key={meme.id} style={{ padding: 12, textAlign: "center", background: "var(--ncu-surface)", borderRadius: 12, color: "var(--ncu-ink)" }}>
+                    {isUnlocked ? (
+                      <img src={meme.localPhotoUrl || meme.photoUrl} alt={meme.name} style={{ width: "100%", aspectRatio: "1", objectFit: "contain", borderRadius: 8 }} />
+                    ) : (
+                      <div style={{ padding: 24, color: "var(--ncu-muted)" }}><IonIcon icon={lockClosedOutline} /> 未解鎖</div>
+                    )}
+                    <div style={{ marginTop: 8, fontWeight: 700 }}>{isUnlocked ? meme.name : "？？？"}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
 
           {/* Detail Modal for Selected Unlocked Teacher */}
           <IonModal
