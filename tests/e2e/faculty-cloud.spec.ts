@@ -16,7 +16,7 @@ for (const [view, targetYaw] of [["front", 0], ["mirrored", Math.PI]] as const) 
     const puzzle = page.getByRole("button", { name: "旋轉視角，對準正面解鎖" });
     const question = page.getByText("他是教授嗎？");
     await expect(puzzle).toBeVisible();
-    await expect(puzzle.getByText("載入教授人像中…")).toBeHidden();
+    await expect(puzzle.getByText("載入人像中…")).toBeHidden();
     await expect(puzzle.getByText(/載入失敗/)).toBeHidden();
     await puzzle.screenshot({ path: `test-results/cloud-puzzle-${view}-start.png` });
     const drag = async (dx: number, dy: number) => {
@@ -50,7 +50,7 @@ for (const [view, targetYaw] of [["front", 0], ["mirrored", Math.PI]] as const) 
     await expect(next).toBeVisible();
     await next.click();
     await expect(next).toBeHidden();
-    await expect(puzzle.getByText("載入教授人像中…")).toBeHidden();
+    await expect(puzzle.getByText("載入人像中…")).toBeHidden();
     await expect(question).toBeHidden();
     // Replay the first round's exact gesture: it must not solve this round.
     await drag(targetYaw - 1.3, 0.4);

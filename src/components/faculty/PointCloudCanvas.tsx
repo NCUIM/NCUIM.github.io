@@ -459,7 +459,7 @@ function projectAndDrawParticles(
             pointerEvents: "none",
           }}
         >
-          載入教授人像中…
+          載入人像中…
         </div>
       )}
       {!isCelebrating && (

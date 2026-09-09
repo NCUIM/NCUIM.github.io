@@ -52,14 +52,14 @@ describe("faculty dataset and quiz logic", () => {
     }
   });
 
-  it("should contain 54 meme stickers with valid paths", () => {
-    expect(memes).toHaveLength(54);
+  it("uses only curated portrait-style memes with matching puzzle and reveal paths", () => {
+    expect(memes.map(m => m.id).sort()).toEqual(["cat_polite", "doge", "rollsafe"]);
 
     for (const meme of memes) {
       expect(meme.id).toBeTruthy();
       expect(meme.name).toBeTruthy();
-      expect(meme.photoUrl).toMatch(/^\/png\/[a-zA-Z0-9_.-]+\.png$/);
-      expect(meme.localPhotoUrl).toMatch(/^\/png\/[a-zA-Z0-9_.-]+\.png$/);
+      expect(meme.photoUrl).toMatch(/^\/meme-portraits\/[a-zA-Z0-9_.-]+\.png$/);
+      expect(meme.localPhotoUrl).toBe(meme.photoUrl);
     }
   });
 
