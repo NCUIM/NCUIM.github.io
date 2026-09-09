@@ -25,6 +25,7 @@ import { FacultyCompendiumModal } from "./FacultyCompendiumModal";
 import { QuizResultCard } from "./QuizResultCard";
 import { triggerConfetti } from "../../utils/confetti";
 import { useFacultyQuiz } from "./useFacultyQuiz";
+import { useModalHistorySync } from "../../utils/useModalHistorySync";
 export { pickNextTarget, pickClaimedTeacher, generateQuestion, type QuizPhase } from "./useFacultyQuiz";
 
 const allTeachers: readonly TeacherProfile[] = teachersData as readonly TeacherProfile[];
@@ -34,6 +35,7 @@ export const FacultyQuizModal: React.FC<{
   isOpen: boolean;
   onDismiss: () => void;
 }> = ({ isOpen, onDismiss }) => {
+  useModalHistorySync(isOpen, onDismiss, "faculty-quiz-modal");
   const confettiCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const confettiCancelRef = useRef<(() => void) | null>(null);
   const [showCompendium, setShowCompendium] = useState(false);

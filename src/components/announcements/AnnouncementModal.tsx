@@ -26,6 +26,7 @@ import {
   PRIORITY_CONFIG,
 } from "../../services/announcement-api";
 import AnnouncementContent from "./AnnouncementContent";
+import { useModalHistorySync } from "../../utils/useModalHistorySync";
 
 export interface AnnouncementModalProps {
   readonly isOpen: boolean;
@@ -76,6 +77,7 @@ export const AnnouncementModal = ({
   announcements,
   onDismiss,
 }: AnnouncementModalProps) => {
+  useModalHistorySync(isOpen, onDismiss, "announcement-modal");
   const [selectedCategory, setSelectedCategory] = useState<AnnouncementCategory>("all");
 
   const filtered =

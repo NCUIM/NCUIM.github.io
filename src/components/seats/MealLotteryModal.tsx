@@ -25,6 +25,7 @@ import {
 import { type MealCandidate } from "../../utils/meal-lottery";
 import { isIosHeaderMode } from "../../services/platform";
 import { useMealLottery } from "./useMealLottery";
+import { useModalHistorySync } from "../../utils/useModalHistorySync";
 
 export interface MealLotteryModalProps {
   readonly isOpen: boolean;
@@ -316,6 +317,8 @@ export const MealLotteryModal = ({
     }
     onDismiss();
   };
+
+  useModalHistorySync(isOpen, handleModalDismiss, "meal-lottery-modal");
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={handleModalDismiss}>
