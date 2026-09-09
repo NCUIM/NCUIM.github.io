@@ -170,7 +170,6 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
 
     rotYRef.current += dx * 0.009;
     rotXRef.current -= dy * 0.009;
-    checkAlignment();
   };
 
   const checkAlignment = () => {
@@ -183,6 +182,12 @@ export const PointCloudCanvas: React.FC<PointCloudCanvasProps> = ({
   };
 
   const handlePointerUp = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    checkAlignment();
+  };
+
+  const cancelDrag = () => {
     isDraggingRef.current = false;
   };
 
@@ -392,7 +397,7 @@ function projectAndDrawParticles(
       type="button"
       aria-label="旋轉視角，對準正面解鎖"
       onKeyDown={(e) => {
-        if (!readyRef.current || solvedRef.current) return;
+        if (!readyRef.current || solvedRef.current || isDraggingRef.current) return;
         if (e.key === " " || e.key === "Enter") {
           e.preventDefault();
           return;
@@ -423,13 +428,14 @@ function projectAndDrawParticles(
         textAlign: "inherit",
       }}
       onPointerDown={(e) => {
+        if (!e.isPrimary || e.button !== 0) return;
         e.currentTarget.setPointerCapture(e.pointerId);
         handlePointerDown(e.clientX, e.clientY);
       }}
       onPointerMove={(e) => handlePointerMove(e.clientX, e.clientY)}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      onLostPointerCapture={handlePointerUp}
+      onPointerCancel={cancelDrag}
+      onLostPointerCapture={cancelDrag}
     >
       <canvas
         ref={canvasRef}

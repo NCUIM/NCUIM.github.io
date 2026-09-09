@@ -29,7 +29,20 @@ for (const [view, targetYaw] of [["front", 0], ["mirrored", Math.PI]] as const) 
     };
     await drag(targetYaw - 1.3, 0);
     await expect(question).toBeHidden(); // yaw alone is insufficient
-    await drag(0, 0.4);
+    const box = (await puzzle.boundingBox())!;
+    const x = box.x + box.width / 2, y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 0.4 / 0.009, { steps: 12 });
+    await expect(question).toBeHidden(); // aligned, but still holding
+    await page.mouse.move(x, y + 0.2 / 0.009, { steps: 12 });
+    await page.mouse.up();
+    await expect(question).toBeHidden(); // passed the answer, released elsewhere
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y + 0.2 / 0.009, { steps: 12 });
+    await expect(question).toBeHidden();
+    await page.mouse.up();
     await expect(question).toBeVisible();
     await puzzle.screenshot({ path: `test-results/cloud-puzzle-${view}-solved.png` });
     await page.getByRole("button", { name: "是", exact: true }).click();
