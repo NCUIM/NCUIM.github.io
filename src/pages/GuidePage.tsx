@@ -23,6 +23,8 @@ import {
   gridSharp,
   giftOutline,
   giftSharp,
+  extensionPuzzleOutline,
+  extensionPuzzleSharp,
 } from "ionicons/icons";
 
 const SOLID_ICON: Readonly<Record<string, string>> = {
@@ -31,6 +33,7 @@ const SOLID_ICON: Readonly<Record<string, string>> = {
   [codeSlashOutline]: codeSlashSharp,
   [gridOutline]: gridSharp,
   [giftOutline]: giftSharp,
+  [extensionPuzzleOutline]: extensionPuzzleSharp,
 };
 import guideCategoriesJson from "../data/guide-resources.json";
 
@@ -79,6 +82,12 @@ const CATEGORY_THEMES: Record<string, CategoryTheme> = {
     iconColor: "#d97706",
     tagBg: "#fef3c7",
     tagColor: "#92400e",
+  },
+  clubs: {
+    icon: extensionPuzzleOutline,
+    iconColor: "#e11d48",
+    tagBg: "#ffe4e6",
+    tagColor: "#be123c",
   },
 };
 

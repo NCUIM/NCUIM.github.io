@@ -130,5 +130,65 @@
         "tag": "館藏"
       }
     ]
+  },
+  {
+    "id": "clubs",
+    "title": "課外社群",
+    "items": [
+      {
+        "title": "大數據學生團隊",
+        "description": "ERP 中心商業數據分析",
+        "url": "https://erp.mgt.ncu.edu.tw/big-data-club/",
+        "tag": "數據"
+      },
+      {
+        "title": "GDG 學生開發者社群",
+        "description": "Google 技術與專案交流",
+        "url": "https://www.instagram.com/gdg.ncu/",
+        "tag": "開發"
+      },
+      {
+        "title": "資安讀書會",
+        "description": "CTF 競賽與資安技術研習",
+        "url": "https://www.facebook.com/nctfu/",
+        "tag": "資安"
+      },
+      {
+        "title": "區塊鏈研究社",
+        "description": "Web3 開發與加密應用",
+        "url": "https://www.instagram.com/ncublockchainclub/",
+        "tag": "Web3"
+      },
+      {
+        "title": "證券研究社",
+        "description": "股票投資與金融市場研究",
+        "url": "https://www.instagram.com/ncu_srs/",
+        "tag": "金融"
+      },
+      {
+        "title": "機器人研究社",
+        "description": "軟硬體整合與自走車實作",
+        "url": "https://www.facebook.com/groups/ncuRoboticsStudyClub/",
+        "tag": "硬體"
+      },
+      {
+        "title": "IEEE 學生分會",
+        "description": "電資領域國際學術交流",
+        "url": "https://www.instagram.com/ieee_ncu_student_branch/",
+        "tag": "國際"
+      },
+      {
+        "title": "資管系企業導師",
+        "description": "系友業界領路與職涯諮詢",
+        "url": "https://im.mgt.ncu.edu.tw/business/main",
+        "tag": "導師"
+      },
+      {
+        "title": "管院企業導師",
+        "description": "業界前輩一對一職涯指導",
+        "url": "https://emba.ncu.edu.tw/NationalCentralUniversityEMBA8.html",
+        "tag": "導師"
+      }
+    ]
   }
 ]
