@@ -74,6 +74,8 @@ export const FacultyQuizModal: React.FC<{
 
   if (!target || !claimedTeacher || !isOpen) return null;
 
+  const isCompendiumComplete = allTeachers.every(teacher => unlockedIds.includes(teacher.id));
+
   return (
     <IonModal isOpen={isOpen} onDidDismiss={handleDismiss}>
       <IonHeader>
@@ -125,20 +127,20 @@ export const FacultyQuizModal: React.FC<{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 4,
-                  background: "var(--ncu-primary)",
-                  color: "#ffffff",
+                  background: isCompendiumComplete ? "linear-gradient(135deg, #fde68a, #f59e0b)" : "var(--ncu-primary)",
+                  color: isCompendiumComplete ? "#78350f" : "#ffffff",
                   border: "none",
                   borderRadius: 16,
                   padding: "4px 10px",
                   fontSize: 13,
                   fontWeight: 700,
                   cursor: "pointer",
-                  boxShadow: "0 2px 6px rgba(59, 130, 246, 0.3)",
+                  boxShadow: isCompendiumComplete ? "0 2px 8px rgba(245, 158, 11, 0.4)" : "0 2px 6px rgba(59, 130, 246, 0.3)",
                 }}
-                aria-label="展開師資圖鑑"
+                aria-label={isCompendiumComplete ? "全圖鑑達成，展開師資圖鑑" : "展開師資圖鑑"}
               >
                 <IonIcon icon={trophyOutline} style={{ verticalAlign: "middle" }} />
-                <span>圖鑑 {unlockedCount} / {allTeachers.length}</span>
+                <span>{isCompendiumComplete ? "全圖鑑達成" : `圖鑑 ${unlockedCount} / ${allTeachers.length}`}</span>
               </button>
             </div>
           </div>
