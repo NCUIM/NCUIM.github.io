@@ -228,14 +228,14 @@ const GuideFilterChips = ({
   <div
     role="tablist"
     aria-label="資源類別篩選"
+    className="guide-chips-scroll"
     style={{
       display: "flex",
       gap: 8,
       overflowX: "auto",
-      paddingBottom: 16,
-      marginBottom: 20,
-      scrollbarWidth: "none",
-      msOverflowStyle: "none",
+      paddingBottom: 8,
+      marginBottom: 16,
+      WebkitOverflowScrolling: "touch",
     }}
   >
     {FILTER_TABS.map((tab) => {
