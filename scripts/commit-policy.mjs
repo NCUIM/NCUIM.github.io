@@ -262,7 +262,7 @@ export function validateCommitMessage(message) {
 
 function isVagueContent(content) {
   const normalized = content.trim().toLowerCase();
-  return POLICY.prBody.vaguePlaceholders.some((ph) => normalized === ph);
+  return POLICY.prBody.vaguePlaceholders.includes(normalized);
 }
 
 function stripFencedCodeBlocks(text) {
@@ -316,8 +316,8 @@ function validateSection(heading, content, errors) {
     const listItems = content
       .split("\n")
       .map((line) => line.trim())
-      .filter((line) => /^(?:[0-9]+[.)]|[-*+])\s+\S+/.test(line))
-      .map((line) => line.replace(/^(?:[0-9]+[.)]|[-*+])\s+/, "").trim());
+      .filter((line) => /^(?:\d+[.)]|[-*+])\s+\S+/.test(line))
+      .map((line) => line.replace(/^(?:\d+[.)]|[-*+])\s+/, "").trim());
 
     const meaningfulItems = listItems.filter((item) => !isVagueContent(item));
     if (meaningfulItems.length === 0) {
@@ -542,18 +542,20 @@ function main() {
       finish(validatePrBody(text), "[PR BODY BLOCKED]");
       break;
     }
-    case "list":
+    case "list": {
+      const quotedHeadings = POLICY.prBody.requiredHeadings.map((h) => `"${h}"`).join(", ");
       console.log(
         [
           `types: ${POLICY.types.join(", ")}`,
           `scopes: ${POLICY.scopes.join(", ")}`,
           `subjectMaxLength: ${POLICY.subjectMaxLength}`,
           'body: numbered list starting with "1. " or "1)"',
-          `prBody: required sections ${POLICY.prBody.requiredHeadings.map((h) => `"${h}"`).join(", ")}`,
+          `prBody: required sections ${quotedHeadings}`,
         ].join("\n"),
       );
       process.exit(0);
       break;
+    }
     case "self-test":
       finish(runSelfTest());
       break;
