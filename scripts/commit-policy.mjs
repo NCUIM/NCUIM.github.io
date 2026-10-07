@@ -276,8 +276,8 @@ function extractHeadingMatches(text, headings, errors) {
   const matches = [];
   for (const heading of headings) {
     // Escape heading for regex and match entire heading line up to optional trailing spaces/hashes
-    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`^${escaped}(?:\\s+#*)?\\s*$`, "im");
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+    const regex = new RegExp(`^${escaped}` + String.raw`(?:\s+#*)?\s*$`, "im");
     const match = regex.exec(text);
     if (!match) {
       errors.push(`PR body is missing required section "${heading}".`);
@@ -358,8 +358,7 @@ export function validatePrBody(body) {
 
   validateHeadingOrder(headingMatches, errors);
 
-  for (let i = 0; i < headingMatches.length; i++) {
-    const current = headingMatches[i];
+  for (const current of headingMatches) {
     const after = text.slice(current.endIndex);
     const nextH2 = after.search(/\n##\s+/);
     const sectionContent = (nextH2 >= 0 ? after.slice(0, nextH2) : after).trim();
