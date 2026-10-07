@@ -16,7 +16,7 @@
 | --- | --- | --- |
 | **本機提示 (Advisory)** | `scripts/hooks/pre-commit` | 於 `git add` 後提示合適的 scope；**不阻擋 Commit** |
 | **本機攔截 (Hard Gate)** | `scripts/hooks/commit-msg` | 每次執行 `git commit` 時即時檢驗；**不符規範則阻擋提交** |
-| **CI 雲端檢查** | `.github/workflows/policy.yml` | 每次發起或更新 PR 時，檢驗 PR 標題與所有 Commit 訊息 |
+| **CI 雲端檢查** | `.github/workflows/policy.yml` | 每次發起或更新 PR 時，檢驗 PR 標題、PR 內文與所有 Commit 訊息 |
 
 ---
 
@@ -62,6 +62,13 @@ feat(timetable): add smart merged multi-section course card
 ### 5. PR 標題規範 (PR Title)
 
 Pull Request 標題與 Commit Subject 遵守完全相同的格式與長度規則。
+
+### 6. PR 內文規範 (PR Body Format)
+
+Pull Request 內文必須遵循 [`.github/pull_request_template.md`](../../.github/pull_request_template.md) 模板結構：
+- 必須包含 `## Summary` 區塊，且內文不可留空。
+- 必須包含 `## Key Changes` 區塊，且必須含有條列項目（如 `1. ` 或 `- `）。
+- 必須包含 `## Verification` 區塊，且必須含有驗證核取清單（如 `- [x]` 或 `- [ ]`）。
 
 ---
 
