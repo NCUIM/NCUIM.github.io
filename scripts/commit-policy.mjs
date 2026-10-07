@@ -39,7 +39,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const POLICY = {
@@ -92,6 +92,18 @@ export const POLICY = {
   body: {
     // Body must contain a numbered list in English starting at "1. " or "1)".
     numberedListPattern: /^\s{0,3}1[.)]\s+/m,
+  },
+  prBody: {
+    requiredHeadings: ["## Summary", "## Key Changes", "## Verification"],
+    vaguePlaceholders: [
+      "todo",
+      "tbd",
+      "n/a",
+      "none",
+      "describe here",
+      "fill in",
+      "placeholder",
+    ],
   },
 };
 
@@ -248,6 +260,114 @@ export function validateCommitMessage(message) {
   return errors;
 }
 
+function isVagueContent(content) {
+  const normalized = content.trim().toLowerCase();
+  return POLICY.prBody.vaguePlaceholders.includes(normalized);
+}
+
+function stripFencedCodeBlocks(text) {
+  // Replace code fences (``` or ~~~) with newlines to preserve line boundaries
+  return text
+    .replace(/^```[\s\S]*?^```[ \t]*/gm, "")
+    .replace(/^~~~[\s\S]*?^~~~[ \t]*/gm, "");
+}
+
+function extractHeadingMatches(text, headings, errors) {
+  const matches = [];
+  for (const heading of headings) {
+    // Escape heading for regex and match entire heading line up to optional trailing spaces/hashes
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+    const regex = new RegExp(`^${escaped}` + String.raw`(?:\s+#*)?\s*$`, "im");
+    const match = regex.exec(text);
+    if (!match) {
+      errors.push(`PR body is missing required section "${heading}".`);
+    } else {
+      matches.push({
+        heading,
+        index: match.index,
+        endIndex: match.index + match[0].length,
+      });
+    }
+  }
+  return matches;
+}
+
+function validateHeadingOrder(headingMatches, errors) {
+  for (let i = 0; i < headingMatches.length - 1; i++) {
+    if (headingMatches[i].index >= headingMatches[i + 1].index) {
+      errors.push(
+        `PR body sections are out of order: "${headingMatches[i].heading}" must appear before "${headingMatches[i + 1].heading}".`,
+      );
+      break;
+    }
+  }
+}
+
+function validateSection(heading, content, errors) {
+  const lower = heading.toLowerCase();
+  if (lower.includes("summary")) {
+    if (!content || isVagueContent(content)) {
+      errors.push(`Section "${heading}" must contain a meaningful description of the pull request.`);
+    }
+    return;
+  }
+
+  if (lower.includes("key changes")) {
+    const listItems = content
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => /^(?:\d+[.)]|[-*+])\s+\S+/.test(line))
+      .map((line) => line.replace(/^(?:\d+[.)]|[-*+])\s+/, "").trim());
+
+    const meaningfulItems = listItems.filter((item) => !isVagueContent(item));
+    if (meaningfulItems.length === 0) {
+      errors.push(`Section "${heading}" must contain at least one meaningful list item (e.g. "1. " or "- ").`);
+    }
+    return;
+  }
+
+  if (lower.includes("verification")) {
+    const checklistItems = content
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
+      .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
+
+    const meaningfulChecks = checklistItems.filter((item) => !isVagueContent(item));
+    if (meaningfulChecks.length === 0) {
+      errors.push(`Section "${heading}" must contain at least one meaningful checklist item (e.g. "- [x]" or "- [ ]").`);
+    }
+  }
+}
+
+export function validatePrBody(body) {
+  const errors = [];
+  const rawText = String(body ?? "").replaceAll("\r\n", "\n").trim();
+  if (!rawText) {
+    errors.push("PR body is empty. Please follow .github/pull_request_template.md.");
+    return errors;
+  }
+
+  const text = stripFencedCodeBlocks(rawText);
+  const headings = POLICY.prBody.requiredHeadings;
+  const headingMatches = extractHeadingMatches(text, headings, errors);
+
+  if (headingMatches.length < headings.length) {
+    return errors;
+  }
+
+  validateHeadingOrder(headingMatches, errors);
+
+  for (const current of headingMatches) {
+    const after = text.slice(current.endIndex);
+    const nextH2 = after.search(/\n##\s+/);
+    const sectionContent = (nextH2 >= 0 ? after.slice(0, nextH2) : after).trim();
+    validateSection(current.heading, sectionContent, errors);
+  }
+
+  return errors;
+}
+
 function runSelfTest() {
   const failures = [];
   const check = (label, errors, expectErrors) => {
@@ -293,6 +413,38 @@ function runSelfTest() {
     false,
   );
 
+  const validPrBody = "## Summary\nImplemented feature X.\n\n## Key Changes\n1. Added component.\n\n## Verification\n- [x] Tests pass\n";
+  check("valid pr body", validatePrBody(validPrBody), false);
+
+  const validPrBodyWithHyphenList = "## Summary\nBugfix description here.\n\n## Key Changes\n- Fixed edge case\n\n## Verification\n- [ ] Pending test\n";
+  check("valid pr body with hyphen", validatePrBody(validPrBodyWithHyphenList), false);
+
+  check("empty pr body", validatePrBody(""), true);
+  check("missing summary in pr body", validatePrBody("## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
+  check("empty summary in pr body", validatePrBody("## Summary\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
+  check("missing key changes in pr body", validatePrBody("## Summary\nDesc\n## Verification\n- [x] OK"), true);
+  check("empty key changes in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n\n## Verification\n- [x] OK"), true);
+  check("missing verification in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n1. Done"), true);
+  check("verification missing checklist in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n1. Done\n## Verification\nAll tests passed"), true);
+
+  // New hardening checks
+  check("vague summary in pr body", validatePrBody("## Summary\nTODO\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
+  check("vague key changes in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. TBD\n## Verification\n- [x] OK"), true);
+  check("vague verification in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] N/A"), true);
+  check("out of order headings in pr body", validatePrBody("## Key Changes\n1. Done\n## Summary\nValid summary\n## Verification\n- [x] OK"), true);
+  check("fenced code block with fake headings does not satisfy required headings", validatePrBody("```markdown\n## Summary\nFake summary\n## Key Changes\n1. Fake\n## Verification\n- [x] Fake\n```"), true);
+  check("trailing hashes on heading line are consumed properly", validatePrBody("## Summary ###\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
+
+  // CLI pr-body file mode check
+  try {
+    execFileSync("node", ["scripts/commit-policy.mjs", "pr-body", "non-existent-template.md"], { stdio: "pipe" }); // NOSONAR
+    failures.push("CLI pr-body with non-existent file: expected exit non-zero but succeeded");
+  } catch (err) {
+    if (err.status !== 1) {
+      failures.push(`CLI pr-body with non-existent file: expected exit 1 but got ${err.status}`);
+    }
+  }
+
   return failures;
 }
 
@@ -302,6 +454,7 @@ function printUsage() {
       "Usage:",
       "  node scripts/commit-policy.mjs subject <text>       validate one subject (PR title or commit subject)",
       "  node scripts/commit-policy.mjs message [file]       validate a full commit message (file path or stdin)",
+      "  node scripts/commit-policy.mjs pr-body [file]       validate a PR body against initial template (file, text, or stdin)",
       "  node scripts/commit-policy.mjs list                 print the current policy",
       "  node scripts/commit-policy.mjs self-test            run built-in checks and exit non-zero on failure",
       "  node scripts/commit-policy.mjs suggest-scope [--json] [path…]  hint at the scope for staged files (or given paths)",
@@ -309,10 +462,10 @@ function printUsage() {
   );
 }
 
-function finish(errors) {
+function finish(errors, label = "[COMMIT BLOCKED]") {
   if (errors.length > 0) {
     for (const error of errors) {
-      console.error(`[COMMIT BLOCKED] ${error}`);
+      console.error(`${label} ${error}`);
     }
     process.exit(1);
   }
@@ -388,17 +541,37 @@ function main() {
       finish(validateCommitMessage(text));
       break;
     }
-    case "list":
+    case "pr-body": {
+      let text = "";
+      if (arg !== undefined) {
+        if (existsSync(arg)) {
+          text = readFileSync(arg, "utf8");
+        } else if (arg.endsWith(".md") || arg.endsWith(".txt")) {
+          console.error(`[PR BODY BLOCKED] File not found: "${arg}".`);
+          process.exit(1);
+        } else {
+          text = arg;
+        }
+      } else {
+        text = readFileSync(0, "utf8");
+      }
+      finish(validatePrBody(text), "[PR BODY BLOCKED]");
+      break;
+    }
+    case "list": {
+      const quotedHeadings = POLICY.prBody.requiredHeadings.map((h) => `"${h}"`).join(", ");
       console.log(
         [
           `types: ${POLICY.types.join(", ")}`,
           `scopes: ${POLICY.scopes.join(", ")}`,
           `subjectMaxLength: ${POLICY.subjectMaxLength}`,
           'body: numbered list starting with "1. " or "1)"',
+          `prBody: required sections ${quotedHeadings}`,
         ].join("\n"),
       );
       process.exit(0);
       break;
+    }
     case "self-test":
       finish(runSelfTest());
       break;

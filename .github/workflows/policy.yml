@@ -8,6 +8,10 @@ permissions:
   contents: read
   pull-requests: read
 
+concurrency:
+  group: policy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   commit-policy:
     name: Commit and PR policy
@@ -20,7 +24,7 @@ jobs:
       - name: Policy self-test
         run: node scripts/commit-policy.mjs self-test
 
-      - name: Validate PR title and commit messages
+      - name: Validate PR title, body, and commit messages
         uses: actions/github-script@v9
         with:
           script: |
@@ -42,6 +46,12 @@ jobs:
               runPolicy(["subject", context.payload.pull_request.title]);
             } catch (e) {
               failures.push(`PR title failed policy:\n${(e.stderr || "").trim()}`);
+            }
+
+            try {
+              runPolicy(["pr-body"], context.payload.pull_request.body || "");
+            } catch (e) {
+              failures.push(`PR body failed policy:\n${(e.stderr || "").trim()}`);
             }
 
             const commits = await github.paginate(github.rest.pulls.listCommits, {
