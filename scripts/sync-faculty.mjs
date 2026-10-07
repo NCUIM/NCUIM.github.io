@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Sync NCU IM faculty members from the official department website.
  *
@@ -228,23 +227,31 @@ async function syncPortraits(teachers) {
     mkdirSync(PHOTO_DIR, { recursive: true });
   }
 
-  let downloadCount = 0;
-  for (const t of teachers) {
-    if (!t.photoUrl) continue;
+  const missingTeachers = teachers.filter((t) => {
+    if (!t.photoUrl) return false;
     const localFileName = path.basename(t.localPhotoUrl);
     const dest = path.join(PHOTO_DIR, localFileName);
+    return !existsSync(dest);
+  });
 
-    if (!existsSync(dest)) {
+  const downloadResults = await Promise.allSettled(
+    missingTeachers.map(async (t) => {
+      const localFileName = path.basename(t.localPhotoUrl);
+      const dest = path.join(PHOTO_DIR, localFileName);
       console.log(`[sync-faculty] Downloading portrait for ${t.name} -> ${localFileName}`);
       try {
         await downloadFile(t.photoUrl, dest);
-        downloadCount++;
+        return true;
       } catch (err) {
         console.warn(`[sync-faculty] Failed to download photo for ${t.name}:`, err.message);
+        return false;
       }
-    }
-  }
-  return downloadCount;
+    }),
+  );
+
+  return downloadResults.filter(
+    (res) => res.status === "fulfilled" && res.value === true,
+  ).length;
 }
 
 async function main() {
