@@ -157,29 +157,8 @@ const fetchRoomMap = async (): Promise<Map<string, string>> => {
   return rooms;
 };
 
-export interface BookmarkletPayload {
-  readonly currentCourses: CisCourse[];
-  readonly historyCourses: CisCourse[];
-}
-
-/** Parse the bookmarklet's `#cis_data=` hash payload into current and history courses. */
-export const parseBookmarkletPayload = (hash: string): BookmarkletPayload | null => {
-  if (!hash?.includes("cis_data=")) return null;
-  try {
-    const rawParam = hash.replace(/^#.*?cis_data=/, "");
-    const decoded = decodeURIComponent(rawParam);
-    const parsed = JSON.parse(decoded);
-    const currentCourses: CisCourse[] = Array.isArray(parsed)
-      ? parsed
-      : (parsed?.current || []);
-    const historyCourses: CisCourse[] = Array.isArray(parsed)
-      ? []
-      : (parsed?.history || []);
-    return { currentCourses, historyCourses };
-  } catch {
-    return null;
-  }
-};
+export type { BookmarkletPayload } from "./cis-bookmarklet";
+export { parseBookmarkletPayload } from "./cis-bookmarklet";
 
 /** Fetch only the student's current CIS timetable for the timetable page. */
 export const fetchCisSelectedCourses = async (): Promise<CisCourse[]> => {
