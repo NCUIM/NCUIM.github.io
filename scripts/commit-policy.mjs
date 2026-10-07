@@ -95,6 +95,15 @@ export const POLICY = {
   },
   prBody: {
     requiredHeadings: ["## Summary", "## Key Changes", "## Verification"],
+    vaguePlaceholders: [
+      "todo",
+      "tbd",
+      "n/a",
+      "none",
+      "describe here",
+      "fill in",
+      "placeholder",
+    ],
   },
 };
 
@@ -251,52 +260,100 @@ export function validateCommitMessage(message) {
   return errors;
 }
 
+function isVagueContent(content) {
+  const normalized = content.trim().toLowerCase();
+  return POLICY.prBody.vaguePlaceholders.some((ph) => normalized === ph);
+}
+
+function stripFencedCodeBlocks(text) {
+  // Replace code fences (``` or ~~~) with newlines to preserve line boundaries
+  return text
+    .replace(/^```[\s\S]*?^```[ \t]*/gm, "")
+    .replace(/^~~~[\s\S]*?^~~~[ \t]*/gm, "");
+}
+
 export function validatePrBody(body) {
   const errors = [];
-  const text = String(body ?? "").replaceAll("\r\n", "\n").trim();
-  if (!text) {
+  const rawText = String(body ?? "").replaceAll("\r\n", "\n").trim();
+  if (!rawText) {
     errors.push("PR body is empty. Please follow .github/pull_request_template.md.");
     return errors;
   }
 
-  // Check ## Summary
-  const summaryHeaderMatch = /^##\s+Summary\b/im.exec(text);
-  if (!summaryHeaderMatch) {
-    errors.push('PR body is missing required section "## Summary".');
-  } else {
-    const afterSummary = text.slice(summaryHeaderMatch.index + summaryHeaderMatch[0].length);
-    const nextHeadingIndex = afterSummary.search(/\n##\s+/);
-    const summaryContent = (nextHeadingIndex >= 0 ? afterSummary.slice(0, nextHeadingIndex) : afterSummary).trim();
-    if (!summaryContent) {
-      errors.push('Section "## Summary" must contain a description of the pull request.');
+  const text = stripFencedCodeBlocks(rawText);
+  const headings = POLICY.prBody.requiredHeadings;
+  const headingMatches = [];
+
+  for (const heading of headings) {
+    // Escape heading for regex and match entire heading line up to optional trailing spaces/hashes
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`^${escaped}(?:\\s+#*)?\\s*$`, "im");
+    const match = regex.exec(text);
+    if (!match) {
+      errors.push(`PR body is missing required section "${heading}".`);
+    } else {
+      headingMatches.push({
+        heading,
+        index: match.index,
+        endIndex: match.index + match[0].length,
+      });
     }
   }
 
-  // Check ## Key Changes
-  const keyChangesHeaderMatch = /^##\s+Key Changes\b/im.exec(text);
-  if (!keyChangesHeaderMatch) {
-    errors.push('PR body is missing required section "## Key Changes".');
-  } else {
-    const afterKeyChanges = text.slice(keyChangesHeaderMatch.index + keyChangesHeaderMatch[0].length);
-    const nextHeadingIndex = afterKeyChanges.search(/\n##\s+/);
-    const keyChangesContent = (nextHeadingIndex >= 0 ? afterKeyChanges.slice(0, nextHeadingIndex) : afterKeyChanges).trim();
-    const hasListItem = /^\s{0,3}(?:[0-9]+[.)]|[-*+])\s+\S+/m.test(keyChangesContent);
-    if (!hasListItem) {
-      errors.push('Section "## Key Changes" must contain at least one list item (e.g. "1. " or "- ").');
+  // If any required headings are missing, check order only among found ones, or return early
+  if (headingMatches.length < headings.length) {
+    return errors;
+  }
+
+  // Verify heading order matches requiredHeadings order
+  for (let i = 0; i < headingMatches.length - 1; i++) {
+    if (headingMatches[i].index >= headingMatches[i + 1].index) {
+      errors.push(
+        `PR body sections are out of order: "${headingMatches[i].heading}" must appear before "${headingMatches[i + 1].heading}".`,
+      );
+      break;
     }
   }
 
-  // Check ## Verification
-  const verificationHeaderMatch = /^##\s+Verification\b/im.exec(text);
-  if (!verificationHeaderMatch) {
-    errors.push('PR body is missing required section "## Verification".');
-  } else {
-    const afterVerification = text.slice(verificationHeaderMatch.index + verificationHeaderMatch[0].length);
-    const nextHeadingIndex = afterVerification.search(/\n##\s+/);
-    const verificationContent = (nextHeadingIndex >= 0 ? afterVerification.slice(0, nextHeadingIndex) : afterVerification).trim();
-    const hasChecklist = /^\s{0,3}[-*+]\s+\[[ xX]\]\s+\S+/m.test(verificationContent);
-    if (!hasChecklist) {
-      errors.push('Section "## Verification" must contain at least one checklist item (e.g. "- [x]" or "- [ ]").');
+  // Extract content between headings or to next top-level/h2 heading
+  const getSectionContent = (matchIndex) => {
+    const current = headingMatches[matchIndex];
+    const after = text.slice(current.endIndex);
+    const nextH2 = after.search(/\n##\s+/);
+    return (nextH2 >= 0 ? after.slice(0, nextH2) : after).trim();
+  };
+
+  // Validate each section's content
+  for (let i = 0; i < headingMatches.length; i++) {
+    const { heading } = headingMatches[i];
+    const content = getSectionContent(i);
+
+    if (heading.toLowerCase().includes("summary")) {
+      if (!content || isVagueContent(content)) {
+        errors.push(`Section "${heading}" must contain a meaningful description of the pull request.`);
+      }
+    } else if (heading.toLowerCase().includes("key changes")) {
+      const listItems = content
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => /^(?:[0-9]+[.)]|[-*+])\s+\S+/.test(line))
+        .map((line) => line.replace(/^(?:[0-9]+[.)]|[-*+])\s+/, "").trim());
+
+      const meaningfulItems = listItems.filter((item) => !isVagueContent(item));
+      if (meaningfulItems.length === 0) {
+        errors.push(`Section "${heading}" must contain at least one meaningful list item (e.g. "1. " or "- ").`);
+      }
+    } else if (heading.toLowerCase().includes("verification")) {
+      const checklistItems = content
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
+        .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
+
+      const meaningfulChecks = checklistItems.filter((item) => !isVagueContent(item));
+      if (meaningfulChecks.length === 0) {
+        errors.push(`Section "${heading}" must contain at least one meaningful checklist item (e.g. "- [x]" or "- [ ]").`);
+      }
     }
   }
 
@@ -361,6 +418,14 @@ function runSelfTest() {
   check("empty key changes in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n\n## Verification\n- [x] OK"), true);
   check("missing verification in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n1. Done"), true);
   check("verification missing checklist in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n1. Done\n## Verification\nAll tests passed"), true);
+
+  // New hardening checks
+  check("vague summary in pr body", validatePrBody("## Summary\nTODO\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
+  check("vague key changes in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. TBD\n## Verification\n- [x] OK"), true);
+  check("vague verification in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] N/A"), true);
+  check("out of order headings in pr body", validatePrBody("## Key Changes\n1. Done\n## Summary\nValid summary\n## Verification\n- [x] OK"), true);
+  check("fenced code block with fake headings does not satisfy required headings", validatePrBody("```markdown\n## Summary\nFake summary\n## Key Changes\n1. Fake\n## Verification\n- [x] Fake\n```"), true);
+  check("trailing hashes on heading line are consumed properly", validatePrBody("## Summary ###\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
 
   return failures;
 }
