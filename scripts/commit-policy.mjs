@@ -272,6 +272,74 @@ function stripFencedCodeBlocks(text) {
     .replace(/^~~~[\s\S]*?^~~~[ \t]*/gm, "");
 }
 
+function extractHeadingMatches(text, headings, errors) {
+  const matches = [];
+  for (const heading of headings) {
+    // Escape heading for regex and match entire heading line up to optional trailing spaces/hashes
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`^${escaped}(?:\\s+#*)?\\s*$`, "im");
+    const match = regex.exec(text);
+    if (!match) {
+      errors.push(`PR body is missing required section "${heading}".`);
+    } else {
+      matches.push({
+        heading,
+        index: match.index,
+        endIndex: match.index + match[0].length,
+      });
+    }
+  }
+  return matches;
+}
+
+function validateHeadingOrder(headingMatches, errors) {
+  for (let i = 0; i < headingMatches.length - 1; i++) {
+    if (headingMatches[i].index >= headingMatches[i + 1].index) {
+      errors.push(
+        `PR body sections are out of order: "${headingMatches[i].heading}" must appear before "${headingMatches[i + 1].heading}".`,
+      );
+      break;
+    }
+  }
+}
+
+function validateSection(heading, content, errors) {
+  const lower = heading.toLowerCase();
+  if (lower.includes("summary")) {
+    if (!content || isVagueContent(content)) {
+      errors.push(`Section "${heading}" must contain a meaningful description of the pull request.`);
+    }
+    return;
+  }
+
+  if (lower.includes("key changes")) {
+    const listItems = content
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => /^(?:[0-9]+[.)]|[-*+])\s+\S+/.test(line))
+      .map((line) => line.replace(/^(?:[0-9]+[.)]|[-*+])\s+/, "").trim());
+
+    const meaningfulItems = listItems.filter((item) => !isVagueContent(item));
+    if (meaningfulItems.length === 0) {
+      errors.push(`Section "${heading}" must contain at least one meaningful list item (e.g. "1. " or "- ").`);
+    }
+    return;
+  }
+
+  if (lower.includes("verification")) {
+    const checklistItems = content
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
+      .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
+
+    const meaningfulChecks = checklistItems.filter((item) => !isVagueContent(item));
+    if (meaningfulChecks.length === 0) {
+      errors.push(`Section "${heading}" must contain at least one meaningful checklist item (e.g. "- [x]" or "- [ ]").`);
+    }
+  }
+}
+
 export function validatePrBody(body) {
   const errors = [];
   const rawText = String(body ?? "").replaceAll("\r\n", "\n").trim();
@@ -282,79 +350,20 @@ export function validatePrBody(body) {
 
   const text = stripFencedCodeBlocks(rawText);
   const headings = POLICY.prBody.requiredHeadings;
-  const headingMatches = [];
+  const headingMatches = extractHeadingMatches(text, headings, errors);
 
-  for (const heading of headings) {
-    // Escape heading for regex and match entire heading line up to optional trailing spaces/hashes
-    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`^${escaped}(?:\\s+#*)?\\s*$`, "im");
-    const match = regex.exec(text);
-    if (!match) {
-      errors.push(`PR body is missing required section "${heading}".`);
-    } else {
-      headingMatches.push({
-        heading,
-        index: match.index,
-        endIndex: match.index + match[0].length,
-      });
-    }
-  }
-
-  // If any required headings are missing, check order only among found ones, or return early
   if (headingMatches.length < headings.length) {
     return errors;
   }
 
-  // Verify heading order matches requiredHeadings order
-  for (let i = 0; i < headingMatches.length - 1; i++) {
-    if (headingMatches[i].index >= headingMatches[i + 1].index) {
-      errors.push(
-        `PR body sections are out of order: "${headingMatches[i].heading}" must appear before "${headingMatches[i + 1].heading}".`,
-      );
-      break;
-    }
-  }
+  validateHeadingOrder(headingMatches, errors);
 
-  // Extract content between headings or to next top-level/h2 heading
-  const getSectionContent = (matchIndex) => {
-    const current = headingMatches[matchIndex];
+  for (let i = 0; i < headingMatches.length; i++) {
+    const current = headingMatches[i];
     const after = text.slice(current.endIndex);
     const nextH2 = after.search(/\n##\s+/);
-    return (nextH2 >= 0 ? after.slice(0, nextH2) : after).trim();
-  };
-
-  // Validate each section's content
-  for (let i = 0; i < headingMatches.length; i++) {
-    const { heading } = headingMatches[i];
-    const content = getSectionContent(i);
-
-    if (heading.toLowerCase().includes("summary")) {
-      if (!content || isVagueContent(content)) {
-        errors.push(`Section "${heading}" must contain a meaningful description of the pull request.`);
-      }
-    } else if (heading.toLowerCase().includes("key changes")) {
-      const listItems = content
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => /^(?:[0-9]+[.)]|[-*+])\s+\S+/.test(line))
-        .map((line) => line.replace(/^(?:[0-9]+[.)]|[-*+])\s+/, "").trim());
-
-      const meaningfulItems = listItems.filter((item) => !isVagueContent(item));
-      if (meaningfulItems.length === 0) {
-        errors.push(`Section "${heading}" must contain at least one meaningful list item (e.g. "1. " or "- ").`);
-      }
-    } else if (heading.toLowerCase().includes("verification")) {
-      const checklistItems = content
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
-        .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
-
-      const meaningfulChecks = checklistItems.filter((item) => !isVagueContent(item));
-      if (meaningfulChecks.length === 0) {
-        errors.push(`Section "${heading}" must contain at least one meaningful checklist item (e.g. "- [x]" or "- [ ]").`);
-      }
-    }
+    const sectionContent = (nextH2 >= 0 ? after.slice(0, nextH2) : after).trim();
+    validateSection(current.heading, sectionContent, errors);
   }
 
   return errors;
