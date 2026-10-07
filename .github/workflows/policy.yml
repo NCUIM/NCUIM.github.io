@@ -8,6 +8,10 @@ permissions:
   contents: read
   pull-requests: read
 
+concurrency:
+  group: policy-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   commit-policy:
     name: Commit and PR policy
