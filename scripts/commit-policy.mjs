@@ -435,6 +435,16 @@ function runSelfTest() {
   check("fenced code block with fake headings does not satisfy required headings", validatePrBody("```markdown\n## Summary\nFake summary\n## Key Changes\n1. Fake\n## Verification\n- [x] Fake\n```"), true);
   check("trailing hashes on heading line are consumed properly", validatePrBody("## Summary ###\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
 
+  // CLI pr-body file mode check
+  try {
+    execFileSync("node", ["scripts/commit-policy.mjs", "pr-body", "non-existent-template.md"], { stdio: "pipe" }); // NOSONAR
+    failures.push("CLI pr-body with non-existent file: expected exit non-zero but succeeded");
+  } catch (err) {
+    if (err.status !== 1) {
+      failures.push(`CLI pr-body with non-existent file: expected exit 1 but got ${err.status}`);
+    }
+  }
+
   return failures;
 }
 
@@ -534,7 +544,14 @@ function main() {
     case "pr-body": {
       let text = "";
       if (arg !== undefined) {
-        text = existsSync(arg) ? readFileSync(arg, "utf8") : arg;
+        if (existsSync(arg)) {
+          text = readFileSync(arg, "utf8");
+        } else if (arg.endsWith(".md") || arg.endsWith(".txt")) {
+          console.error(`[PR BODY BLOCKED] File not found: "${arg}".`);
+          process.exit(1);
+        } else {
+          text = arg;
+        }
       } else {
         text = readFileSync(0, "utf8");
       }
