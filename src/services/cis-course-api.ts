@@ -1,4 +1,10 @@
-/** CIS course and course-taking-status readers. */
+/**
+ * CIS course and course-taking-status readers (Development Proxy Mode).
+ *
+ * NOTE: These fetch functions rely on the local Vite dev proxy (`/ncu/cis`) with session cookies.
+ * For production static deployment on GitHub Pages, course and credit synchronizations are
+ * driven by the pure client-side Bookmarklet (`src/services/cis-bookmarklet.ts`).
+ */
 import { cisFetch, isCisLoggedIn, cisLogout } from "./cis-login";
 
 export interface CisCourse {
