@@ -39,7 +39,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const POLICY = {
@@ -92,6 +92,9 @@ export const POLICY = {
   body: {
     // Body must contain a numbered list in English starting at "1. " or "1)".
     numberedListPattern: /^\s{0,3}1[.)]\s+/m,
+  },
+  prBody: {
+    requiredHeadings: ["## Summary", "## Key Changes", "## Verification"],
   },
 };
 
@@ -248,6 +251,58 @@ export function validateCommitMessage(message) {
   return errors;
 }
 
+export function validatePrBody(body) {
+  const errors = [];
+  const text = String(body ?? "").replaceAll("\r\n", "\n").trim();
+  if (!text) {
+    errors.push("PR body is empty. Please follow .github/pull_request_template.md.");
+    return errors;
+  }
+
+  // Check ## Summary
+  const summaryHeaderMatch = /^##\s+Summary\b/im.exec(text);
+  if (!summaryHeaderMatch) {
+    errors.push('PR body is missing required section "## Summary".');
+  } else {
+    const afterSummary = text.slice(summaryHeaderMatch.index + summaryHeaderMatch[0].length);
+    const nextHeadingIndex = afterSummary.search(/\n##\s+/);
+    const summaryContent = (nextHeadingIndex >= 0 ? afterSummary.slice(0, nextHeadingIndex) : afterSummary).trim();
+    if (!summaryContent) {
+      errors.push('Section "## Summary" must contain a description of the pull request.');
+    }
+  }
+
+  // Check ## Key Changes
+  const keyChangesHeaderMatch = /^##\s+Key Changes\b/im.exec(text);
+  if (!keyChangesHeaderMatch) {
+    errors.push('PR body is missing required section "## Key Changes".');
+  } else {
+    const afterKeyChanges = text.slice(keyChangesHeaderMatch.index + keyChangesHeaderMatch[0].length);
+    const nextHeadingIndex = afterKeyChanges.search(/\n##\s+/);
+    const keyChangesContent = (nextHeadingIndex >= 0 ? afterKeyChanges.slice(0, nextHeadingIndex) : afterKeyChanges).trim();
+    const hasListItem = /^\s{0,3}(?:[0-9]+[.)]|[-*+])\s+\S+/m.test(keyChangesContent);
+    if (!hasListItem) {
+      errors.push('Section "## Key Changes" must contain at least one list item (e.g. "1. " or "- ").');
+    }
+  }
+
+  // Check ## Verification
+  const verificationHeaderMatch = /^##\s+Verification\b/im.exec(text);
+  if (!verificationHeaderMatch) {
+    errors.push('PR body is missing required section "## Verification".');
+  } else {
+    const afterVerification = text.slice(verificationHeaderMatch.index + verificationHeaderMatch[0].length);
+    const nextHeadingIndex = afterVerification.search(/\n##\s+/);
+    const verificationContent = (nextHeadingIndex >= 0 ? afterVerification.slice(0, nextHeadingIndex) : afterVerification).trim();
+    const hasChecklist = /^\s{0,3}[-*+]\s+\[[ xX]\]\s+\S+/m.test(verificationContent);
+    if (!hasChecklist) {
+      errors.push('Section "## Verification" must contain at least one checklist item (e.g. "- [x]" or "- [ ]").');
+    }
+  }
+
+  return errors;
+}
+
 function runSelfTest() {
   const failures = [];
   const check = (label, errors, expectErrors) => {
@@ -293,6 +348,20 @@ function runSelfTest() {
     false,
   );
 
+  const validPrBody = "## Summary\nImplemented feature X.\n\n## Key Changes\n1. Added component.\n\n## Verification\n- [x] Tests pass\n";
+  check("valid pr body", validatePrBody(validPrBody), false);
+
+  const validPrBodyWithHyphenList = "## Summary\nBugfix description here.\n\n## Key Changes\n- Fixed edge case\n\n## Verification\n- [ ] Pending test\n";
+  check("valid pr body with hyphen", validatePrBody(validPrBodyWithHyphenList), false);
+
+  check("empty pr body", validatePrBody(""), true);
+  check("missing summary in pr body", validatePrBody("## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
+  check("empty summary in pr body", validatePrBody("## Summary\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
+  check("missing key changes in pr body", validatePrBody("## Summary\nDesc\n## Verification\n- [x] OK"), true);
+  check("empty key changes in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n\n## Verification\n- [x] OK"), true);
+  check("missing verification in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n1. Done"), true);
+  check("verification missing checklist in pr body", validatePrBody("## Summary\nDesc\n## Key Changes\n1. Done\n## Verification\nAll tests passed"), true);
+
   return failures;
 }
 
@@ -302,6 +371,7 @@ function printUsage() {
       "Usage:",
       "  node scripts/commit-policy.mjs subject <text>       validate one subject (PR title or commit subject)",
       "  node scripts/commit-policy.mjs message [file]       validate a full commit message (file path or stdin)",
+      "  node scripts/commit-policy.mjs pr-body [file]       validate a PR body against initial template (file, text, or stdin)",
       "  node scripts/commit-policy.mjs list                 print the current policy",
       "  node scripts/commit-policy.mjs self-test            run built-in checks and exit non-zero on failure",
       "  node scripts/commit-policy.mjs suggest-scope [--json] [path…]  hint at the scope for staged files (or given paths)",
@@ -309,10 +379,10 @@ function printUsage() {
   );
 }
 
-function finish(errors) {
+function finish(errors, label = "[COMMIT BLOCKED]") {
   if (errors.length > 0) {
     for (const error of errors) {
-      console.error(`[COMMIT BLOCKED] ${error}`);
+      console.error(`${label} ${error}`);
     }
     process.exit(1);
   }
@@ -388,6 +458,16 @@ function main() {
       finish(validateCommitMessage(text));
       break;
     }
+    case "pr-body": {
+      let text = "";
+      if (arg !== undefined) {
+        text = existsSync(arg) ? readFileSync(arg, "utf8") : arg;
+      } else {
+        text = readFileSync(0, "utf8");
+      }
+      finish(validatePrBody(text), "[PR BODY BLOCKED]");
+      break;
+    }
     case "list":
       console.log(
         [
@@ -395,6 +475,7 @@ function main() {
           `scopes: ${POLICY.scopes.join(", ")}`,
           `subjectMaxLength: ${POLICY.subjectMaxLength}`,
           'body: numbered list starting with "1. " or "1)"',
+          `prBody: required sections ${POLICY.prBody.requiredHeadings.map((h) => `"${h}"`).join(", ")}`,
         ].join("\n"),
       );
       process.exit(0);
