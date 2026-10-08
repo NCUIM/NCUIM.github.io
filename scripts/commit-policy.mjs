@@ -357,6 +357,19 @@ export function validatePrBody(body) {
     return errors;
   }
 
+  // Parity with tool-scripts: check for corrupted escaped inline code artifacts (e.g. \npm test\ instead of `npm test`)
+  const escapedArtifactPattern = /\\([a-zA-Z0-9_./#:@<>()'" -]+)\\/;
+  if (escapedArtifactPattern.test(rawText)) {
+    const matched = rawText.match(escapedArtifactPattern);
+    errors.push(`PR body contains corrupted escaped inline code artifacts ("${matched[0]}" instead of \`${matched[1]}\`). Use backticks for code and paths.`);
+  }
+
+  // Parity with tool-scripts: check for unmatched backticks across the entire PR body
+  const backtickCount = (rawText.match(/`/g) || []).length;
+  if (backtickCount % 2 !== 0) {
+    errors.push(`PR body has an unmatched backtick (total: ${backtickCount}). Ensure all code spans are closed.`);
+  }
+
   const text = stripFencedCodeBlocks(rawText);
   const headings = POLICY.prBody.requiredHeadings;
   const headingMatches = extractHeadingMatches(text, headings, errors);
@@ -442,6 +455,8 @@ function runSelfTest() {
   check("vague verification in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] N/A"), true);
   check("trailing backslash in verification checklist", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] px tsc passes\\\n"), true);
   check("leading backslash in verification checklist item", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] \\npx tsc passes\n"), true);
+  check("unmatched backticks in pr body", validatePrBody("## Summary\nValid summary `code\n## Key Changes\n1. Done\n## Verification\n- [x] OK\n"), true);
+  check("corrupted escaped inline code artifact", validatePrBody("## Summary\nValid summary \\npm test\\\n## Key Changes\n1. Done\n## Verification\n- [x] OK\n"), true);
   check("out of order headings in pr body", validatePrBody("## Key Changes\n1. Done\n## Summary\nValid summary\n## Verification\n- [x] OK"), true);
   check("fenced code block with fake headings does not satisfy required headings", validatePrBody("```markdown\n## Summary\nFake summary\n## Key Changes\n1. Fake\n## Verification\n- [x] Fake\n```"), true);
   check("trailing hashes on heading line are consumed properly", validatePrBody("## Summary ###\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
