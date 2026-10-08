@@ -5,14 +5,13 @@ import {
   BUILTIN_ANNOUNCEMENTS,
   fetchAnnouncements,
 } from "../services/announcement-api";
+import { CTF_CONFIG, isCtfEnded } from "../services/ctf-challenge";
 import AnnouncementModal from "../components/announcements/AnnouncementModal";
 import { FacultyQuizModal } from "../components/faculty/FacultyQuizModal";
 import {
   HomeHeader,
   HomeBody,
   ParticleData,
-  CTF_CONFIG,
-  isCtfEnded,
   getStageIcon,
 } from "../components/home";
 
