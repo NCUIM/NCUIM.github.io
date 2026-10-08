@@ -26,8 +26,27 @@ export const generateBookmarkletCode = (targetUrl: string): string => {
 };
 
 /**
+ * Validate that an object resembles a valid CisCourse item.
+ */
+const isValidCourse = (item: unknown): item is CisCourse => {
+  if (!item || typeof item !== "object") return false;
+  const course = item as Record<string, unknown>;
+  const hasIdentifier =
+    typeof course.serialNo === "string" ||
+    typeof course.classNo === "string" ||
+    typeof course.name === "string";
+  return hasIdentifier;
+};
+
+const sanitizeCourseList = (list: unknown): CisCourse[] => {
+  if (!Array.isArray(list)) return [];
+  return list.filter(isValidCourse);
+};
+
+/**
  * Parse the bookmarklet's `#cis_data=` hash payload into current and history courses.
  * Handles both legacy array formats and modern `{ current, history }` object shapes.
+ * Rejects non-array lists and filters out malformed non-course entries.
  */
 export const parseBookmarkletPayload = (hash: string): BookmarkletPayload | null => {
   if (!hash?.includes("cis_data=")) return null;
@@ -35,13 +54,21 @@ export const parseBookmarkletPayload = (hash: string): BookmarkletPayload | null
     const rawParam = hash.replace(/^#.*?cis_data=/, "");
     const decoded = decodeURIComponent(rawParam);
     const parsed = JSON.parse(decoded);
-    const currentCourses: CisCourse[] = Array.isArray(parsed)
-      ? parsed
-      : (parsed?.current || []);
-    const historyCourses: CisCourse[] = Array.isArray(parsed)
-      ? []
-      : (parsed?.history || []);
-    return { currentCourses, historyCourses };
+
+    if (Array.isArray(parsed)) {
+      return {
+        currentCourses: sanitizeCourseList(parsed),
+        historyCourses: [],
+      };
+    }
+
+    if (parsed && typeof parsed === "object") {
+      const currentCourses = sanitizeCourseList((parsed as Record<string, unknown>).current);
+      const historyCourses = sanitizeCourseList((parsed as Record<string, unknown>).history);
+      return { currentCourses, historyCourses };
+    }
+
+    return null;
   } catch {
     return null;
   }

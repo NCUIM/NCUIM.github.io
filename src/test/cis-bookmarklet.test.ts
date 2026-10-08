@@ -78,13 +78,17 @@ describe("cis-bookmarklet service", () => {
       expect(result?.historyCourses).toEqual([]);
     });
 
-    it("handles hash prefixes with multiple fragment segments safely", () => {
-      const payloadObj = { current: [], history: [] };
-      const hash = `#/some/route?foo=bar#cis_data=${encodeURIComponent(JSON.stringify(payloadObj))}`;
+    it("filters out non-course entries and gracefully handles non-array lists", () => {
+      const payloadWithMalformedData = {
+        current: [{ serialNo: "11111", name: "微積分" }, null, "invalid", 42, {}],
+        history: "not-an-array",
+      };
+      const hash = `#cis_data=${encodeURIComponent(JSON.stringify(payloadWithMalformedData))}`;
 
       const result = parseBookmarkletPayload(hash);
       expect(result).not.toBeNull();
-      expect(result?.currentCourses).toEqual([]);
+      expect(result?.currentCourses).toHaveLength(1);
+      expect(result?.currentCourses[0].serialNo).toBe("11111");
       expect(result?.historyCourses).toEqual([]);
     });
   });
