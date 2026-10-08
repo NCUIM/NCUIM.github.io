@@ -327,9 +327,18 @@ function validateSection(heading, content, errors) {
   }
 
   if (lower.includes("verification")) {
-    const checklistItems = content
+    const rawChecklistLines = content
       .split("\n")
       .map((line) => line.trim())
+      .filter((line) => /^[-*+]\s+\[[ xX]\]/.test(line));
+
+    for (const rawLine of rawChecklistLines) {
+      if (/(?:^|[^\\])\\[\s\S]*$/.test(rawLine) && (/\\$/.test(rawLine) || /^[-*+]\s+\[[ xX]\]\s*\\/.test(rawLine))) {
+        errors.push(`Checklist item contains invalid or escaped backslashes: "${rawLine}".`);
+      }
+    }
+
+    const checklistItems = rawChecklistLines
       .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
       .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
 
@@ -431,6 +440,8 @@ function runSelfTest() {
   check("vague summary in pr body", validatePrBody("## Summary\nTODO\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
   check("vague key changes in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. TBD\n## Verification\n- [x] OK"), true);
   check("vague verification in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] N/A"), true);
+  check("trailing backslash in verification checklist", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] px tsc passes\\\n"), true);
+  check("leading backslash in verification checklist item", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] \\npx tsc passes\n"), true);
   check("out of order headings in pr body", validatePrBody("## Key Changes\n1. Done\n## Summary\nValid summary\n## Verification\n- [x] OK"), true);
   check("fenced code block with fake headings does not satisfy required headings", validatePrBody("```markdown\n## Summary\nFake summary\n## Key Changes\n1. Fake\n## Verification\n- [x] Fake\n```"), true);
   check("trailing hashes on heading line are consumed properly", validatePrBody("## Summary ###\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
