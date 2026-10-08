@@ -4,7 +4,7 @@ import { home, book, person } from "ionicons/icons";
 
 import HomePage from "./pages/HomePage";
 import CardsPage from "./pages/CardsPage";
-import LeaderboardPage from "./pages/LeaderboardPage";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
 import SeatsPage from "./pages/SeatsPage";
 import TimetablePage from "./pages/TimetablePage";
 import FoodPage from "./pages/FoodPage";
@@ -18,7 +18,8 @@ const TabsShell = () => (
       <Route exact path="/" component={HomePage} tab="home" />
       <Route exact path="/guide" component={GuidePage} tab="guide" />
       <Route exact path="/cards" component={CardsPage} tab="user" />
-      <Route exact path="/leaderboard" component={LeaderboardPage} tab="user" />
+      <Route exact path="/announcements" component={AnnouncementsPage} tab="home" />
+      <Route exact path="/leaderboard" component={AnnouncementsPage} tab="home" />
       <Route exact path="/seats" component={SeatsPage} tab="home" />
       <Route exact path="/timetable" component={TimetablePage} tab="home" />
       <Route exact path="/food" component={FoodPage} tab="home" />

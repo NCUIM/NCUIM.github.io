@@ -24,6 +24,14 @@
     "color": "var(--ncu-star)"
   },
   {
+    "id": "announcements",
+    "title": "系網公告",
+    "subtitle": "最新消息 · 課程演講 · 獎學金",
+    "icon": "newspaper",
+    "route": "/announcements",
+    "color": "#0284c7"
+  },
+  {
     "id": "lottery",
     "title": "抽籤大會",
     "subtitle": "大螢幕開獎 · 蛇形相鄰分配",
