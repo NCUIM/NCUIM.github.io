@@ -1,5 +1,10 @@
 /**
- * CIS Session Management
+ * CIS Session Management (Development Proxy Mode)
+ *
+ * NOTE: This module interacts with the local Vite dev proxy (/ncu/cis).
+ * In production static deployment (GitHub Pages), the application strictly adheres
+ * to the zero-backend principle where course data is imported client-side via
+ * the Bookmarklet mechanism (see `src/services/cis-bookmarklet.ts`).
  *
  * Does NOT handle login credentials. The user provides a JSESSIONID
  * obtained from their own browser's DevTools.

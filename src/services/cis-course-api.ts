@@ -1,4 +1,10 @@
-/** CIS course and course-taking-status readers. */
+/**
+ * CIS course and course-taking-status readers (Development Proxy Mode).
+ *
+ * NOTE: These fetch functions rely on the local Vite dev proxy (`/ncu/cis`) with session cookies.
+ * For production static deployment on GitHub Pages, course and credit synchronizations are
+ * driven by the pure client-side Bookmarklet (`src/services/cis-bookmarklet.ts`).
+ */
 import { cisFetch, isCisLoggedIn, cisLogout } from "./cis-login";
 
 export interface CisCourse {
@@ -157,29 +163,8 @@ const fetchRoomMap = async (): Promise<Map<string, string>> => {
   return rooms;
 };
 
-export interface BookmarkletPayload {
-  readonly currentCourses: CisCourse[];
-  readonly historyCourses: CisCourse[];
-}
-
-/** Parse the bookmarklet's `#cis_data=` hash payload into current and history courses. */
-export const parseBookmarkletPayload = (hash: string): BookmarkletPayload | null => {
-  if (!hash?.includes("cis_data=")) return null;
-  try {
-    const rawParam = hash.replace(/^#.*?cis_data=/, "");
-    const decoded = decodeURIComponent(rawParam);
-    const parsed = JSON.parse(decoded);
-    const currentCourses: CisCourse[] = Array.isArray(parsed)
-      ? parsed
-      : (parsed?.current || []);
-    const historyCourses: CisCourse[] = Array.isArray(parsed)
-      ? []
-      : (parsed?.history || []);
-    return { currentCourses, historyCourses };
-  } catch {
-    return null;
-  }
-};
+export type { BookmarkletPayload } from "./cis-bookmarklet";
+export { parseBookmarkletPayload } from "./cis-bookmarklet";
 
 /** Fetch only the student's current CIS timetable for the timetable page. */
 export const fetchCisSelectedCourses = async (): Promise<CisCourse[]> => {
