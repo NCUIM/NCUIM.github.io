@@ -359,9 +359,9 @@ export function validatePrBody(body) {
 
   // Parity with tool-scripts: check for corrupted escaped inline code artifacts (e.g. \npm test\ instead of `npm test`)
   const escapedArtifactPattern = /\\([a-zA-Z0-9_./#:@<>()'" -]+)\\/;
-  if (escapedArtifactPattern.test(rawText)) {
-    const matched = rawText.match(escapedArtifactPattern);
-    errors.push(`PR body contains corrupted escaped inline code artifacts ("${matched[0]}" instead of \`${matched[1]}\`). Use backticks for code and paths.`);
+  const escapedArtifactMatch = escapedArtifactPattern.exec(rawText);
+  if (escapedArtifactMatch) {
+    errors.push(`PR body contains corrupted escaped inline code artifacts ("${escapedArtifactMatch[0]}" instead of \`${escapedArtifactMatch[1]}\`). Use backticks for code and paths.`);
   }
 
   // Parity with tool-scripts: check for unmatched backticks across the entire PR body
