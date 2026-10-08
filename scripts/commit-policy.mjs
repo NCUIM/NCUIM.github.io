@@ -327,9 +327,18 @@ function validateSection(heading, content, errors) {
   }
 
   if (lower.includes("verification")) {
-    const checklistItems = content
+    const rawChecklistLines = content
       .split("\n")
       .map((line) => line.trim())
+      .filter((line) => /^[-*+]\s+\[[ xX]\]/.test(line));
+
+    for (const rawLine of rawChecklistLines) {
+      if (/(?:^|[^\\])\\[\s\S]*$/.test(rawLine) && (/\\$/.test(rawLine) || /^[-*+]\s+\[[ xX]\]\s*\\/.test(rawLine))) {
+        errors.push(`Checklist item contains invalid or escaped backslashes: "${rawLine}".`);
+      }
+    }
+
+    const checklistItems = rawChecklistLines
       .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
       .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
 
@@ -346,6 +355,19 @@ export function validatePrBody(body) {
   if (!rawText) {
     errors.push("PR body is empty. Please follow .github/pull_request_template.md.");
     return errors;
+  }
+
+  // Parity with tool-scripts: check for corrupted escaped inline code artifacts (e.g. \npm test\ instead of `npm test`)
+  const escapedArtifactPattern = /\\([a-zA-Z0-9_./#:@<>()'" -]+)\\/;
+  const escapedArtifactMatch = escapedArtifactPattern.exec(rawText);
+  if (escapedArtifactMatch) {
+    errors.push(`PR body contains corrupted escaped inline code artifacts ("${escapedArtifactMatch[0]}" instead of \`${escapedArtifactMatch[1]}\`). Use backticks for code and paths.`);
+  }
+
+  // Parity with tool-scripts: check for unmatched backticks across the entire PR body
+  const backtickCount = (rawText.match(/`/g) || []).length;
+  if (backtickCount % 2 !== 0) {
+    errors.push(`PR body has an unmatched backtick (total: ${backtickCount}). Ensure all code spans are closed.`);
   }
 
   const text = stripFencedCodeBlocks(rawText);
@@ -431,6 +453,10 @@ function runSelfTest() {
   check("vague summary in pr body", validatePrBody("## Summary\nTODO\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
   check("vague key changes in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. TBD\n## Verification\n- [x] OK"), true);
   check("vague verification in pr body", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] N/A"), true);
+  check("trailing backslash in verification checklist", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] px tsc passes\\\n"), true);
+  check("leading backslash in verification checklist item", validatePrBody("## Summary\nValid summary\n## Key Changes\n1. Done\n## Verification\n- [x] \\npx tsc passes\n"), true);
+  check("unmatched backticks in pr body", validatePrBody("## Summary\nValid summary `code\n## Key Changes\n1. Done\n## Verification\n- [x] OK\n"), true);
+  check("corrupted escaped inline code artifact", validatePrBody("## Summary\nValid summary \\npm test\\\n## Key Changes\n1. Done\n## Verification\n- [x] OK\n"), true);
   check("out of order headings in pr body", validatePrBody("## Key Changes\n1. Done\n## Summary\nValid summary\n## Verification\n- [x] OK"), true);
   check("fenced code block with fake headings does not satisfy required headings", validatePrBody("```markdown\n## Summary\nFake summary\n## Key Changes\n1. Fake\n## Verification\n- [x] Fake\n```"), true);
   check("trailing hashes on heading line are consumed properly", validatePrBody("## Summary ###\n\n## Key Changes\n1. Done\n## Verification\n- [x] OK"), true);
