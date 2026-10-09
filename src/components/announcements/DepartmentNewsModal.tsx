@@ -253,11 +253,21 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
 
             {/* Post Content */}
             {(() => {
-              const sanitizedHtml = (detail.contentHtml || "")
+              let sanitizedHtml = (detail.contentHtml || "")
                 .replace(/src=["']\/(?!\/)/g, 'src="https://im.mgt.ncu.edu.tw/')
                 .replace(/href=["']\/(?!\/)/g, 'href="https://im.mgt.ncu.edu.tw/');
 
+              // If structured attachments exist, strip the raw CMS attachment block at the bottom
+              if (detail.attachments && detail.attachments.length > 0) {
+                sanitizedHtml = sanitizedHtml
+                  .replace(/(?:<\/div>\s*)?<b>\s*附件[：:]\s*<\/b>[\s\S]*$/i, "")
+                  .trim();
+              }
+
               if (!sanitizedHtml.trim()) {
+                if (detail.attachments && detail.attachments.length > 0) {
+                  return null;
+                }
                 return (
                   <div
                     style={{
@@ -270,7 +280,7 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                     }}
                   >
                     <p style={{ margin: "0 0 12px", color: "var(--ncu-muted)", fontSize: 14 }}>
-                      此公告內文為圖片、外部表單或附件格式，請點擊下方按鈕前往官網閱讀完整內容。
+                      此公告內文為外部表單或附件格式，請點擊下方按鈕前往官網閱讀完整內容。
                     </p>
                     {detail.originalUrl && (
                       <IonButton
