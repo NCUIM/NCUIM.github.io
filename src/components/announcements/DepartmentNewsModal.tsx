@@ -23,7 +23,6 @@ import {
   documentTextOutline,
   chevronDownOutline,
   chevronUpOutline,
-  swapHorizontalOutline,
 } from "ionicons/icons";
 import {
   fetchDepartmentNewsDetail,
@@ -52,7 +51,6 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<{ name: string; url: string } | null>(null);
-  const [previewEngine, setPreviewEngine] = useState<"native" | "google">("native");
   const [isPdfExpanded, setIsPdfExpanded] = useState<boolean>(true);
 
   useEffect(() => {
@@ -542,11 +540,7 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                           >
                             <div style={{ width: "100%", overflow: "hidden", position: "relative" }}>
                               <iframe
-                                src={
-                                  previewEngine === "google"
-                                    ? `https://docs.google.com/viewer?url=${encodeURIComponent(att.url)}&embedded=true`
-                                    : `${att.url}#view=FitH`
-                                }
+                                src={`${att.url}#view=FitH`}
                                 title={att.name}
                                 scrolling="no"
                                 style={{
@@ -560,50 +554,32 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                               />
                             </div>
 
-                            {/* Minimalist Reader Footer */}
+                            {/* Clean Reader Footer */}
                             <div
                               style={{
                                 display: "flex",
                                 alignItems: "center",
-                                justifyContent: "space-between",
-                                padding: "6px 12px",
-                                fontSize: 11.5,
-                                color: "var(--ncu-muted, #64748b)",
-                                background: "#f1f5f9",
+                                justifyContent: "flex-end",
+                                padding: "8px 14px",
+                                background: "#f8fafc",
                                 borderTop: "1px solid var(--ncu-border, #e2e8f0)",
                               }}
                             >
-                              <span>
-                                預覽模式：{previewEngine === "native" ? "原生瀏覽器" : "Google Docs"}
-                                {" · "}
-                                <button
-                                  type="button"
-                                  onClick={() => setPreviewEngine((e) => (e === "native" ? "google" : "native"))}
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    color: "var(--ncu-primary, #0284c7)",
-                                    padding: 0,
-                                    cursor: "pointer",
-                                    fontSize: 11.5,
-                                    textDecoration: "underline",
-                                  }}
-                                >
-                                  {previewEngine === "native" ? "若空白切換 Google 引擎" : "切換回原生引擎"}
-                                </button>
-                              </span>
-
                               <a
                                 href={att.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{
+                                  fontSize: 12.5,
                                   color: "var(--ncu-primary, #0284c7)",
                                   textDecoration: "none",
                                   fontWeight: 600,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
                                 }}
                               >
-                                新分頁全螢幕 ↗
+                                新分頁全螢幕開啟 <IonIcon icon={openOutline} style={{ fontSize: 13 }} />
                               </a>
                             </div>
                           </div>
