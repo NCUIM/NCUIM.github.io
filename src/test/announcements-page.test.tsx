@@ -115,7 +115,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
 
     await waitFor(() => {
       expect(screen.getByText("公告詳情")).toBeDefined();
-      expect(screen.getByText("科目表下載.pdf")).toBeDefined();
+      expect(screen.getAllByText("科目表下載.pdf").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("2026-10-08")).toBeDefined();
     });
   });
