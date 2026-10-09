@@ -18,6 +18,7 @@ import {
   attachOutline,
   downloadOutline,
   warningOutline,
+  refreshOutline,
 } from "ionicons/icons";
 import {
   fetchDepartmentNewsDetail,
@@ -78,6 +79,27 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
         <IonToolbar>
           <IonTitle>公告詳情</IonTitle>
           <IonButtons slot="end">
+            <IonButton
+              onClick={() => {
+                if (newsId) {
+                  setLoading(true);
+                  setError(null);
+                  fetchDepartmentNewsDetail(newsId, true)
+                    .then((data) => {
+                      setDetail(data);
+                      setLoading(false);
+                    })
+                    .catch((err: unknown) => {
+                      setError(err instanceof Error ? err.message : "重試失敗");
+                      setLoading(false);
+                    });
+                }
+              }}
+              title="重新整理"
+              aria-label="重新整理"
+            >
+              <IonIcon slot="icon-only" icon={refreshOutline} />
+            </IonButton>
             {detail?.originalUrl && (
               <IonButton
                 href={detail.originalUrl}

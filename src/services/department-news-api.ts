@@ -48,8 +48,21 @@ export const DEPARTMENT_NEWS_CONFIG = {
   baseUrl: "https://ncuim-news-proxy.g1014308.workers.dev",
   listTtlMs: 10 * 60 * 1000, // 10 minutes
   detailTtlMs: 60 * 60 * 1000, // 60 minutes
-  storagePrefix: "ncuim_news_cache_",
+  storagePrefix: "ncuim_news_v3_",
 };
+
+// Clean legacy caches from previous versions
+try {
+  if (typeof localStorage !== "undefined") {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("ncuim_news_cache_") || key.startsWith("ncuim_news_v2_")) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
+} catch {
+  // Ignore localStorage issues
+}
 
 interface CacheEnvelope<T> {
   timestamp: number;
@@ -147,7 +160,9 @@ export async function fetchDepartmentNewsDetail(
       cacheKey,
       DEPARTMENT_NEWS_CONFIG.detailTtlMs
     );
-    if (cached) return cached;
+    if (cached && (cached.contentHtml?.trim() || (cached.attachments && cached.attachments.length > 0))) {
+      return cached;
+    }
   }
 
   const url = `${DEPARTMENT_NEWS_CONFIG.baseUrl}/?id=${encodeURIComponent(id)}`;
