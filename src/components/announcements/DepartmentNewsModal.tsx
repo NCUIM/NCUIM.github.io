@@ -75,9 +75,14 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
           const firstPdf = data.attachments?.find((att) => isPdf(att.name, att.url));
           if (firstPdf) {
             setSelectedPdf(firstPdf);
-            setIsPdfExpanded(true);
+            const textOnly = (data.contentHtml || "")
+              .replace(/(?:<\/div>\s*)?<b>\s*附件[：:]\s*<\/b>[\s\S]*$/i, "")
+              .replace(/<[^>]+>/g, "")
+              .trim();
+            setIsPdfExpanded(textOnly.length < 50);
           } else {
             setSelectedPdf(null);
+            setIsPdfExpanded(false);
           }
         }
       })
@@ -111,9 +116,14 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                       const firstPdf = data.attachments?.find((att) => isPdf(att.name, att.url));
                       if (firstPdf) {
                         setSelectedPdf(firstPdf);
-                        setIsPdfExpanded(true);
+                        const textOnly = (data.contentHtml || "")
+                          .replace(/(?:<\/div>\s*)?<b>\s*附件[：:]\s*<\/b>[\s\S]*$/i, "")
+                          .replace(/<[^>]+>/g, "")
+                          .trim();
+                        setIsPdfExpanded(textOnly.length < 50);
                       } else {
                         setSelectedPdf(null);
+                        setIsPdfExpanded(false);
                       }
                     })
                     .catch((err: unknown) => {
@@ -146,13 +156,31 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
 
       <IonContent className="ion-padding">
         <style>{`
+          .ncu-announcement-html-body {
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--ncu-ink, #0f172a);
+          }
+          .ncu-announcement-html-body * {
+            max-width: 100% !important;
+            background-color: transparent !important;
+          }
+          .ncu-announcement-html-body p {
+            margin: 0 0 0.85em;
+          }
+          .ncu-announcement-html-body p:last-child {
+            margin-bottom: 0;
+          }
+          .ncu-announcement-html-body span.text-big {
+            font-size: 1.05em !important;
+          }
           .ncu-announcement-html-body img {
             max-width: 100% !important;
             height: auto !important;
             border-radius: 8px;
             margin: 14px auto;
             display: block;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
           }
           .ncu-announcement-html-body figure.image {
             margin: 14px 0;
@@ -162,17 +190,36 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
             width: 100% !important;
             max-width: 100% !important;
             border-collapse: collapse;
-            margin: 12px 0;
-            font-size: 14px;
+            margin: 14px 0;
+            font-size: 13.5px;
+            border: 1px solid var(--ncu-border, #e2e8f0);
+            border-radius: 6px;
+            overflow: hidden;
           }
-          .ncu-announcement-html-body table th,
+          .ncu-announcement-html-body table th {
+            background-color: var(--ncu-surface-secondary, #f8fafc) !important;
+            color: var(--ncu-text-main, #334155);
+            font-weight: 600;
+            border: 1px solid var(--ncu-border, #e2e8f0);
+            padding: 8px 12px;
+          }
           .ncu-announcement-html-body table td {
-            border: 1px solid var(--ncu-border, #cbd5e1);
-            padding: 8px 10px;
+            border: 1px solid var(--ncu-border, #e2e8f0);
+            padding: 8px 12px;
+          }
+          .ncu-announcement-html-body ol,
+          .ncu-announcement-html-body ul {
+            padding-left: 22px;
+            margin: 10px 0;
+          }
+          .ncu-announcement-html-body li {
+            margin-bottom: 5px;
           }
           .ncu-announcement-html-body a {
             color: var(--ncu-primary, #0284c7);
             word-break: break-all;
+            text-decoration: underline;
+            text-underline-offset: 2px;
           }
         `}</style>
         {loading && (
@@ -339,169 +386,13 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
               );
             })()}
 
-            {/* Interactive PDF Preview Section */}
-            {selectedPdf && (
-              <div
-                style={{
-                  marginTop: 24,
-                  borderRadius: 12,
-                  border: "1px solid var(--ncu-border, #cbd5e1)",
-                  overflow: "hidden",
-                  background: "var(--ncu-surface-secondary, #f8fafc)",
-                  boxShadow: "0 2px 10px rgba(0, 0, 0, 0.05)",
-                }}
-              >
-                {/* PDF Preview Toolbar */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "10px 14px",
-                    background: "#fff",
-                    borderBottom: "1px solid var(--ncu-border, #e2e8f0)",
-                    flexWrap: "wrap",
-                    gap: 8,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      minWidth: 0,
-                      flex: 1,
-                    }}
-                  >
-                    <IonIcon
-                      icon={documentTextOutline}
-                      style={{ fontSize: 20, color: "var(--ncu-primary, #0284c7)", flexShrink: 0 }}
-                    />
-                    <div style={{ minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: 13.5,
-                          fontWeight: 700,
-                          color: "var(--ncu-text-main, #1e293b)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                        title={selectedPdf.name}
-                      >
-                        {selectedPdf.name}
-                      </div>
-                      <div style={{ fontSize: 11, color: "var(--ncu-muted, #64748b)" }}>
-                        PDF 線上即時預覽（{previewEngine === "native" ? "原生瀏覽器引擎" : "Google Docs 引擎"}）
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <IonButton
-                      fill="clear"
-                      size="small"
-                      onClick={() => setPreviewEngine((e) => (e === "native" ? "google" : "native"))}
-                      title="若頁面空白可切換預覽引擎 (原生 / Google Docs)"
-                      style={{ fontSize: 12, height: 30 }}
-                    >
-                      <IonIcon slot="start" icon={swapHorizontalOutline} />
-                      {previewEngine === "native" ? "Google 引擎" : "原生引擎"}
-                    </IonButton>
-
-                    <IonButton
-                      fill="clear"
-                      size="small"
-                      href={selectedPdf.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="在新分頁全螢幕開啟"
-                      style={{ height: 30 }}
-                    >
-                      <IonIcon slot="icon-only" icon={openOutline} />
-                    </IonButton>
-
-                    <IonButton
-                      fill="clear"
-                      size="small"
-                      href={selectedPdf.url}
-                      download={selectedPdf.name}
-                      title="下載 PDF"
-                      style={{ height: 30 }}
-                    >
-                      <IonIcon slot="icon-only" icon={downloadOutline} />
-                    </IonButton>
-
-                    <IonButton
-                      fill="clear"
-                      size="small"
-                      onClick={() => setIsPdfExpanded((v) => !v)}
-                      title={isPdfExpanded ? "收合預覽" : "展開預覽"}
-                      style={{ height: 30 }}
-                    >
-                      <IonIcon slot="icon-only" icon={isPdfExpanded ? chevronUpOutline : chevronDownOutline} />
-                    </IonButton>
-                  </div>
-                </div>
-
-                {/* PDF Viewer Iframe */}
-                {isPdfExpanded && (
-                  <div style={{ width: "100%", overflow: "hidden", position: "relative" }}>
-                    <iframe
-                      src={
-                        previewEngine === "google"
-                          ? `https://docs.google.com/viewer?url=${encodeURIComponent(selectedPdf.url)}&embedded=true`
-                          : `${selectedPdf.url}#view=FitH`
-                      }
-                      title={selectedPdf.name}
-                      scrolling="no"
-                      style={{
-                        width: "100%",
-                        height: "min(72vh, 600px)",
-                        border: "none",
-                        display: "block",
-                        background: "#fff",
-                        overflow: "hidden",
-                      }}
-                    />
-                    <div
-                      style={{
-                        padding: "8px 14px",
-                        fontSize: 12,
-                        color: "var(--ncu-muted, #64748b)",
-                        background: "#f8fafc",
-                        borderTop: "1px solid var(--ncu-border, #e2e8f0)",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      <span>💡 免安裝 PDF 閱讀器，支援滑動翻頁與縮放。</span>
-                      <a
-                        href={selectedPdf.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: "var(--ncu-primary, #0284c7)", textDecoration: "none", fontWeight: 600 }}
-                      >
-                        新分頁全螢幕檢視 ↗
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Attachments Section */}
+            {/* Unified Attachments & In-App Reader */}
             {detail.attachments && detail.attachments.length > 0 && (
-              <div
+              <section
                 style={{
-                  marginTop: 24,
-                  padding: "16px",
-                  background: "var(--ncu-surface-secondary, #f8fafc)",
-                  borderRadius: 10,
-                  border: "1px solid var(--ncu-border, #e2e8f0)",
+                  marginTop: 28,
+                  paddingTop: 20,
+                  borderTop: "1px solid var(--ncu-border, #e2e8f0)",
                 }}
               >
                 <div
@@ -509,16 +400,18 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: 700,
-                    color: "var(--ncu-ink)",
-                    marginBottom: 10,
+                    color: "var(--ncu-muted, #64748b)",
+                    letterSpacing: "0.03em",
+                    marginBottom: 12,
                   }}
                 >
-                  <IonIcon icon={attachOutline} style={{ fontSize: 18 }} />
-                  <span>附件清單 ({detail.attachments.length})</span>
+                  <IonIcon icon={attachOutline} style={{ fontSize: 16 }} />
+                  <span>相關附件 ({detail.attachments.length})</span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {detail.attachments.map((att, idx) => {
                     const isAttPdf = isPdf(att.name, att.url);
                     const isCurrentPreview =
@@ -528,87 +421,198 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                       <div
                         key={`${att.name}-${idx}`}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          padding: "10px 14px",
-                          background: "#fff",
-                          borderRadius: 8,
+                          borderRadius: 10,
                           border: isCurrentPreview
                             ? "1px solid var(--ncu-primary, #0284c7)"
                             : "1px solid var(--ncu-border, #e2e8f0)",
-                          gap: 10,
+                          background: "#fff",
+                          overflow: "hidden",
+                          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                          boxShadow: isCurrentPreview ? "0 2px 10px rgba(2, 132, 199, 0.08)" : "none",
                         }}
                       >
+                        {/* Attachment Header Row */}
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 8,
-                            minWidth: 0,
-                            flex: 1,
+                            justifyContent: "space-between",
+                            padding: "10px 14px",
+                            background: isCurrentPreview ? "rgba(2, 132, 199, 0.04)" : "#fff",
+                            gap: 12,
                           }}
                         >
-                          <IonIcon
-                            icon={isAttPdf ? documentTextOutline : attachOutline}
+                          <div
                             style={{
-                              fontSize: 18,
-                              color: isAttPdf ? "var(--ncu-primary)" : "var(--ncu-muted)",
-                              flexShrink: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              minWidth: 0,
+                              flex: 1,
                             }}
-                          />
-                          <span
-                            style={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              fontSize: 13.5,
-                              fontWeight: 600,
-                              color: "var(--ncu-text-main, #1e293b)",
-                            }}
-                            title={att.name || `附件 ${idx + 1}`}
                           >
-                            {att.name || `附件 ${idx + 1}`}
-                          </span>
+                            <IonIcon
+                              icon={isAttPdf ? documentTextOutline : attachOutline}
+                              style={{
+                                fontSize: 20,
+                                color: isAttPdf ? "var(--ncu-primary, #0284c7)" : "var(--ncu-muted)",
+                                flexShrink: 0,
+                              }}
+                            />
+                            <div style={{ minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontSize: 14,
+                                  fontWeight: 600,
+                                  color: "var(--ncu-text-main, #1e293b)",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                                title={att.name || `附件 ${idx + 1}`}
+                              >
+                                {att.name || `附件 ${idx + 1}`}
+                              </div>
+                              {isAttPdf && (
+                                <div style={{ fontSize: 11.5, color: "var(--ncu-muted, #64748b)" }}>
+                                  PDF 文件 · 線上即時閱讀
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                            {isAttPdf && (
+                              <IonButton
+                                fill={isCurrentPreview ? "solid" : "outline"}
+                                size="small"
+                                onClick={() => {
+                                  if (selectedPdf?.url === att.url) {
+                                    setIsPdfExpanded((v) => !v);
+                                  } else {
+                                    setSelectedPdf(att);
+                                    setIsPdfExpanded(true);
+                                  }
+                                }}
+                                style={{
+                                  fontSize: 12.5,
+                                  height: 30,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                <IonIcon slot="start" icon={isCurrentPreview ? chevronUpOutline : eyeOutline} />
+                                {isCurrentPreview ? "收合閱讀" : "線上閱讀"}
+                              </IonButton>
+                            )}
+
+                            <IonButton
+                              fill="clear"
+                              size="small"
+                              href={att.url}
+                              download={att.name}
+                              title="下載檔案"
+                              style={{ height: 30 }}
+                            >
+                              <IonIcon slot="icon-only" icon={downloadOutline} />
+                            </IonButton>
+
+                            {isAttPdf && (
+                              <IonButton
+                                fill="clear"
+                                size="small"
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="在新分頁開啟"
+                                style={{ height: 30 }}
+                              >
+                                <IonIcon slot="icon-only" icon={openOutline} />
+                              </IonButton>
+                            )}
+                          </div>
                         </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                          {isAttPdf && (
-                            <IonButton
-                              fill={isCurrentPreview ? "solid" : "outline"}
-                              size="small"
-                              onClick={() => {
-                                if (selectedPdf?.url === att.url) {
-                                  setIsPdfExpanded((v) => !v);
-                                } else {
-                                  setSelectedPdf(att);
-                                  setIsPdfExpanded(true);
-                                }
-                              }}
-                              style={{ fontSize: 12, height: 28 }}
-                            >
-                              <IonIcon slot="start" icon={eyeOutline} />
-                              {isCurrentPreview ? "預覽中" : "線上預覽"}
-                            </IonButton>
-                          )}
-                          <IonButton
-                            fill="clear"
-                            size="small"
-                            href={att.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download={att.name}
-                            title="下載檔案"
-                            style={{ height: 28 }}
+                        {/* Inline PDF Viewer Frame */}
+                        {isCurrentPreview && (
+                          <div
+                            style={{
+                              borderTop: "1px solid var(--ncu-border, #e2e8f0)",
+                              background: "#f8fafc",
+                            }}
                           >
-                            <IonIcon slot="icon-only" icon={downloadOutline} />
-                          </IonButton>
-                        </div>
+                            <div style={{ width: "100%", overflow: "hidden", position: "relative" }}>
+                              <iframe
+                                src={
+                                  previewEngine === "google"
+                                    ? `https://docs.google.com/viewer?url=${encodeURIComponent(att.url)}&embedded=true`
+                                    : `${att.url}#view=FitH`
+                                }
+                                title={att.name}
+                                scrolling="no"
+                                style={{
+                                  width: "100%",
+                                  height: "min(68vh, 520px)",
+                                  border: "none",
+                                  display: "block",
+                                  background: "#fff",
+                                  overflow: "hidden",
+                                }}
+                              />
+                            </div>
+
+                            {/* Minimalist Reader Footer */}
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                padding: "6px 12px",
+                                fontSize: 11.5,
+                                color: "var(--ncu-muted, #64748b)",
+                                background: "#f1f5f9",
+                                borderTop: "1px solid var(--ncu-border, #e2e8f0)",
+                              }}
+                            >
+                              <span>
+                                預覽模式：{previewEngine === "native" ? "原生瀏覽器" : "Google Docs"}
+                                {" · "}
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewEngine((e) => (e === "native" ? "google" : "native"))}
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    color: "var(--ncu-primary, #0284c7)",
+                                    padding: 0,
+                                    cursor: "pointer",
+                                    fontSize: 11.5,
+                                    textDecoration: "underline",
+                                  }}
+                                >
+                                  {previewEngine === "native" ? "若空白切換 Google 引擎" : "切換回原生引擎"}
+                                </button>
+                              </span>
+
+                              <a
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  color: "var(--ncu-primary, #0284c7)",
+                                  textDecoration: "none",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                新分頁全螢幕 ↗
+                              </a>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
-              </div>
+              </section>
             )}
           </article>
         )}
