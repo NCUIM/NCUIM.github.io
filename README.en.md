@@ -36,9 +36,6 @@ It is built as a pure client-side single-page application (SPA). All personal co
 - **Physical Room Layouts**: Interactive floor plans for 209 (20 seats), 310 (27 seats), 313 (23 seats), and 919 (9 seats).
 - **Seat & Member Search**: Instant highlighting by student name or advisor.
 
-### Student Profile & Badge (`/cards`)
-- **Personal Digital Badge**: Display assigned lab and seat identification with optional GitHub profile integration.
-- **Event Check-in QR Code**: Interactive check-in barcode for departmental events and orientation.
 
 ### Department Announcements (`/announcements`)
 - **Official Real-time Sync**: Seamlessly synchronized with the official NCUIM department website via edge proxy.

@@ -1,9 +1,8 @@
 import { IonTabs, IonRouterOutlet, IonTabBar, IonTabButton, IonIcon, IonLabel } from "@ionic/react";
-import { Route } from "react-router-dom";
-import { home, book, person } from "ionicons/icons";
+import { Route, Redirect } from "react-router-dom";
+import { home, book, newspaper } from "ionicons/icons";
 
 import HomePage from "./pages/HomePage";
-import CardsPage from "./pages/CardsPage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
 import SeatsPage from "./pages/SeatsPage";
 import TimetablePage from "./pages/TimetablePage";
@@ -17,9 +16,13 @@ const TabsShell = () => (
     <IonRouterOutlet>
       <Route exact path="/" component={HomePage} tab="home" />
       <Route exact path="/guide" component={GuidePage} tab="guide" />
-      <Route exact path="/cards" component={CardsPage} tab="user" />
-      <Route exact path="/announcements" component={AnnouncementsPage} tab="home" />
-      <Route exact path="/leaderboard" component={AnnouncementsPage} tab="home" />
+      <Route exact path="/announcements" component={AnnouncementsPage} tab="announcements" />
+      <Route exact path="/cards">
+        <Redirect to="/announcements" />
+      </Route>
+      <Route exact path="/leaderboard">
+        <Redirect to="/announcements" />
+      </Route>
       <Route exact path="/seats" component={SeatsPage} tab="home" />
       <Route exact path="/timetable" component={TimetablePage} tab="home" />
       <Route exact path="/food" component={FoodPage} tab="home" />
@@ -34,9 +37,9 @@ const TabsShell = () => (
         <IonIcon icon={book} />
         <IonLabel>指南</IonLabel>
       </IonTabButton>
-      <IonTabButton tab="user" href="/cards">
-        <IonIcon icon={person} />
-        <IonLabel>個人</IonLabel>
+      <IonTabButton tab="announcements" href="/announcements">
+        <IonIcon icon={newspaper} />
+        <IonLabel>公告</IonLabel>
       </IonTabButton>
     </IonTabBar>
   </IonTabs>
