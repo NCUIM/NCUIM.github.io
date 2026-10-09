@@ -480,51 +480,57 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                           </div>
 
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                            {isAttPdf && (
+                            {isAttPdf ? (
+                              <>
+                                <IonButton
+                                  fill={isCurrentPreview ? "solid" : "outline"}
+                                  size="small"
+                                  onClick={() => {
+                                    if (selectedPdf?.url === att.url) {
+                                      setIsPdfExpanded((v) => !v);
+                                    } else {
+                                      setSelectedPdf(att);
+                                      setIsPdfExpanded(true);
+                                    }
+                                  }}
+                                  style={{
+                                    fontSize: 12.5,
+                                    height: 30,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  <IonIcon slot="start" icon={isCurrentPreview ? chevronUpOutline : eyeOutline} />
+                                  {isCurrentPreview ? "收合" : "閱讀"}
+                                </IonButton>
+
+                                <IonButton
+                                  fill="clear"
+                                  size="small"
+                                  href={att.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="在新分頁開啟原始檔案"
+                                  style={{ height: 30 }}
+                                >
+                                  <IonIcon slot="icon-only" icon={openOutline} />
+                                </IonButton>
+                              </>
+                            ) : (
                               <IonButton
-                                fill={isCurrentPreview ? "solid" : "outline"}
+                                fill="outline"
                                 size="small"
-                                onClick={() => {
-                                  if (selectedPdf?.url === att.url) {
-                                    setIsPdfExpanded((v) => !v);
-                                  } else {
-                                    setSelectedPdf(att);
-                                    setIsPdfExpanded(true);
-                                  }
-                                }}
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download={att.name}
                                 style={{
                                   fontSize: 12.5,
                                   height: 30,
                                   fontWeight: 600,
                                 }}
                               >
-                                <IonIcon slot="start" icon={isCurrentPreview ? chevronUpOutline : eyeOutline} />
-                                {isCurrentPreview ? "收合閱讀" : "線上閱讀"}
-                              </IonButton>
-                            )}
-
-                            <IonButton
-                              fill="clear"
-                              size="small"
-                              href={att.url}
-                              download={att.name}
-                              title="下載檔案"
-                              style={{ height: 30 }}
-                            >
-                              <IonIcon slot="icon-only" icon={downloadOutline} />
-                            </IonButton>
-
-                            {isAttPdf && (
-                              <IonButton
-                                fill="clear"
-                                size="small"
-                                href={att.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title="在新分頁開啟"
-                                style={{ height: 30 }}
-                              >
-                                <IonIcon slot="icon-only" icon={openOutline} />
+                                <IonIcon slot="start" icon={downloadOutline} />
+                                下載
                               </IonButton>
                             )}
                           </div>
@@ -535,53 +541,25 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                           <div
                             style={{
                               borderTop: "1px solid var(--ncu-border, #e2e8f0)",
-                              background: "#f8fafc",
+                              background: "#fff",
+                              width: "100%",
+                              overflow: "hidden",
+                              position: "relative",
                             }}
                           >
-                            <div style={{ width: "100%", overflow: "hidden", position: "relative" }}>
-                              <iframe
-                                src={`${att.url}#view=FitH`}
-                                title={att.name}
-                                scrolling="no"
-                                style={{
-                                  width: "100%",
-                                  height: "min(68vh, 520px)",
-                                  border: "none",
-                                  display: "block",
-                                  background: "#fff",
-                                  overflow: "hidden",
-                                }}
-                              />
-                            </div>
-
-                            {/* Clean Reader Footer */}
-                            <div
+                            <iframe
+                              src={`${att.url}#view=FitH`}
+                              title={att.name}
+                              scrolling="no"
                               style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "flex-end",
-                                padding: "8px 14px",
-                                background: "#f8fafc",
-                                borderTop: "1px solid var(--ncu-border, #e2e8f0)",
+                                width: "100%",
+                                height: "min(68vh, 520px)",
+                                border: "none",
+                                display: "block",
+                                background: "#fff",
+                                overflow: "hidden",
                               }}
-                            >
-                              <a
-                                href={att.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  fontSize: 12.5,
-                                  color: "var(--ncu-primary, #0284c7)",
-                                  textDecoration: "none",
-                                  fontWeight: 600,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                }}
-                              >
-                                新分頁全螢幕開啟 <IonIcon icon={openOutline} style={{ fontSize: 13 }} />
-                              </a>
-                            </div>
+                            />
                           </div>
                         )}
                       </div>
