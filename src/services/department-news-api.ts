@@ -157,8 +157,19 @@ export async function fetchDepartmentNewsDetail(
     if (!res.ok) {
       throw new Error(`公告內容載入失敗 (HTTP ${res.status})`);
     }
-    const data = (await res.json()) as DepartmentNewsDetail;
-    saveToCache(cacheKey, data);
+    const rawData = (await res.json()) as DepartmentNewsDetail;
+    const contentHtml = (rawData.contentHtml || "")
+      .replace(/src=["']\/(?!\/)/g, 'src="https://im.mgt.ncu.edu.tw/')
+      .replace(/href=["']\/(?!\/)/g, 'href="https://im.mgt.ncu.edu.tw/');
+
+    const data: DepartmentNewsDetail = {
+      ...rawData,
+      contentHtml,
+    };
+
+    if (data.contentHtml || (data.attachments && data.attachments.length > 0)) {
+      saveToCache(cacheKey, data);
+    }
     return data;
   } catch (err) {
     const fallback = getStaleCache<DepartmentNewsDetail>(cacheKey);

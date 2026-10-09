@@ -96,6 +96,36 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
       </IonHeader>
 
       <IonContent className="ion-padding">
+        <style>{`
+          .ncu-announcement-html-body img {
+            max-width: 100% !important;
+            height: auto !important;
+            border-radius: 8px;
+            margin: 14px auto;
+            display: block;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          }
+          .ncu-announcement-html-body figure.image {
+            margin: 14px 0;
+            text-align: center;
+          }
+          .ncu-announcement-html-body table {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 14px;
+          }
+          .ncu-announcement-html-body table th,
+          .ncu-announcement-html-body table td {
+            border: 1px solid var(--ncu-border, #cbd5e1);
+            padding: 8px 10px;
+          }
+          .ncu-announcement-html-body a {
+            color: var(--ncu-primary, #0284c7);
+            word-break: break-all;
+          }
+        `}</style>
         {loading && (
           <div
             style={{
@@ -200,18 +230,55 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
             </div>
 
             {/* Post Content */}
-            <div
-              className="ncu-announcement-html-body"
-              style={{
-                fontSize: 15,
-                lineHeight: 1.7,
-                color: "var(--ncu-text-main, #1e293b)",
-                overflowX: "auto",
-                wordBreak: "break-word",
-              }}
-              // Content is fetched from our own controlled worker proxy of official NCUIM department website
-              dangerouslySetInnerHTML={{ __html: detail.contentHtml }}
-            />
+            {(() => {
+              const sanitizedHtml = (detail.contentHtml || "")
+                .replace(/src=["']\/(?!\/)/g, 'src="https://im.mgt.ncu.edu.tw/')
+                .replace(/href=["']\/(?!\/)/g, 'href="https://im.mgt.ncu.edu.tw/');
+
+              if (!sanitizedHtml.trim()) {
+                return (
+                  <div
+                    style={{
+                      padding: "24px 16px",
+                      textAlign: "center",
+                      background: "var(--ncu-surface-secondary, #f8fafc)",
+                      borderRadius: 12,
+                      border: "1px dashed var(--ncu-border, #cbd5e1)",
+                      margin: "20px 0",
+                    }}
+                  >
+                    <p style={{ margin: "0 0 12px", color: "var(--ncu-muted)", fontSize: 14 }}>
+                      此公告內文為圖片、外部表單或附件格式，請點擊下方按鈕前往官網閱讀完整內容。
+                    </p>
+                    {detail.originalUrl && (
+                      <IonButton
+                        href={detail.originalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        size="small"
+                        style={{ fontWeight: 700 }}
+                      >
+                        前往系網原文 ↗
+                      </IonButton>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  className="ncu-announcement-html-body"
+                  style={{
+                    fontSize: 15,
+                    lineHeight: 1.7,
+                    color: "var(--ncu-text-main, #1e293b)",
+                    overflowX: "auto",
+                    wordBreak: "break-word",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                />
+              );
+            })()}
 
             {/* Attachments Section */}
             {detail.attachments && detail.attachments.length > 0 && (
