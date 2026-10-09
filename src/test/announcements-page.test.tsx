@@ -59,8 +59,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
 
     render(<AnnouncementsPage />);
 
-    expect(screen.getByText("系網即時公告")).toBeDefined();
-    expect(screen.getByText("系網公告專區")).toBeDefined();
+    expect(screen.getByText("系網公告")).toBeDefined();
 
     await waitFor(() => {
       expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();

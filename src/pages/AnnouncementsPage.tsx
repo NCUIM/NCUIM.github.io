@@ -5,23 +5,18 @@ import {
   IonToolbar,
   IonTitle,
   IonButtons,
-  IonBackButton,
   IonButton,
   IonContent,
   IonIcon,
-  IonBadge,
   IonSpinner,
   IonRefresher,
   IonRefresherContent,
   IonSearchbar,
-  IonCard,
-  IonCardContent,
   type RefresherEventDetail,
 } from "@ionic/react";
 import {
   refreshOutline,
   openOutline,
-  newspaperOutline,
   chevronBackOutline,
   chevronForwardOutline,
   warningOutline,
@@ -101,24 +96,23 @@ export const AnnouncementsPage: React.FC = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/" text="返回" />
-          </IonButtons>
-          <IonTitle>系網即時公告</IonTitle>
+          <IonTitle>系網公告</IonTitle>
           <IonButtons slot="end">
+            <IonButton
+              onClick={() => loadNews(activeCategory, currentPage, true)}
+              title="重新整理"
+              aria-label="重新整理"
+            >
+              <IonIcon slot="icon-only" icon={refreshOutline} />
+            </IonButton>
             <IonButton
               href="https://im.mgt.ncu.edu.tw"
               target="_blank"
               rel="noopener noreferrer"
               title="前往中央資管系官網"
+              aria-label="前往中央資管系官網"
             >
               <IonIcon slot="icon-only" icon={openOutline} />
-            </IonButton>
-            <IonButton
-              onClick={() => loadNews(activeCategory, currentPage, true)}
-              title="重新整理"
-            >
-              <IonIcon slot="icon-only" icon={refreshOutline} />
             </IonButton>
           </IonButtons>
         </IonToolbar>
@@ -129,62 +123,7 @@ export const AnnouncementsPage: React.FC = () => {
           <IonRefresherContent pullingText="下拉重新整理" refreshingSpinner="crescent" />
         </IonRefresher>
 
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 16px 0" }}>
-          {/* Header Banner */}
-          <div
-            style={{
-              padding: "16px 18px",
-              marginBottom: 16,
-              borderRadius: "var(--ncu-radius-lg, 14px)",
-              background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              boxShadow: "var(--ncu-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1))",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#bae6fd",
-                }}
-              >
-                <IonIcon icon={newspaperOutline} style={{ fontSize: 16 }} />
-                <span>國立中央大學資訊管理學系</span>
-              </div>
-              <h1
-                style={{
-                  fontSize: 20,
-                  fontWeight: 800,
-                  margin: "6px 0 2px",
-                  color: "#ffffff",
-                }}
-              >
-                系網公告專區
-              </h1>
-              <p style={{ margin: 0, fontSize: 12.5, color: "#e0f2fe" }}>
-                即時串接官網公告 · 分類篩選與內文檢視
-              </p>
-            </div>
-            <IonBadge
-              color="light"
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                padding: "6px 10px",
-                borderRadius: 8,
-              }}
-            >
-              {activeCategory}
-            </IonBadge>
-          </div>
-
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "16px 16px 0" }}>
           {/* Category Chips Scroll */}
           <div
             role="tablist"
@@ -193,8 +132,8 @@ export const AnnouncementsPage: React.FC = () => {
               display: "flex",
               gap: 8,
               overflowX: "auto",
-              paddingBottom: 8,
-              marginBottom: 12,
+              paddingBottom: 10,
+              marginBottom: 10,
               scrollbarWidth: "none",
             }}
           >
@@ -208,15 +147,13 @@ export const AnnouncementsPage: React.FC = () => {
                   aria-selected={isSelected}
                   onClick={() => handleCategoryChange(cat)}
                   style={{
-                    padding: "7px 14px",
+                    padding: "6px 14px",
                     borderRadius: 20,
-                    border: isSelected
-                      ? "1.5px solid var(--ncu-primary, #0284c7)"
-                      : "1.5px solid var(--ncu-border, #cbd5e1)",
+                    border: "none",
                     background: isSelected
                       ? "var(--ncu-primary, #0284c7)"
-                      : "var(--ncu-surface, #ffffff)",
-                    color: isSelected ? "#ffffff" : "var(--ncu-ink, #1e293b)",
+                      : "var(--ncu-surface-secondary, #f1f5f9)",
+                    color: isSelected ? "#ffffff" : "var(--ncu-muted, #64748b)",
                     fontSize: 13,
                     fontWeight: isSelected ? 700 : 500,
                     whiteSpace: "nowrap",
@@ -234,7 +171,7 @@ export const AnnouncementsPage: React.FC = () => {
           <IonSearchbar
             value={searchQuery}
             onIonInput={(e) => setSearchQuery(e.detail.value ?? "")}
-            placeholder={`在 ${activeCategory} 中搜尋標題...`}
+            placeholder={`搜尋 ${activeCategory}...`}
             debounce={200}
             style={{ padding: "0 0 12px" }}
           />
@@ -253,7 +190,7 @@ export const AnnouncementsPage: React.FC = () => {
             >
               <IonSpinner name="crescent" color="primary" />
               <span style={{ fontSize: 14, color: "var(--ncu-muted)" }}>
-                正在同步系網最新公告...
+                正在載入公告...
               </span>
             </div>
           )}
@@ -281,102 +218,86 @@ export const AnnouncementsPage: React.FC = () => {
 
           {/* Announcements List */}
           {!loading && !error && filteredItems.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {filteredItems.map((item) => {
                 const isImportant =
                   item.tag.includes("重要") || item.title.includes("【重要】");
                 return (
-                  <IonCard
+                  <div
                     key={item.id}
-                    button
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleOpenDetail(item.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleOpenDetail(item.id);
+                      }
+                    }}
                     style={{
-                      margin: 0,
-                      borderRadius: 12,
-                      border: isImportant
-                        ? "1.5px solid #f59e0b"
-                        : "1px solid var(--ncu-border, #e2e8f0)",
-                      boxShadow: isImportant
-                        ? "0 2px 4px rgba(245, 158, 11, 0.15)"
-                        : "var(--ncu-shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05))",
-                      background: "var(--ncu-surface, #ffffff)",
+                      padding: "13px 16px",
+                      borderRadius: 10,
+                      border: "1px solid var(--ncu-border, #e2e8f0)",
+                      background: "#ffffff",
+                      cursor: "pointer",
+                      transition: "transform 0.1s ease, box-shadow 0.1s ease",
                     }}
                   >
-                    <IonCardContent style={{ padding: "14px 16px" }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                          gap: 10,
-                        }}
-                      >
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              marginBottom: 6,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {item.tag && (
-                              <IonBadge
-                                color={isImportant ? "warning" : "medium"}
-                                style={{
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  padding: "3px 6px",
-                                  borderRadius: 4,
-                                }}
-                              >
-                                {item.tag}
-                              </IonBadge>
-                            )}
-                            <span
-                              style={{
-                                fontSize: 12,
-                                color: "var(--ncu-muted, #64748b)",
-                                fontWeight: 600,
-                              }}
-                            >
-                              #{item.id}
-                            </span>
-                          </div>
-
-                          <h3
-                            style={{
-                              fontSize: 15,
-                              fontWeight: 700,
-                              lineHeight: 1.45,
-                              margin: 0,
-                              color: "var(--ncu-ink, #0f172a)",
-                            }}
-                          >
-                            {item.title}
-                          </h3>
-                        </div>
-
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title="在系網開啟"
-                          onClick={(e) => e.stopPropagation()}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 6,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {isImportant && (
+                        <span
                           style={{
-                            padding: 6,
-                            color: "var(--ncu-muted, #64748b)",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            flexShrink: 0,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            background: "#fef3c7",
+                            color: "#b45309",
                           }}
                         >
-                          <IonIcon icon={openOutline} style={{ fontSize: 18 }} />
-                        </a>
-                      </div>
-                    </IonCardContent>
-                  </IonCard>
+                          重要
+                        </span>
+                      )}
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--ncu-muted, #64748b)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {item.category}
+                      </span>
+                      <span style={{ fontSize: 11, color: "var(--ncu-border, #cbd5e1)" }}>•</span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--ncu-muted, #94a3b8)",
+                        }}
+                      >
+                        #{item.id}
+                      </span>
+                    </div>
+
+                    <h3
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        lineHeight: 1.45,
+                        margin: 0,
+                        color: "var(--ncu-ink, #0f172a)",
+                      }}
+                    >
+                      {item.title}
+                    </h3>
+                  </div>
                 );
               })}
             </div>
