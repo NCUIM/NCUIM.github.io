@@ -446,20 +446,22 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
 
                 {/* PDF Viewer Iframe */}
                 {isPdfExpanded && (
-                  <div>
+                  <div style={{ width: "100%", overflow: "hidden", position: "relative" }}>
                     <iframe
                       src={
                         previewEngine === "google"
                           ? `https://docs.google.com/viewer?url=${encodeURIComponent(selectedPdf.url)}&embedded=true`
-                          : selectedPdf.url
+                          : `${selectedPdf.url}#view=FitH`
                       }
                       title={selectedPdf.name}
+                      scrolling="no"
                       style={{
                         width: "100%",
                         height: "min(72vh, 600px)",
                         border: "none",
                         display: "block",
                         background: "#fff",
+                        overflow: "hidden",
                       }}
                     />
                     <div
