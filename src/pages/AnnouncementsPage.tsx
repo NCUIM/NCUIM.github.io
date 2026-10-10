@@ -31,21 +31,33 @@ import {
 } from "ionicons/icons";
 import {
   fetchDepartmentNews,
+  DEPARTMENT_NEWS_CATEGORIES,
   type DepartmentNewsCategory,
   type DepartmentNewsItem,
 } from "../services/department-news-api";
 import { DepartmentNewsModal } from "../components/announcements/DepartmentNewsModal";
 import { FilterChips, type FilterChipTab } from "../components/common/FilterChips";
 
-const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] = [
-  { id: "最新消息", label: "最新", icon: newspaperOutline, iconColor: "var(--ncu-primary, #0284c7)" },
-  { id: "課程消息", label: "課程", icon: bookOutline, iconColor: "#2563eb" },
-  { id: "演講訊息", label: "演講", icon: micOutline, iconColor: "#7c3aed" },
-  { id: "工讀獎學金", label: "獎助", icon: schoolOutline, iconColor: "#d97706" },
-  { id: "實習與企業徵才", label: "徵才", icon: briefcaseOutline, iconColor: "var(--ncu-success, #0f766e)" },
-  { id: "榮譽榜", label: "榮譽", icon: trophyOutline, iconColor: "#e11d48" },
-  { id: "其他活動", label: "活動", icon: extensionPuzzleOutline, iconColor: "#64748b" },
-];
+const CATEGORY_CHIP_META: Record<
+  DepartmentNewsCategory,
+  { label: string; icon: string; iconColor: string }
+> = {
+  "最新消息": { label: "最新", icon: newspaperOutline, iconColor: "var(--ncu-primary, #0284c7)" },
+  "課程消息": { label: "課程", icon: bookOutline, iconColor: "#2563eb" },
+  "演講訊息": { label: "演講", icon: micOutline, iconColor: "#7c3aed" },
+  "工讀獎學金": { label: "獎助工讀", icon: schoolOutline, iconColor: "#d97706" },
+  "實習與企業徵才": { label: "實習徵才", icon: briefcaseOutline, iconColor: "var(--ncu-success, #0f766e)" },
+  "榮譽榜": { label: "榮譽", icon: trophyOutline, iconColor: "#e11d48" },
+  "其他活動": { label: "其他活動", icon: extensionPuzzleOutline, iconColor: "#64748b" },
+};
+
+const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] =
+  DEPARTMENT_NEWS_CATEGORIES.map((cat) => ({
+    id: cat,
+    label: CATEGORY_CHIP_META[cat].label,
+    icon: CATEGORY_CHIP_META[cat].icon,
+    iconColor: CATEGORY_CHIP_META[cat].iconColor,
+  }));
 
 export const AnnouncementsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<DepartmentNewsCategory>("最新消息");

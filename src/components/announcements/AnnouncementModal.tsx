@@ -56,12 +56,12 @@ const CATEGORY_TAB_CONFIG: Record<
   { label: string; icon: string; iconColor: string }
 > = {
   all: { label: "全部", icon: gridOutline, iconColor: "var(--ncu-primary, #0284c7)" },
-  event: { label: "迎新", icon: sparklesOutline, iconColor: "#f59e0b" },
+  event: { label: "活動", icon: sparklesOutline, iconColor: "#f59e0b" },
   system: { label: "系統", icon: constructOutline, iconColor: "#64748b" },
   general: { label: "一般", icon: megaphoneOutline, iconColor: "var(--ncu-primary, #0284c7)" },
   course: { label: "選課", icon: bookOutline, iconColor: "#2563eb" },
   department: { label: "系所", icon: schoolOutline, iconColor: "#7c3aed" },
-  career: { label: "職涯", icon: briefcaseOutline, iconColor: "#0f766e" },
+  career: { label: "獎助職涯", icon: briefcaseOutline, iconColor: "#0f766e" },
 };
 
 const isTodayAnnouncement = (item: AnnouncementItem): boolean => {
