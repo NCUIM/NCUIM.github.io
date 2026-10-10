@@ -53,28 +53,57 @@ const isPreviewable = (name: string, url: string = ""): boolean => {
 
 export const isMobileDevice = (): boolean => {
   if (typeof window === "undefined") return false;
-  try {
-    if (isPlatform("mobile") || isPlatform("android") || isPlatform("ios")) {
-      return true;
-    }
-  } catch {
-    // Ignore in non-browser or mock test environments
+  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+    return true;
   }
   const hasTouchScreen =
-    (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0) ||
-    "ontouchstart" in window;
+    typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
   const isNarrowScreen =
     typeof window.matchMedia === "function" &&
     window.matchMedia("(max-width: 768px)").matches;
-  const isMobileUserAgent =
-    typeof navigator !== "undefined" &&
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  return (hasTouchScreen && isNarrowScreen) || isMobileUserAgent;
+  return hasTouchScreen && isNarrowScreen;
+};
+
+export const isSafePublicPdfUrl = (urlStr: string): boolean => {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.username || parsed.password) {
+      return false;
+    }
+    const sensitiveKeys = [
+      "token",
+      "auth",
+      "secret",
+      "password",
+      "apikey",
+      "access_token",
+      "session",
+      "sig",
+      "signature",
+    ];
+    for (const key of sensitiveKeys) {
+      if (parsed.searchParams.has(key)) {
+        return false;
+      }
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    return (
+      hostname === "im.mgt.ncu.edu.tw" ||
+      hostname.endsWith(".ncu.edu.tw") ||
+      hostname.endsWith(".edu.tw")
+    );
+  } catch {
+    return false;
+  }
 };
 
 export const getPdfPreviewUrl = (rawUrl: string, isMobile: boolean): string => {
-  if (isMobile) {
+  if (isMobile && isSafePublicPdfUrl(rawUrl)) {
     return `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
   }
   return `${rawUrl}#view=FitH`;
@@ -140,7 +169,7 @@ const getAttachmentMeta = (isPdfFile: boolean, isImageFile: boolean): Attachment
   };
 };
 
-const AttachmentItem: React.FC<AttachmentItemProps> = ({
+export const AttachmentItem: React.FC<AttachmentItemProps> = ({
   att,
   idx,
   isSelected,
