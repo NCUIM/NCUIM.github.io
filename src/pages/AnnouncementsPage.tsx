@@ -21,6 +21,13 @@ import {
   chevronForwardOutline,
   warningOutline,
   documentTextOutline,
+  newspaperOutline,
+  bookOutline,
+  micOutline,
+  schoolOutline,
+  briefcaseOutline,
+  trophyOutline,
+  extensionPuzzleOutline,
 } from "ionicons/icons";
 import {
   fetchDepartmentNews,
@@ -29,8 +36,28 @@ import {
   type DepartmentNewsItem,
 } from "../services/department-news-api";
 import { DepartmentNewsModal } from "../components/announcements/DepartmentNewsModal";
+import { FilterChips, type FilterChipTab } from "../components/common/FilterChips";
 
-const CATEGORY_CHIPS: readonly DepartmentNewsCategory[] = DEPARTMENT_NEWS_CATEGORIES;
+const CATEGORY_CHIP_META: Record<
+  DepartmentNewsCategory,
+  { label: string; icon: string; iconColor: string }
+> = {
+  "最新消息": { label: "最新", icon: newspaperOutline, iconColor: "var(--ncu-primary, #0284c7)" },
+  "課程消息": { label: "課程", icon: bookOutline, iconColor: "#2563eb" },
+  "演講訊息": { label: "演講", icon: micOutline, iconColor: "#7c3aed" },
+  "工讀獎學金": { label: "獎助工讀", icon: schoolOutline, iconColor: "#d97706" },
+  "實習與企業徵才": { label: "實習徵才", icon: briefcaseOutline, iconColor: "var(--ncu-success, #0f766e)" },
+  "榮譽榜": { label: "榮譽", icon: trophyOutline, iconColor: "#e11d48" },
+  "其他活動": { label: "其他活動", icon: extensionPuzzleOutline, iconColor: "#64748b" },
+};
+
+const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] =
+  DEPARTMENT_NEWS_CATEGORIES.map((cat) => ({
+    id: cat,
+    label: CATEGORY_CHIP_META[cat].label,
+    icon: CATEGORY_CHIP_META[cat].icon,
+    iconColor: CATEGORY_CHIP_META[cat].iconColor,
+  }));
 
 export const AnnouncementsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<DepartmentNewsCategory>("最新消息");
@@ -136,54 +163,23 @@ export const AnnouncementsPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="ion-padding-bottom">
+      <IonContent
+        fullscreen
+        className="ion-padding-bottom"
+        style={{ "--background": "var(--ncu-canvas)" }}
+      >
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent pullingText="下拉重新整理" refreshingSpinner="crescent" />
         </IonRefresher>
 
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "16px 16px 0" }}>
           {/* Category Chips Scroll */}
-          <div
-            role="tablist"
-            aria-label="公告分類"
-            style={{
-              display: "flex",
-              gap: 8,
-              overflowX: "auto",
-              paddingBottom: 10,
-              marginBottom: 10,
-              scrollbarWidth: "none",
-            }}
-          >
-            {CATEGORY_CHIPS.map((cat) => {
-              const isSelected = cat === activeCategory;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  onClick={() => handleCategoryChange(cat)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: 20,
-                    border: "none",
-                    background: isSelected
-                      ? "var(--ncu-primary, #0284c7)"
-                      : "var(--ncu-surface-secondary, #f1f5f9)",
-                    color: isSelected ? "#ffffff" : "var(--ncu-muted, #64748b)",
-                    fontSize: 13,
-                    fontWeight: isSelected ? 700 : 500,
-                    whiteSpace: "nowrap",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
+          <FilterChips<DepartmentNewsCategory>
+            activeCategory={activeCategory}
+            onSelectCategory={handleCategoryChange}
+            tabs={ANNOUNCEMENT_TABS}
+            ariaLabel="公告分類"
+          />
 
           {/* Search bar */}
           <IonSearchbar

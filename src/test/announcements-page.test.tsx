@@ -92,7 +92,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
       expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
     });
 
-    const courseBtn = screen.getByRole("tab", { name: "課程消息" });
+    const courseBtn = screen.getByRole("tab", { name: "課程" });
     fireEvent.click(courseBtn);
 
     await waitFor(() => {

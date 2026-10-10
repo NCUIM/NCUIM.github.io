@@ -486,17 +486,21 @@ ion-segment.duty-lottery-segment ion-segment-button {
 .guide-filter-chip-label {
   display: inline-flex;
 }
-.guide-chips-scroll {
+.guide-chips-scroll,
+.filter-chips-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--ncu-border) transparent;
 }
-.guide-chips-scroll::-webkit-scrollbar {
+.guide-chips-scroll::-webkit-scrollbar,
+.filter-chips-scroll::-webkit-scrollbar {
   height: 5px;
 }
-.guide-chips-scroll::-webkit-scrollbar-track {
+.guide-chips-scroll::-webkit-scrollbar-track,
+.filter-chips-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.guide-chips-scroll::-webkit-scrollbar-thumb {
+.guide-chips-scroll::-webkit-scrollbar-thumb,
+.filter-chips-scroll::-webkit-scrollbar-thumb {
   background-color: var(--ncu-border);
   border-radius: 999px;
 }
@@ -511,3 +515,22 @@ ion-segment.duty-lottery-segment ion-segment-button {
     display: none;
   }
 }
+
+/* ── In-App Announcements & News Floating Modal (懸浮視窗) ──────────────────── */
+ion-modal.department-news-floating-modal,
+ion-modal.announcement-floating-modal {
+  --width: min(780px, 92vw);
+  --height: min(86vh, 880px);
+  --border-radius: 16px;
+  --box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 640px) {
+  ion-modal.department-news-floating-modal,
+  ion-modal.announcement-floating-modal {
+    --width: 100%;
+    --height: 92vh;
+    --border-radius: 20px 20px 0 0;
+  }
+}
+

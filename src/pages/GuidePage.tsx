@@ -36,6 +36,7 @@ const SOLID_ICON: Readonly<Record<string, string>> = {
   [extensionPuzzleOutline]: extensionPuzzleSharp,
 };
 import guideCategoriesJson from "../data/guide-resources.json";
+import { FilterChips, type FilterChipTab } from "../components/common/FilterChips";
 
 interface ResourceLink {
   readonly title: string;
@@ -203,86 +204,28 @@ const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
   );
 };
 
-interface FilterTab {
-  readonly id: string;
-  readonly label: string;
-  readonly icon: string;
-}
+const GUIDE_SHORT_LABELS: Readonly<Record<string, string>> = {
+  academic: "教務",
+  community: "生活",
+  "student-resources": "福利",
+  "tech-dev": "計中",
+  clubs: "社群",
+};
 
-const FILTER_TABS: readonly FilterTab[] = [
-  { id: "all", label: "全部資源", icon: gridOutline },
+const FILTER_TABS: readonly FilterChipTab<string>[] = [
+  {
+    id: "all",
+    label: "全部",
+    icon: SOLID_ICON[gridOutline] ?? gridOutline,
+    iconColor: CATEGORY_ICON_COLORS.all,
+  },
   ...guideCategories.map((cat) => ({
     id: cat.id,
-    label: cat.title,
-    icon: cat.icon,
+    label: GUIDE_SHORT_LABELS[cat.id] ?? cat.title,
+    icon: SOLID_ICON[cat.icon] ?? cat.icon,
+    iconColor: CATEGORY_ICON_COLORS[cat.id],
   })),
 ];
-
-const GuideFilterChips = ({
-  activeCategory,
-  onSelectCategory,
-}: Readonly<{
-  activeCategory: string;
-  onSelectCategory: (id: string) => void;
-}>) => (
-  <div
-    role="tablist"
-    aria-label="資源類別篩選"
-    className="guide-chips-scroll"
-    style={{
-      display: "flex",
-      gap: 8,
-      overflowX: "auto",
-      paddingBottom: 8,
-      marginBottom: 16,
-      WebkitOverflowScrolling: "touch",
-    }}
-  >
-    {FILTER_TABS.map((tab) => {
-      const isSelected = activeCategory === tab.id;
-      const isAll = tab.id === "all";
-
-      return (
-        <button
-          key={tab.id}
-          type="button"
-          role="tab"
-          aria-selected={isSelected}
-          onClick={() => onSelectCategory(tab.id)}
-          aria-label={tab.label}
-          title={tab.label}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            padding: isAll ? "6px 12px" : "6px 14px",
-            borderRadius: "var(--ncu-radius-full)",
-            fontSize: 13,
-            fontWeight: isSelected ? 800 : 600,
-            border: isSelected ? "1.5px solid var(--ncu-ink)" : "1px solid var(--ncu-border)",
-            background: isSelected ? "var(--ncu-ink)" : "var(--ncu-surface)",
-            color: isSelected ? "#ffffff" : "var(--ncu-ink)",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-            boxShadow: isSelected ? "var(--ncu-shadow-sm)" : "none",
-            transition: "all 0.15s ease",
-            flexShrink: 0,
-          }}
-        >
-          <IonIcon
-            icon={SOLID_ICON[tab.icon] ?? tab.icon}
-            style={{
-              fontSize: isAll ? 16 : 14,
-              color: isSelected ? "#ffffff" : CATEGORY_ICON_COLORS[tab.id] ?? "var(--ncu-ink)",
-            }}
-          />
-          <span className="guide-filter-chip-label">{tab.label}</span>
-        </button>
-      );
-    })}
-  </div>
-);
 
 const GuidePageBody = () => {
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -295,9 +238,13 @@ const GuidePageBody = () => {
   return (
     <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
       <div style={{ maxWidth: 860, margin: "0 auto", paddingTop: 4 }}>
-        <GuideFilterChips
+        <FilterChips
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
+          tabs={FILTER_TABS}
+          ariaLabel="資源類別篩選"
+          className="guide-chips-scroll"
+          labelClassName="guide-filter-chip-label"
         />
 
         {displayedCategories.map((cat) => (

@@ -5,6 +5,7 @@ import type { AnnouncementItem } from "../../services/announcement-api";
 import { HeroHeader } from "./HeroHeader";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { HomeModuleList } from "./HomeModuleList";
+import { HomeFooter } from "./HomeFooter";
 
 export const HomeBody = ({
   stage,
@@ -37,6 +38,7 @@ export const HomeBody = ({
       />
       <AnnouncementBar announcements={announcements} onOpen={onOpenAnnouncements} />
       <HomeModuleList hovered={hovered} onHover={onHover} onLeave={onLeave} />
+      <HomeFooter />
     </div>
   </IonContent>
 );

@@ -1,6 +1,6 @@
 import { IonTabs, IonRouterOutlet, IonTabBar, IonTabButton, IonIcon, IonLabel } from "@ionic/react";
 import { Route, Redirect } from "react-router-dom";
-import { home, book, newspaper } from "ionicons/icons";
+import { grid, book, newspaper } from "ionicons/icons";
 
 import HomePage from "./pages/HomePage";
 import AnnouncementsPage from "./pages/AnnouncementsPage";
@@ -30,8 +30,8 @@ const TabsShell = () => (
     </IonRouterOutlet>
     <IonTabBar slot="bottom">
       <IonTabButton tab="home" href="/">
-        <IonIcon icon={home} />
-        <IonLabel>首頁</IonLabel>
+        <IonIcon icon={grid} />
+        <IonLabel>常用</IonLabel>
       </IonTabButton>
       <IonTabButton tab="guide" href="/guide">
         <IonIcon icon={book} />
