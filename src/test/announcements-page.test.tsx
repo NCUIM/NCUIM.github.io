@@ -118,4 +118,51 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
       expect(screen.getByText("2026-10-08")).toBeDefined();
     });
   });
+
+  it("renders DepartmentNewsModal with image attachment and toggles image preview", async () => {
+    const mockImageDetail: newsApi.DepartmentNewsDetail = {
+      id: "9530",
+      title: "院週會演講公告",
+      date: "2026-10-09",
+      contentHtml: "<p>歡迎全系師生參加院週會演講。</p>",
+      attachments: [
+        {
+          name: "演講海報.jpg",
+          url: "https://im.mgt.ncu.edu.tw/uploads/poster.jpg",
+        },
+      ],
+      originalUrl: "https://im.mgt.ncu.edu.tw/homes/9530/post",
+    };
+
+    vi.spyOn(newsApi, "fetchDepartmentNewsDetail").mockResolvedValueOnce(mockImageDetail);
+
+    render(
+      <DepartmentNewsModal
+        isOpen={true}
+        newsId="9530"
+        onDismiss={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("演講海報.jpg")).toBeDefined();
+      expect(screen.getByText("圖片檔案 · 線上即時預覽")).toBeDefined();
+    });
+
+    // Automatically expanded since content text is short (< 80 chars)
+    const imgEl = screen.getByAltText("演講海報.jpg") as HTMLImageElement;
+    expect(imgEl).toBeDefined();
+    expect(imgEl.src).toBe("https://im.mgt.ncu.edu.tw/uploads/poster.jpg");
+
+    // Toggle collapse
+    const collapseBtn = screen.getByText("收合");
+    fireEvent.click(collapseBtn);
+    expect(screen.queryByAltText("演講海報.jpg")).toBeNull();
+
+    // Toggle expand again
+    const previewBtn = screen.getByText("預覽");
+    fireEvent.click(previewBtn);
+    expect(screen.getByAltText("演講海報.jpg")).toBeDefined();
+  });
 });
+

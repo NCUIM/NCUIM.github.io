@@ -21,6 +21,7 @@ import {
   refreshOutline,
   eyeOutline,
   documentTextOutline,
+  imageOutline,
   chevronDownOutline,
   chevronUpOutline,
 } from "ionicons/icons";
@@ -37,7 +38,17 @@ export interface DepartmentNewsModalProps {
 }
 
 const isPdf = (name: string, url: string = ""): boolean => {
-  return name.toLowerCase().endsWith(".pdf") || url.toLowerCase().endsWith(".pdf");
+  const target = (name || url).toLowerCase();
+  return /\.pdf(\?.*)?$/i.test(target);
+};
+
+const isImage = (name: string, url: string = ""): boolean => {
+  const target = (name || url).toLowerCase();
+  return /\.(jpe?g|png|webp|gif|svg)(\?.*)?$/i.test(target);
+};
+
+const isPreviewable = (name: string, url: string = ""): boolean => {
+  return isPdf(name, url) || isImage(name, url);
 };
 
 export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
@@ -50,14 +61,14 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
   const [detail, setDetail] = useState<DepartmentNewsDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPdf, setSelectedPdf] = useState<{ name: string; url: string } | null>(null);
-  const [isPdfExpanded, setIsPdfExpanded] = useState<boolean>(true);
+  const [selectedPreview, setSelectedPreview] = useState<{ name: string; url: string } | null>(null);
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState<boolean>(true);
 
   useEffect(() => {
     if (!isOpen || !newsId) {
       setDetail(null);
       setError(null);
-      setSelectedPdf(null);
+      setSelectedPreview(null);
       return;
     }
 
@@ -70,17 +81,17 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
         if (isMounted) {
           setDetail(data);
           setLoading(false);
-          const firstPdf = data.attachments?.find((att) => isPdf(att.name, att.url));
-          if (firstPdf) {
-            setSelectedPdf(firstPdf);
+          const firstPreview = data.attachments?.find((att) => isPreviewable(att.name, att.url));
+          if (firstPreview) {
+            setSelectedPreview(firstPreview);
             const textOnly = (data.contentHtml || "")
               .replace(/(?:<\/div>\s*)?<b>\s*附件[：:]\s*<\/b>[\s\S]*$/i, "")
               .replace(/<[^>]+>/g, "")
               .trim();
-            setIsPdfExpanded(textOnly.length < 50);
+            setIsPreviewExpanded(textOnly.length < 80);
           } else {
-            setSelectedPdf(null);
-            setIsPdfExpanded(false);
+            setSelectedPreview(null);
+            setIsPreviewExpanded(false);
           }
         }
       })
@@ -111,17 +122,17 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                     .then((data) => {
                       setDetail(data);
                       setLoading(false);
-                      const firstPdf = data.attachments?.find((att) => isPdf(att.name, att.url));
-                      if (firstPdf) {
-                        setSelectedPdf(firstPdf);
+                      const firstPreview = data.attachments?.find((att) => isPreviewable(att.name, att.url));
+                      if (firstPreview) {
+                        setSelectedPreview(firstPreview);
                         const textOnly = (data.contentHtml || "")
                           .replace(/(?:<\/div>\s*)?<b>\s*附件[：:]\s*<\/b>[\s\S]*$/i, "")
                           .replace(/<[^>]+>/g, "")
                           .trim();
-                        setIsPdfExpanded(textOnly.length < 50);
+                        setIsPreviewExpanded(textOnly.length < 80);
                       } else {
-                        setSelectedPdf(null);
-                        setIsPdfExpanded(false);
+                        setSelectedPreview(null);
+                        setIsPreviewExpanded(false);
                       }
                     })
                     .catch((err: unknown) => {
@@ -412,8 +423,28 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {detail.attachments.map((att, idx) => {
                     const isAttPdf = isPdf(att.name, att.url);
+                    const isAttImage = isImage(att.name, att.url);
+                    const canPreview = isAttPdf || isAttImage;
                     const isCurrentPreview =
-                      selectedPdf?.url === att.url && isPdfExpanded;
+                      selectedPreview?.url === att.url && isPreviewExpanded;
+
+                    const attachmentIcon = isAttPdf
+                      ? documentTextOutline
+                      : isAttImage
+                      ? imageOutline
+                      : attachOutline;
+
+                    const attachmentIconColor = isAttPdf
+                      ? "var(--ncu-primary, #0284c7)"
+                      : isAttImage
+                      ? "var(--ncu-success, #10b981)"
+                      : "var(--ncu-muted)";
+
+                    const attachmentTypeLabel = isAttPdf
+                      ? "PDF 文件 · 線上即時閱讀"
+                      : isAttImage
+                      ? "圖片檔案 · 線上即時預覽"
+                      : null;
 
                     return (
                       <div
@@ -450,10 +481,10 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                             }}
                           >
                             <IonIcon
-                              icon={isAttPdf ? documentTextOutline : attachOutline}
+                              icon={attachmentIcon}
                               style={{
                                 fontSize: 20,
-                                color: isAttPdf ? "var(--ncu-primary, #0284c7)" : "var(--ncu-muted)",
+                                color: attachmentIconColor,
                                 flexShrink: 0,
                               }}
                             />
@@ -471,26 +502,26 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                               >
                                 {att.name || `附件 ${idx + 1}`}
                               </div>
-                              {isAttPdf && (
+                              {attachmentTypeLabel && (
                                 <div style={{ fontSize: 11.5, color: "var(--ncu-muted, #64748b)" }}>
-                                  PDF 文件 · 線上即時閱讀
+                                  {attachmentTypeLabel}
                                 </div>
                               )}
                             </div>
                           </div>
 
                           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                            {isAttPdf ? (
+                            {canPreview ? (
                               <>
                                 <IonButton
                                   fill={isCurrentPreview ? "solid" : "outline"}
                                   size="small"
                                   onClick={() => {
-                                    if (selectedPdf?.url === att.url) {
-                                      setIsPdfExpanded((v) => !v);
+                                    if (selectedPreview?.url === att.url) {
+                                      setIsPreviewExpanded((v) => !v);
                                     } else {
-                                      setSelectedPdf(att);
-                                      setIsPdfExpanded(true);
+                                      setSelectedPreview(att);
+                                      setIsPreviewExpanded(true);
                                     }
                                   }}
                                   style={{
@@ -500,7 +531,7 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                                   }}
                                 >
                                   <IonIcon slot="start" icon={isCurrentPreview ? chevronUpOutline : eyeOutline} />
-                                  {isCurrentPreview ? "收合" : "閱讀"}
+                                  {isCurrentPreview ? "收合" : (isAttPdf ? "閱讀" : "預覽")}
                                 </IonButton>
 
                                 <IonButton
@@ -509,7 +540,7 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                                   href={att.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  title="在新分頁開啟原始檔案"
+                                  title={isAttPdf ? "在新分頁開啟原始 PDF" : "在新分頁開啟原始圖片"}
                                   style={{ height: 30 }}
                                 >
                                   <IonIcon slot="icon-only" icon={openOutline} />
@@ -536,8 +567,8 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                           </div>
                         </div>
 
-                        {/* Inline PDF Viewer Frame */}
-                        {isCurrentPreview && (
+                        {/* Inline Preview (PDF Frame or Responsive Image) */}
+                        {isCurrentPreview && isAttPdf && (
                           <div
                             style={{
                               borderTop: "1px solid var(--ncu-border, #e2e8f0)",
@@ -558,6 +589,33 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                                 display: "block",
                                 background: "#fff",
                                 overflow: "hidden",
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {isCurrentPreview && isAttImage && (
+                          <div
+                            style={{
+                              borderTop: "1px solid var(--ncu-border, #e2e8f0)",
+                              background: "var(--ncu-surface-secondary, #f8fafc)",
+                              padding: "16px 12px",
+                              textAlign: "center",
+                              overflowX: "auto",
+                            }}
+                          >
+                            <img
+                              src={att.url}
+                              alt={att.name || "公告圖片附件"}
+                              loading="lazy"
+                              style={{
+                                maxWidth: "100%",
+                                maxHeight: "min(70vh, 560px)",
+                                objectFit: "contain",
+                                borderRadius: 8,
+                                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+                                display: "inline-block",
+                                backgroundColor: "#fff",
                               }}
                             />
                           </div>
