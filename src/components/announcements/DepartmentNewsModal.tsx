@@ -28,6 +28,7 @@ import {
   type DepartmentNewsDetail,
 } from "../../services/department-news-api";
 import { useModalHistorySync } from "../../utils/useModalHistorySync";
+import { sanitizeDepartmentNewsHtml } from "../../utils/sanitize-news-html";
 
 export interface DepartmentNewsModalProps {
   readonly isOpen: boolean;
@@ -572,16 +573,12 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
 
             {/* Post Content */}
             {(() => {
-              let sanitizedHtml = (detail.contentHtml || "")
-                .replace(/src=["']\/(?!\/)/g, 'src="https://im.mgt.ncu.edu.tw/')
-                .replace(/href=["']\/(?!\/)/g, 'href="https://im.mgt.ncu.edu.tw/');
-
-              // If structured attachments exist, strip the raw CMS attachment block at the bottom
-              if (detail.attachments && detail.attachments.length > 0) {
-                sanitizedHtml = sanitizedHtml
-                  .replace(/(?:<\/div>\s*)?<b>\s*附件[：:]\s*<\/b>[\s\S]*$/i, "")
-                  .trim();
-              }
+              const hasStructuredAttachments = Boolean(
+                detail.attachments && detail.attachments.length > 0,
+              );
+              const sanitizedHtml = sanitizeDepartmentNewsHtml(detail.contentHtml || "", {
+                stripAttachmentBlock: hasStructuredAttachments,
+              });
 
               if (!sanitizedHtml.trim()) {
                 if (detail.attachments && detail.attachments.length > 0) {
