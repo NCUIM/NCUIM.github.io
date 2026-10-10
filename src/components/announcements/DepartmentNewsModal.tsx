@@ -53,7 +53,15 @@ const extractTextSnippet = (html: string): string => {
   if (!html) return "";
   const attachmentIndex = html.search(/<b>\s*附件[：:]/i);
   const content = attachmentIndex !== -1 ? html.slice(0, attachmentIndex) : html;
-  return content.replace(/<[^>]+>/g, "").trim();
+  if (typeof DOMParser !== "undefined") {
+    try {
+      const doc = new DOMParser().parseFromString(content, "text/html");
+      return (doc.body.textContent || "").trim();
+    } catch {
+      // Fallback
+    }
+  }
+  return content.trim();
 };
 
 interface AttachmentItemProps {
