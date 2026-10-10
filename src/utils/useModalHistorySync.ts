@@ -48,7 +48,9 @@ export const useModalHistorySync = (
     } else {
       if (isPushedRef.current && !isPopstateClosingRef.current) {
         isPushedRef.current = false;
-        window.history.back();
+        if (window.history.state?.modal === modalKey) {
+          window.history.back();
+        }
       }
       isPopstateClosingRef.current = false;
     }

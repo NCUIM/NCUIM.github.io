@@ -25,6 +25,7 @@ import {
   CATEGORY_LABELS,
   PRIORITY_CONFIG,
 } from "../../services/announcement-api";
+import { useHistory } from "react-router-dom";
 import AnnouncementContent from "./AnnouncementContent";
 import { useModalHistorySync } from "../../utils/useModalHistorySync";
 
@@ -78,7 +79,13 @@ export const AnnouncementModal = ({
   onDismiss,
 }: AnnouncementModalProps) => {
   useModalHistorySync(isOpen, onDismiss, "announcement-modal");
+  const history = useHistory();
   const [selectedCategory, setSelectedCategory] = useState<AnnouncementCategory>("all");
+
+  const handleNavigateToAnnouncements = () => {
+    history.replace("/announcements");
+    onDismiss();
+  };
 
   const filtered =
     selectedCategory === "all"
@@ -100,6 +107,36 @@ export const AnnouncementModal = ({
       </IonHeader>
       <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          {/* Department Announcements Quick Link */}
+          <div
+            style={{
+              marginBottom: 16,
+              padding: "12px 14px",
+              background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
+              borderRadius: 12,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "#fff",
+              gap: 8,
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 13.5 }}>中央資管系官網即時公告</div>
+              <div style={{ fontSize: 11.5, color: "#e0f2fe", marginTop: 2 }}>
+                即時同步系網最新消息、演講、獎學金與課程
+              </div>
+            </div>
+            <IonButton
+              onClick={handleNavigateToAnnouncements}
+              size="small"
+              color="light"
+              style={{ fontWeight: 700, flexShrink: 0 }}
+            >
+              前往瀏覽 ↗
+            </IonButton>
+          </div>
+
           {/* Category Filter Tabs */}
           <div
             style={{

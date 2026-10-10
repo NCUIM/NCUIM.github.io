@@ -36,13 +36,11 @@ It is built as a pure client-side single-page application (SPA). All personal co
 - **Physical Room Layouts**: Interactive floor plans for 209 (20 seats), 310 (27 seats), 313 (23 seats), and 919 (9 seats).
 - **Seat & Member Search**: Instant highlighting by student name or advisor.
 
-### Student Profile & Badge (`/cards`)
-- **Personal Digital Badge**: Display assigned lab and seat identification with optional GitHub profile integration.
-- **Event Check-in QR Code**: Interactive check-in barcode for departmental events and orientation.
 
-### Event Leaderboard (`/leaderboard`)
-- **Real-time Event Tracker**: Live check-in statistics and progress for freshman orientation challenges.
-- **Hall of Fame**: Interactive ranking board highlighting top participants and group milestones.
+### Department Announcements (`/announcements`)
+- **Official Real-time Sync**: Seamlessly synchronized with the official NCUIM department website via edge proxy.
+- **Categorization & Pagination**: Switch between news, courses, speeches, scholarships, and recruitment with instant search.
+- **Post Reader & Attachments**: Read full announcement HTML content and download attachments without leaving the application.
 
 ### Survival Guide & Campus Life (`/guide`, `/food`)
 - **Freshman Checklist & Links**: Timeline of key procedures, software benefits, and essential campus portals.

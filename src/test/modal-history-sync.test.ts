@@ -47,4 +47,20 @@ describe("useModalHistorySync", () => {
     rerender({ isOpen: false });
     expect(backSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("does not call history.back if user already navigated to a new route", () => {
+    const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {});
+    const onDismiss = vi.fn();
+
+    const { rerender } = renderHook(
+      ({ isOpen }) => useModalHistorySync(isOpen, onDismiss, "test-modal"),
+      { initialProps: { isOpen: true } }
+    );
+
+    // Simulate route navigation replacing history state
+    window.history.replaceState({ usr: "/announcements" }, "");
+
+    rerender({ isOpen: false });
+    expect(backSpy).not.toHaveBeenCalled();
+  });
 });

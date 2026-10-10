@@ -13,6 +13,7 @@ import {
   restaurant,
   calculator,
   sparkles,
+  newspaper,
 } from "ionicons/icons";
 import type { ModuleCard } from "./types";
 import homeModulesJson from "../../data/home-modules.json";
@@ -35,6 +36,7 @@ const MODULE_ICONS: Record<string, string> = {
   map,
   sparkles,
   restaurant,
+  newspaper,
 };
 
 export const modules: readonly ModuleCard[] = (homeModulesJson as readonly ModuleCardRaw[]).map(
