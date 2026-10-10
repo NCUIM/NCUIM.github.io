@@ -223,18 +223,16 @@ export const AnnouncementsPage: React.FC = () => {
                 const isImportant =
                   item.tag.includes("重要") || item.title.includes("【重要】");
                 return (
-                  <div
+                  <button
                     key={item.id}
-                    role="button"
-                    tabIndex={0}
+                    type="button"
                     onClick={() => handleOpenDetail(item.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleOpenDetail(item.id);
-                      }
-                    }}
                     style={{
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                      font: "inherit",
+                      color: "inherit",
                       padding: "13px 16px",
                       borderRadius: 10,
                       border: "1px solid var(--ncu-border, #e2e8f0)",
@@ -297,7 +295,7 @@ export const AnnouncementsPage: React.FC = () => {
                     >
                       {item.title}
                     </h3>
-                  </div>
+                  </button>
                 );
               })}
             </div>
