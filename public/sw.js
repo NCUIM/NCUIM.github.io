@@ -15,32 +15,66 @@ const STATIC_PRECACHE = [
   "/icons/apple-touch-icon.png",
 ];
 
-// Install event: cache minimal shell
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_PRECACHE).catch(() => {
-        // Continue even if some optional asset fails
-      });
+const precacheStaticAssets = async () => {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(STATIC_PRECACHE);
+  } catch {
+    // Continue even if an asset fails to cache initially
+  }
+};
+
+const cleanupStaleCaches = async () => {
+  const keys = await caches.keys();
+  await Promise.all(
+    keys.map((key) => {
+      if (key !== CACHE_NAME) {
+        return caches.delete(key);
+      }
+      return Promise.resolve();
     })
   );
+};
+
+const handleNavigationRequest = async (request) => {
+  try {
+    return await fetch(request);
+  } catch {
+    const fallbackResponse = await caches.match("/index.html");
+    if (fallbackResponse) {
+      return fallbackResponse;
+    }
+    return fetch(request);
+  }
+};
+
+const handleStaticAssetRequest = async (request) => {
+  const cachedResponse = await caches.match(request);
+  const fetchPromise = (async () => {
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse?.status === 200) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    } catch {
+      return cachedResponse;
+    }
+  })();
+
+  return cachedResponse || fetchPromise;
+};
+
+// Install event: cache minimal shell
+self.addEventListener("install", (event) => {
+  event.waitUntil(precacheStaticAssets());
   self.skipWaiting();
 });
 
 // Activate event: clean up stale caches
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-          return Promise.resolve();
-        })
-      );
-    })
-  );
+  event.waitUntil(cleanupStaleCaches());
   self.clients.claim();
 });
 
@@ -70,34 +104,12 @@ self.addEventListener("fetch", (event) => {
 
   // Navigation requests: network first, fallback to cached index.html
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match("/index.html").then((res) => {
-          return res || fetch(request);
-        });
-      })
-    );
+    event.respondWith(handleNavigationRequest(request));
     return;
   }
 
   // Same-origin static assets: stale-while-revalidate
   if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        const fetchPromise = fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(request, responseToCache);
-              });
-            }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
-
-        return cachedResponse || fetchPromise;
-      })
-    );
+    event.respondWith(handleStaticAssetRequest(request));
   }
 });
