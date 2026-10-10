@@ -6,10 +6,13 @@ import PwaInstallPrompt, {
   checkIsDismissed,
   checkIsIosSafari,
   DISMISSED_STORAGE_KEY,
+  DISMISS_DURATION_MS,
 } from "../components/pwa/PwaInstallPrompt";
 
 describe("PwaInstallPrompt Component and PWA Utilities", () => {
   const originalUserAgent = navigator.userAgent;
+  const originalPlatform = navigator.platform;
+  const originalMaxTouchPoints = navigator.maxTouchPoints;
   const originalMatchMedia = window.matchMedia;
 
   beforeEach(() => {
@@ -23,6 +26,14 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
     window.matchMedia = originalMatchMedia;
     Object.defineProperty(navigator, "userAgent", {
       value: originalUserAgent,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, "platform", {
+      value: originalPlatform,
+      configurable: true,
+    });
+    Object.defineProperty(navigator, "maxTouchPoints", {
+      value: originalMaxTouchPoints,
       configurable: true,
     });
     Object.defineProperty(navigator, "standalone", {
@@ -65,12 +76,12 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
     });
 
     it("returns true when dismiss timestamp is in the future", () => {
-      localStorage.setItem(DISMISSED_STORAGE_KEY, (Date.now() + 100000).toString());
+      localStorage.setItem(DISMISSED_STORAGE_KEY, (Date.now() + 60000).toString());
       expect(checkIsDismissed()).toBe(true);
     });
 
     it("returns false when dismiss timestamp is expired", () => {
-      localStorage.setItem(DISMISSED_STORAGE_KEY, (Date.now() - 1000).toString());
+      localStorage.setItem(DISMISSED_STORAGE_KEY, (Date.now() - 60000).toString());
       expect(checkIsDismissed()).toBe(false);
     });
   });
@@ -79,6 +90,22 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
     it("returns true for iOS Safari user agent", () => {
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+        configurable: true,
+      });
+      expect(checkIsIosSafari()).toBe(true);
+    });
+
+    it("returns true for iPadOS Safari reporting MacIntel with touch support", () => {
+      Object.defineProperty(navigator, "userAgent", {
+        value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+        configurable: true,
+      });
+      Object.defineProperty(navigator, "platform", {
+        value: "MacIntel",
+        configurable: true,
+      });
+      Object.defineProperty(navigator, "maxTouchPoints", {
+        value: 5,
         configurable: true,
       });
       expect(checkIsIosSafari()).toBe(true);
@@ -117,7 +144,7 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
       expect(screen.queryByTestId("pwa-install-banner")).toBeNull();
     });
 
-    it("renders prompt when beforeinstallprompt event is dispatched and handles install click", async () => {
+    it("renders prompt when beforeinstallprompt event is dispatched and handles accepted install click", async () => {
       render(<PwaInstallPrompt />);
       expect(screen.queryByTestId("pwa-install-banner")).toBeNull();
 
@@ -139,9 +166,33 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
       });
 
       expect(promptMock).toHaveBeenCalled();
+      expect(screen.queryByTestId("pwa-install-banner")).toBeNull();
     });
 
-    it("hides banner and sets cooldown when dismiss button is clicked", () => {
+    it("hides banner when install choice is dismissed by user in native prompt", async () => {
+      render(<PwaInstallPrompt />);
+
+      const promptMock = vi.fn().mockResolvedValue(undefined);
+      const fakeEvent = new Event("beforeinstallprompt") as any;
+      fakeEvent.prompt = promptMock;
+      fakeEvent.userChoice = Promise.resolve({ outcome: "dismissed", platform: "web" });
+
+      act(() => {
+        window.dispatchEvent(fakeEvent);
+      });
+
+      expect(screen.getByTestId("pwa-install-banner")).toBeDefined();
+
+      const installButton = screen.getByText("安裝");
+      await act(async () => {
+        fireEvent.click(installButton);
+      });
+
+      expect(promptMock).toHaveBeenCalled();
+      expect(screen.queryByTestId("pwa-install-banner")).toBeNull();
+    });
+
+    it("hides banner and sets 7-day cooldown when dismiss button is clicked", () => {
       render(<PwaInstallPrompt />);
 
       const fakeEvent = new Event("beforeinstallprompt") as any;
@@ -152,6 +203,7 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
         window.dispatchEvent(fakeEvent);
       });
 
+      const before = Date.now();
       const dismissButton = screen.getByTitle("稍後再說");
       act(() => {
         fireEvent.click(dismissButton);
@@ -160,7 +212,56 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
       expect(screen.queryByTestId("pwa-install-banner")).toBeNull();
       const stored = localStorage.getItem(DISMISSED_STORAGE_KEY);
       expect(stored).not.toBeNull();
-      expect(parseInt(stored!, 10)).toBeGreaterThan(Date.now());
+      const storedTimestamp = Number.parseInt(stored!, 10);
+      const expectedTimestamp = before + DISMISS_DURATION_MS;
+      expect(Math.abs(storedTimestamp - expectedTimestamp)).toBeLessThan(2000);
+    });
+
+    it("hides banner when appinstalled event fires", () => {
+      render(<PwaInstallPrompt />);
+
+      const fakeEvent = new Event("beforeinstallprompt") as any;
+      fakeEvent.prompt = vi.fn();
+      fakeEvent.userChoice = Promise.resolve({ outcome: "accepted" });
+
+      act(() => {
+        window.dispatchEvent(fakeEvent);
+      });
+
+      expect(screen.getByTestId("pwa-install-banner")).toBeDefined();
+
+      act(() => {
+        window.dispatchEvent(new Event("appinstalled"));
+      });
+
+      expect(screen.queryByTestId("pwa-install-banner")).toBeNull();
+    });
+
+    it("hides banner when storage event indicates dismissal from another tab", () => {
+      render(<PwaInstallPrompt />);
+
+      const fakeEvent = new Event("beforeinstallprompt") as any;
+      fakeEvent.prompt = vi.fn();
+      fakeEvent.userChoice = Promise.resolve({ outcome: "dismissed" });
+
+      act(() => {
+        window.dispatchEvent(fakeEvent);
+      });
+
+      expect(screen.getByTestId("pwa-install-banner")).toBeDefined();
+
+      // Simulate another tab dismissing the banner
+      localStorage.setItem(DISMISSED_STORAGE_KEY, (Date.now() + DISMISS_DURATION_MS).toString());
+      act(() => {
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: DISMISSED_STORAGE_KEY,
+            newValue: (Date.now() + DISMISS_DURATION_MS).toString(),
+          })
+        );
+      });
+
+      expect(screen.queryByTestId("pwa-install-banner")).toBeNull();
     });
 
     it("renders iOS Safari instruction text on iOS devices", () => {

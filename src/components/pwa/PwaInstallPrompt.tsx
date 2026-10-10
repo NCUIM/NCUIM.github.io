@@ -40,7 +40,9 @@ export const checkIsDismissed = (): boolean => {
 export const checkIsIosSafari = (): boolean => {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent.toLowerCase();
-  const isIos = /iphone|ipad|ipod/.test(ua);
+  const isIos =
+    /iphone|ipad|ipod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const isSafari =
     /safari/.test(ua) && !/chrome|crios|fxios|edgios|opr\//.test(ua);
   return isIos && isSafari;
@@ -62,7 +64,20 @@ export const PwaInstallPrompt: React.FC = () => {
       setShowPrompt(true);
     };
 
+    const handleAppInstalled = () => {
+      setShowPrompt(false);
+      setDeferredPrompt(null);
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === DISMISSED_STORAGE_KEY && checkIsDismissed()) {
+        setShowPrompt(false);
+      }
+    };
+
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    window.addEventListener("storage", handleStorageChange);
 
     if (checkIsIosSafari()) {
       setIsIosGuide(true);
@@ -71,16 +86,16 @@ export const PwaInstallPrompt: React.FC = () => {
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       await deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      if (choice.outcome === "accepted") {
-        setShowPrompt(false);
-      }
+      await deferredPrompt.userChoice;
+      setShowPrompt(false);
       setDeferredPrompt(null);
     }
   };
