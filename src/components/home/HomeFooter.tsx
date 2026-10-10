@@ -12,7 +12,8 @@ export const HomeFooter: React.FC = () => (
       alignItems: "center",
       justifyContent: "center",
       gap: 10,
-      flexWrap: "wrap",
+      flexWrap: "nowrap",
+      overflowX: "auto",
     }}
   >
     <a
@@ -25,11 +26,15 @@ export const HomeFooter: React.FC = () => (
         alignItems: "center",
         textDecoration: "none",
         opacity: 0.9,
+        flexShrink: 0,
       }}
     >
       <img
         src="https://img.shields.io/github/stars/NCUIM/NCUIM.github.io?style=flat-square&label=STARS&color=eab308&logo=github"
         alt="GitHub Stars"
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        loading="lazy"
         style={{ height: 20, borderRadius: 3 }}
       />
     </a>
@@ -39,11 +44,15 @@ export const HomeFooter: React.FC = () => (
         display: "inline-flex",
         alignItems: "center",
         opacity: 0.9,
+        flexShrink: 0,
       }}
     >
       <img
         src="https://hits.sh/ncuim.github.io.svg?style=flat-square&label=VISITORS&color=2563eb"
         alt="Visitors Counter"
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        loading="lazy"
         style={{ height: 20, borderRadius: 3 }}
       />
     </div>

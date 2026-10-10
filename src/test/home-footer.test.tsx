@@ -10,6 +10,7 @@ describe("HomeFooter", () => {
     expect(footer).not.toBeNull();
     expect(footer?.style.flexDirection).toBe("row");
     expect(footer?.style.justifyContent).toBe("center");
+    expect(footer?.style.flexWrap).toBe("nowrap");
 
     const link = screen.getByRole("link", { name: "GitHub 專案與 Star" });
     expect(link).toBeDefined();
@@ -18,9 +19,11 @@ describe("HomeFooter", () => {
     const starImg = screen.getByAltText("GitHub Stars") as HTMLImageElement;
     expect(starImg).toBeDefined();
     expect(starImg.src).toContain("shields.io/github/stars/NCUIM/NCUIM.github.io");
+    expect(starImg.getAttribute("referrerpolicy")).toBe("no-referrer");
 
     const visitorImg = screen.getByAltText("Visitors Counter") as HTMLImageElement;
     expect(visitorImg).toBeDefined();
     expect(visitorImg.src).toContain("hits.sh/ncuim.github.io.svg");
+    expect(visitorImg.getAttribute("referrerpolicy")).toBe("no-referrer");
   });
 });
