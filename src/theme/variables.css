@@ -486,17 +486,21 @@ ion-segment.duty-lottery-segment ion-segment-button {
 .guide-filter-chip-label {
   display: inline-flex;
 }
-.guide-chips-scroll {
+.guide-chips-scroll,
+.filter-chips-scroll {
   scrollbar-width: thin;
   scrollbar-color: var(--ncu-border) transparent;
 }
-.guide-chips-scroll::-webkit-scrollbar {
+.guide-chips-scroll::-webkit-scrollbar,
+.filter-chips-scroll::-webkit-scrollbar {
   height: 5px;
 }
-.guide-chips-scroll::-webkit-scrollbar-track {
+.guide-chips-scroll::-webkit-scrollbar-track,
+.filter-chips-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.guide-chips-scroll::-webkit-scrollbar-thumb {
+.guide-chips-scroll::-webkit-scrollbar-thumb,
+.filter-chips-scroll::-webkit-scrollbar-thumb {
   background-color: var(--ncu-border);
   border-radius: 999px;
 }

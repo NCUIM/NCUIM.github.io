@@ -22,7 +22,7 @@ export function FilterChips<T extends string = string>({
   onSelectCategory,
   tabs,
   ariaLabel = "類別篩選",
-  className = "filter-chips-scroll",
+  className = "guide-chips-scroll filter-chips-scroll",
   labelClassName,
 }: Readonly<FilterChipsProps<T>>): React.ReactElement {
   return (
@@ -37,7 +37,6 @@ export function FilterChips<T extends string = string>({
         paddingBottom: 8,
         marginBottom: 16,
         WebkitOverflowScrolling: "touch",
-        scrollbarWidth: "none",
       }}
     >
       {tabs.map((tab) => {

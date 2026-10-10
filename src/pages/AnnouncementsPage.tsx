@@ -151,7 +151,11 @@ export const AnnouncementsPage: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="ion-padding-bottom">
+      <IonContent
+        fullscreen
+        className="ion-padding-bottom"
+        style={{ "--background": "var(--ncu-canvas)" }}
+      >
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent pullingText="下拉重新整理" refreshingSpinner="crescent" />
         </IonRefresher>
