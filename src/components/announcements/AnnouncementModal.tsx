@@ -17,7 +17,6 @@ import {
   megaphoneOutline,
   openOutline,
   timeOutline,
-  gridOutline,
 } from "ionicons/icons";
 import {
   AnnouncementItem,
@@ -25,8 +24,8 @@ import {
   CATEGORY_LABELS,
   PRIORITY_CONFIG,
 } from "../../services/announcement-api";
-import { useHistory } from "react-router-dom";
 import AnnouncementContent from "./AnnouncementContent";
+import { FilterChips } from "../common/FilterChips";
 import { useModalHistorySync } from "../../utils/useModalHistorySync";
 
 export interface AnnouncementModalProps {
@@ -45,6 +44,16 @@ const CATEGORIES: readonly AnnouncementCategory[] = [
   "general",
 ];
 
+const SHORT_CATEGORY_LABELS: Record<AnnouncementCategory, string> = {
+  all: "全部",
+  course: "選課",
+  event: "迎新",
+  department: "系所",
+  career: "職涯",
+  system: "系統",
+  general: "一般",
+};
+
 const isTodayAnnouncement = (item: AnnouncementItem): boolean => {
   const ts =
     item.createdAt
@@ -59,19 +68,6 @@ const isTodayAnnouncement = (item: AnnouncementItem): boolean => {
     d.getDate() === now.getDate()
   );
 };
-const getCardBorderStyle = (priority: string): string => {
-  if (priority === "urgent") return "2.5px solid #f59e0b";
-  if (priority === "high") return "2px solid #f97316";
-  if (priority === "normal") return "2px solid #3b82f6";
-  return "2px solid var(--ncu-ink)";
-};
-
-const getCardShadowStyle = (priority: string): string => {
-  if (priority === "urgent") return "4px 4px 0 0 rgba(245, 158, 11, 0.45)";
-  if (priority === "high") return "4px 4px 0 0 rgba(249, 115, 22, 0.4)";
-  if (priority === "normal") return "4px 4px 0 0 rgba(59, 130, 246, 0.4)";
-  return "4px 4px 0 0 rgba(23, 32, 51, 0.45)";
-};
 
 export const AnnouncementModal = ({
   isOpen,
@@ -79,18 +75,20 @@ export const AnnouncementModal = ({
   onDismiss,
 }: AnnouncementModalProps) => {
   useModalHistorySync(isOpen, onDismiss, "announcement-modal");
-  const history = useHistory();
   const [selectedCategory, setSelectedCategory] = useState<AnnouncementCategory>("all");
-
-  const handleNavigateToAnnouncements = () => {
-    history.replace("/announcements");
-    onDismiss();
-  };
 
   const filtered =
     selectedCategory === "all"
       ? announcements
       : announcements.filter((item) => item.category === selectedCategory);
+
+  const categoryTabs = CATEGORIES.map((cat) => ({
+    id: cat,
+    label: SHORT_CATEGORY_LABELS[cat] || cat,
+  })).filter((tab) => {
+    if (tab.id === "all") return true;
+    return announcements.some((item) => item.category === tab.id);
+  });
 
   return (
     <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
@@ -107,97 +105,13 @@ export const AnnouncementModal = ({
       </IonHeader>
       <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto" }}>
-          {/* Department Announcements Quick Link */}
-          <div
-            style={{
-              marginBottom: 16,
-              padding: "12px 14px",
-              background: "linear-gradient(135deg, #0284c7 0%, #0369a1 100%)",
-              borderRadius: 12,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              color: "#fff",
-              gap: 8,
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13.5 }}>中央資管系官網即時公告</div>
-              <div style={{ fontSize: 11.5, color: "#e0f2fe", marginTop: 2 }}>
-                即時同步系網最新消息、演講、獎學金與課程
-              </div>
-            </div>
-            <IonButton
-              onClick={handleNavigateToAnnouncements}
-              size="small"
-              color="light"
-              style={{ fontWeight: 700, flexShrink: 0 }}
-            >
-              前往瀏覽 ↗
-            </IonButton>
-          </div>
-
-          {/* Category Filter Tabs */}
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              overflowX: "auto",
-              paddingBottom: 14,
-              marginBottom: 8,
-              WebkitOverflowScrolling: "touch",
-              scrollbarWidth: "none",
-            }}
-          >
-            {CATEGORIES.map((cat) => {
-              const info = CATEGORY_LABELS[cat];
-              const isSelected = selectedCategory === cat;
-              const isAll = cat === "all";
-              const count =
-                isAll
-                  ? announcements.length
-                  : announcements.filter((item) => item.category === cat).length;
-
-              if (!isAll && count === 0) return null;
-
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  aria-label={isAll ? "全部公告" : info.label}
-                  title={isAll ? "全部公告" : info.label}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 4,
-                    padding: "5px 12px",
-                    borderRadius: 20,
-                    fontSize: 12.5,
-                    fontWeight: isSelected ? 800 : 600,
-                    border: isSelected ? "1.5px solid var(--ncu-ink)" : "1px solid var(--ncu-border)",
-                    background: isSelected ? "var(--ncu-ink)" : "var(--ncu-surface)",
-                    color: isSelected ? "#ffffff" : "var(--ncu-ink)",
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                    boxShadow: isSelected ? "var(--ncu-shadow-sm)" : "none",
-                    transition: "all 0.15s ease",
-                  }}
-                >
-                  {isAll ? (
-                    <IonIcon icon={gridOutline} style={{ fontSize: 16 }} />
-                  ) : (
-                    <>
-                      <span>{info.icon}</span>
-                      <span>{info.label}</span>
-                      <span style={{ opacity: 0.75, fontSize: 11 }}>({count})</span>
-                    </>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          {/* Category Filter Chips */}
+          <FilterChips
+            activeCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            tabs={categoryTabs}
+            ariaLabel="公告類別篩選"
+          />
 
           {filtered.length === 0 ? (
             <div
@@ -222,11 +136,17 @@ export const AnnouncementModal = ({
                 <IonCard
                   key={item.id}
                   style={{
-                    margin: "0 0 16px",
-                    border: getCardBorderStyle(item.priority),
-                    borderRadius: "var(--ncu-radius-md)",
-                    boxShadow: getCardShadowStyle(item.priority),
-                    background: "var(--ncu-surface)",
+                    margin: "0 0 14px",
+                    border: "1px solid var(--ncu-border, #e2e8f0)",
+                    borderLeft:
+                      item.priority === "urgent"
+                        ? "4px solid #ef4444"
+                        : item.priority === "high"
+                        ? "4px solid #f97316"
+                        : "1px solid var(--ncu-border, #e2e8f0)",
+                    borderRadius: "var(--ncu-radius-lg, 12px)",
+                    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+                    background: "var(--ncu-surface, #ffffff)",
                   }}
                 >
                   <IonCardHeader style={{ padding: "16px 16px 10px" }}>
@@ -245,40 +165,45 @@ export const AnnouncementModal = ({
                           style={{
                             padding: "2px 8px",
                             borderRadius: 6,
-                            background: "rgba(27, 42, 74, 0.08)",
-                            color: "var(--ncu-ink)",
-                            fontSize: 11,
-                            fontWeight: 700,
+                            background: "rgba(2, 132, 199, 0.08)",
+                            color: "var(--ncu-primary, #0284c7)",
+                            fontSize: 11.5,
+                            fontWeight: 600,
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: 3,
+                            gap: 4,
                           }}
                         >
                           <span>{categoryConfig.icon}</span>
                           <span>{categoryConfig.label}</span>
                         </span>
 
-                        <span
-                          style={{
-                            color: "var(--ncu-muted)",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 3,
-                          }}
-                        >
-                          <span>{priorityConfig.label}</span>
-                        </span>
+                        {item.priority !== "low" && item.priority !== "normal" && (
+                          <span
+                            style={{
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              background:
+                                item.priority === "urgent"
+                                  ? "rgba(239, 68, 68, 0.1)"
+                                  : "rgba(249, 115, 22, 0.1)",
+                              color: item.priority === "urgent" ? "#dc2626" : "#ea580c",
+                              fontSize: 11,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {priorityConfig.label}
+                          </span>
+                        )}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
                         <span
                           style={{
                             fontSize: 12,
-                            fontWeight: 800,
+                            fontWeight: 500,
                             color: isTodayAnnouncement(item)
                               ? "#dc2626"
-                              : "var(--ncu-muted)",
+                              : "var(--ncu-muted, #64748b)",
                           }}
                         >
                           {item.date}
@@ -288,10 +213,10 @@ export const AnnouncementModal = ({
 
                     <IonCardTitle
                       style={{
-                        fontSize: 16.5,
-                        fontWeight: 800,
-                        color: "var(--ncu-ink)",
-                        lineHeight: 1.35,
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: "var(--ncu-ink, #0f172a)",
+                        lineHeight: 1.4,
                       }}
                     >
                       {item.title}
@@ -301,19 +226,19 @@ export const AnnouncementModal = ({
                       <div
                         style={{
                           marginTop: 8,
-                          padding: "6px 10px",
-                          borderRadius: 8,
-                          background: "rgba(59, 130, 246, 0.08)",
-                          border: "1px solid rgba(59, 130, 246, 0.25)",
+                          padding: "5px 10px",
+                          borderRadius: 6,
+                          background: "rgba(59, 130, 246, 0.06)",
+                          border: "1px solid rgba(59, 130, 246, 0.2)",
                           display: "inline-flex",
                           alignItems: "center",
                           gap: 6,
-                          fontSize: 12,
-                          color: "#1e40af",
-                          fontWeight: 700,
+                          fontSize: 11.5,
+                          color: "#1d4ed8",
+                          fontWeight: 600,
                         }}
                       >
-                        <IonIcon icon={timeOutline} style={{ fontSize: 14 }} />
+                        <IonIcon icon={timeOutline} style={{ fontSize: 13 }} />
                         <span>階段：{item.milestone.title}</span>
                         {item.milestone.dueOn && (
                           <span style={{ opacity: 0.85 }}>(截止：{item.milestone.dueOn})</span>
@@ -326,7 +251,7 @@ export const AnnouncementModal = ({
                     style={{
                       padding: "0 16px 16px",
                       fontSize: 14,
-                      color: "var(--ncu-ink)",
+                      color: "var(--ncu-text-main, #334155)",
                       lineHeight: 1.7,
                     }}
                   >
@@ -343,18 +268,18 @@ export const AnnouncementModal = ({
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 6,
-                              padding: "6px 14px",
+                              padding: "6px 12px",
                               borderRadius: 8,
-                              border: "1.5px solid var(--ncu-ink)",
-                              background: "var(--ncu-surface)",
-                              color: "var(--ncu-ink)",
-                              fontSize: 13,
-                              fontWeight: 700,
+                              border: "1px solid var(--ncu-border, #cbd5e1)",
+                              background: "var(--ncu-surface, #ffffff)",
+                              color: "var(--ncu-text-main, #334155)",
+                              fontSize: 12.5,
+                              fontWeight: 600,
                               cursor: "pointer",
-                              boxShadow: "var(--ncu-shadow-sm)",
+                              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)",
                             }}
                           >
-                            <IonIcon icon={openOutline} style={{ fontSize: 14 }} />
+                            <IonIcon icon={openOutline} style={{ fontSize: 13 }} />
                             <span>{item.actionUrls!.length > 1 ? `開啟連結 ${idx + 1}` : "開啟相關連結"}</span>
                           </button>
                         ))}
