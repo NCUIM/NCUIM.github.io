@@ -1,5 +1,5 @@
 import { IonTabs, IonRouterOutlet, IonTabBar, IonTabButton, IonIcon, IonLabel } from "@ionic/react";
-import { Route, Redirect } from "react-router-dom";
+import { Route } from "react-router-dom";
 import { home, book, newspaper } from "ionicons/icons";
 
 import HomePage from "./pages/HomePage";
@@ -17,12 +17,6 @@ const TabsShell = () => (
       <Route exact path="/" component={HomePage} tab="home" />
       <Route exact path="/guide" component={GuidePage} tab="guide" />
       <Route exact path="/announcements" component={AnnouncementsPage} tab="announcements" />
-      <Route exact path="/cards">
-        <Redirect to="/announcements" />
-      </Route>
-      <Route exact path="/leaderboard">
-        <Redirect to="/announcements" />
-      </Route>
       <Route exact path="/seats" component={SeatsPage} tab="home" />
       <Route exact path="/timetable" component={TimetablePage} tab="home" />
       <Route exact path="/food" component={FoodPage} tab="home" />
