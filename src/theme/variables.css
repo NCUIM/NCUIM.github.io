@@ -516,8 +516,9 @@ ion-segment.duty-lottery-segment ion-segment-button {
   }
 }
 
-/* ── Department News Floating Modal (懸浮視窗) ──────────────────── */
-ion-modal.department-news-floating-modal {
+/* ── In-App Announcements & News Floating Modal (懸浮視窗) ──────────────────── */
+ion-modal.department-news-floating-modal,
+ion-modal.announcement-floating-modal {
   --width: min(780px, 92vw);
   --height: min(86vh, 880px);
   --border-radius: 16px;
@@ -525,7 +526,8 @@ ion-modal.department-news-floating-modal {
 }
 
 @media (max-width: 640px) {
-  ion-modal.department-news-floating-modal {
+  ion-modal.department-news-floating-modal,
+  ion-modal.announcement-floating-modal {
     --width: 100%;
     --height: 92vh;
     --border-radius: 20px 20px 0 0;

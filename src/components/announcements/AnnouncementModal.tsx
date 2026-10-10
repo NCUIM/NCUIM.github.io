@@ -17,6 +17,7 @@ import {
   megaphoneOutline,
   openOutline,
   timeOutline,
+  closeOutline,
 } from "ionicons/icons";
 import {
   AnnouncementItem,
@@ -91,7 +92,12 @@ export const AnnouncementModal = ({
   });
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
+    <IonModal
+      isOpen={isOpen}
+      onDidDismiss={onDismiss}
+      backdropDismiss={true}
+      className="announcement-floating-modal"
+    >
       <IonHeader>
         <IonToolbar>
           <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: 12 }}>
@@ -99,7 +105,9 @@ export const AnnouncementModal = ({
             <IonTitle style={{ padding: 0 }}>最新公告與消息</IonTitle>
           </div>
           <IonButtons slot="end">
-            <IonButton onClick={onDismiss}>關閉</IonButton>
+            <IonButton onClick={onDismiss} aria-label="關閉">
+              <IonIcon slot="icon-only" icon={closeOutline} />
+            </IonButton>
           </IonButtons>
         </IonToolbar>
       </IonHeader>
