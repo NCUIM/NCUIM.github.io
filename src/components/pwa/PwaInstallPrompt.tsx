@@ -37,16 +37,16 @@ export const checkIsDismissed = (): boolean => {
   }
 };
 
-export const checkIsIosSafari = (): boolean => {
+export const checkIsIos = (): boolean => {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent.toLowerCase();
   const isIos =
     /iphone|ipad|ipod/.test(ua) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isSafari =
-    /safari/.test(ua) && !/chrome|crios|fxios|edgios|opr\//.test(ua);
-  return isIos && isSafari;
+  return isIos;
 };
+
+export const checkIsIosSafari = checkIsIos;
 
 export const PwaInstallPrompt: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -79,7 +79,7 @@ export const PwaInstallPrompt: React.FC = () => {
     window.addEventListener("appinstalled", handleAppInstalled);
     window.addEventListener("storage", handleStorageChange);
 
-    if (checkIsIosSafari()) {
+    if (checkIsIos()) {
       setIsIosGuide(true);
       setShowPrompt(true);
     }
@@ -131,21 +131,21 @@ export const PwaInstallPrompt: React.FC = () => {
         borderRadius: "var(--ncu-radius-lg, 14px)",
         border: "1px solid var(--ncu-border, #e2e8f0)",
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
-        padding: "12px 14px",
+        padding: isIosGuide ? "10px 14px" : "8px 12px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 12,
+        gap: 10,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
         <img
           src="/icons/icon-192.png"
-          alt="CIM-Life App Icon"
+          alt="CIM-Life"
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: 9,
+            width: 36,
+            height: 36,
+            borderRadius: 8,
             flexShrink: 0,
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.08)",
           }}
@@ -154,29 +154,27 @@ export const PwaInstallPrompt: React.FC = () => {
           <div
             style={{
               fontSize: 13.5,
-              fontWeight: 700,
+              fontWeight: 600,
               color: "var(--ncu-ink, #0f172a)",
               lineHeight: 1.3,
             }}
           >
-            安裝 CIM-Life 到主畫面
+            安裝 CIM-Life
           </div>
-          <div
-            style={{
-              fontSize: 11.5,
-              color: "var(--ncu-muted, #64748b)",
-              lineHeight: 1.3,
-              marginTop: 2,
-            }}
-          >
-            {isIosGuide ? (
+          {isIosGuide && (
+            <div
+              style={{
+                fontSize: 11.5,
+                color: "var(--ncu-muted, #64748b)",
+                lineHeight: 1.3,
+                marginTop: 2,
+              }}
+            >
               <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
-                點擊下方分享 <IonIcon icon={shareOutline} style={{ fontSize: 13 }} /> ➔ 加入主畫面
+                點擊分享 <IonIcon icon={shareOutline} style={{ fontSize: 13 }} /> ➔ 加入主畫面
               </span>
-            ) : (
-              "免網址列，更順暢的類原生 App 體驗"
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
