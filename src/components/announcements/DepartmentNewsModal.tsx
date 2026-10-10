@@ -9,7 +9,6 @@ import {
   IonContent,
   IonIcon,
   IonSpinner,
-  isPlatform,
 } from "@ionic/react";
 import {
   closeOutline,
