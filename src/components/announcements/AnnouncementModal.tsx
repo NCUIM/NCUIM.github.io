@@ -18,6 +18,12 @@ import {
   openOutline,
   timeOutline,
   closeOutline,
+  gridOutline,
+  sparklesOutline,
+  constructOutline,
+  bookOutline,
+  schoolOutline,
+  briefcaseOutline,
 } from "ionicons/icons";
 import {
   AnnouncementItem,
@@ -45,14 +51,17 @@ const CATEGORIES: readonly AnnouncementCategory[] = [
   "general",
 ];
 
-const SHORT_CATEGORY_LABELS: Record<AnnouncementCategory, string> = {
-  all: "全部",
-  course: "選課",
-  event: "迎新",
-  department: "系所",
-  career: "職涯",
-  system: "系統",
-  general: "一般",
+const CATEGORY_TAB_CONFIG: Record<
+  AnnouncementCategory,
+  { label: string; icon: string; iconColor: string }
+> = {
+  all: { label: "全部", icon: gridOutline, iconColor: "var(--ncu-primary, #0284c7)" },
+  event: { label: "迎新", icon: sparklesOutline, iconColor: "#f59e0b" },
+  system: { label: "系統", icon: constructOutline, iconColor: "#64748b" },
+  general: { label: "一般", icon: megaphoneOutline, iconColor: "var(--ncu-primary, #0284c7)" },
+  course: { label: "選課", icon: bookOutline, iconColor: "#2563eb" },
+  department: { label: "系所", icon: schoolOutline, iconColor: "#7c3aed" },
+  career: { label: "職涯", icon: briefcaseOutline, iconColor: "#0f766e" },
 };
 
 const isTodayAnnouncement = (item: AnnouncementItem): boolean => {
@@ -83,10 +92,15 @@ export const AnnouncementModal = ({
       ? announcements
       : announcements.filter((item) => item.category === selectedCategory);
 
-  const categoryTabs = CATEGORIES.map((cat) => ({
-    id: cat,
-    label: SHORT_CATEGORY_LABELS[cat] || cat,
-  })).filter((tab) => {
+  const categoryTabs = CATEGORIES.map((cat) => {
+    const config = CATEGORY_TAB_CONFIG[cat];
+    return {
+      id: cat,
+      label: config.label,
+      icon: config.icon,
+      iconColor: config.iconColor,
+    };
+  }).filter((tab) => {
     if (tab.id === "all") return true;
     return announcements.some((item) => item.category === tab.id);
   });
