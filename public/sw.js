@@ -89,16 +89,13 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Bypass API calls, external APIs, and dev server proxies
-  if (
-    url.pathname.startsWith("/ncu/") ||
-    url.hostname.includes("workers.dev") ||
-    url.hostname.includes("ncu.edu.tw") ||
-    url.hostname.includes("google.com") ||
-    url.hostname.includes("shields.io") ||
-    url.hostname.includes("hits.sh") ||
-    url.hostname.includes("sonarcloud.io")
-  ) {
+  // Strictly only intercept same-origin requests to prevent third-party interference
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Bypass API and proxy routes
+  if (url.pathname.startsWith("/ncu/")) {
     return;
   }
 
@@ -109,7 +106,5 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Same-origin static assets: stale-while-revalidate
-  if (url.origin === self.location.origin) {
-    event.respondWith(handleStaticAssetRequest(request));
-  }
+  event.respondWith(handleStaticAssetRequest(request));
 });
