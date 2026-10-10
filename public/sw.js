@@ -16,19 +16,23 @@ const STATIC_PRECACHE = [
 ];
 
 const precacheStaticAssets = async () => {
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    await cache.addAll(STATIC_PRECACHE);
-  } catch {
-    // Continue even if an asset fails to cache initially
-  }
+  const cache = await caches.open(CACHE_NAME);
+  await Promise.all(
+    STATIC_PRECACHE.map(async (url) => {
+      try {
+        await cache.add(url);
+      } catch {
+        // Continue even if an optional asset fails
+      }
+    })
+  );
 };
 
 const cleanupStaleCaches = async () => {
   const keys = await caches.keys();
   await Promise.all(
     keys.map((key) => {
-      if (key !== CACHE_NAME) {
+      if (key.startsWith("cim-life-") && key !== CACHE_NAME) {
         return caches.delete(key);
       }
       return Promise.resolve();
@@ -48,22 +52,27 @@ const handleNavigationRequest = async (request) => {
   }
 };
 
-const handleStaticAssetRequest = async (request) => {
-  const cachedResponse = await caches.match(request);
-  const fetchPromise = (async () => {
-    try {
-      const networkResponse = await fetch(request);
-      if (networkResponse?.status === 200) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(request, networkResponse.clone());
-      }
-      return networkResponse;
-    } catch {
-      return cachedResponse;
-    }
-  })();
+const handleStaticAssetRequest = (event, request) => {
+  event.respondWith(
+    (async () => {
+      const cachedResponse = await caches.match(request);
+      const cacheWritePromise = (async () => {
+        try {
+          const networkResponse = await fetch(request);
+          if (networkResponse?.status === 200) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        } catch {
+          return cachedResponse;
+        }
+      })();
 
-  return cachedResponse || fetchPromise;
+      event.waitUntil(cacheWritePromise);
+      return cachedResponse || cacheWritePromise;
+    })()
+  );
 };
 
 // Install event: cache minimal shell
@@ -106,5 +115,5 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Same-origin static assets: stale-while-revalidate
-  event.respondWith(handleStaticAssetRequest(request));
+  handleStaticAssetRequest(event, request);
 });
