@@ -4,6 +4,7 @@ import React from "react";
 import PwaInstallPrompt, {
   checkIsStandalone,
   checkIsDismissed,
+  checkIsIos,
   checkIsIosSafari,
   DISMISSED_STORAGE_KEY,
   DISMISS_DURATION_MS,
@@ -111,12 +112,13 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
       expect(checkIsIosSafari()).toBe(true);
     });
 
-    it("returns false for Chrome on iOS (CriOS)", () => {
+    it("returns true for Chrome on iOS (CriOS)", () => {
       Object.defineProperty(navigator, "userAgent", {
         value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/122.0.0.0 Mobile/15E148 Safari/604.1",
         configurable: true,
       });
-      expect(checkIsIosSafari()).toBe(false);
+      expect(checkIsIos()).toBe(true);
+      expect(checkIsIosSafari()).toBe(true);
     });
 
     it("returns false for desktop Chrome", () => {
@@ -158,7 +160,7 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
       });
 
       expect(screen.getByTestId("pwa-install-banner")).toBeDefined();
-      expect(screen.getByText("安裝 CIM-Life 到主畫面")).toBeDefined();
+      expect(screen.getByText("安裝 CIM-Life")).toBeDefined();
 
       const installButton = screen.getByText("安裝");
       await act(async () => {
@@ -273,7 +275,7 @@ describe("PwaInstallPrompt Component and PWA Utilities", () => {
       render(<PwaInstallPrompt />);
 
       expect(screen.getByTestId("pwa-install-banner")).toBeDefined();
-      expect(screen.getByText(/點擊下方分享/)).toBeDefined();
+      expect(screen.getByText(/點擊分享/)).toBeDefined();
       expect(screen.queryByText("安裝")).toBeNull(); // iOS doesn't have programmatic install button
     });
   });
