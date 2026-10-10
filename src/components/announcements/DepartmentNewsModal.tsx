@@ -50,6 +50,65 @@ const isPreviewable = (name: string, url: string = ""): boolean => {
   return isPdf(name, url) || isImage(name, url);
 };
 
+export const isMobileDevice = (): boolean => {
+  if (typeof window === "undefined") return false;
+  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+    return true;
+  }
+  const hasTouchScreen =
+    typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
+  const isNarrowScreen =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 768px)").matches;
+
+  return hasTouchScreen && isNarrowScreen;
+};
+
+export const isSafePublicPdfUrl = (urlStr: string): boolean => {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.username || parsed.password) {
+      return false;
+    }
+    const sensitiveKeys = [
+      "token",
+      "auth",
+      "secret",
+      "password",
+      "apikey",
+      "access_token",
+      "session",
+      "sig",
+      "signature",
+    ];
+    for (const key of sensitiveKeys) {
+      if (parsed.searchParams.has(key)) {
+        return false;
+      }
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    return (
+      hostname === "im.mgt.ncu.edu.tw" ||
+      hostname.endsWith(".ncu.edu.tw") ||
+      hostname.endsWith(".edu.tw")
+    );
+  } catch {
+    return false;
+  }
+};
+
+export const getPdfPreviewUrl = (rawUrl: string, isMobile: boolean): string => {
+  if (isMobile && isSafePublicPdfUrl(rawUrl)) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
+  }
+  return `${rawUrl}#view=FitH`;
+};
+
+
 const extractTextSnippet = (html: string): string => {
   if (!html) return "";
   const attachmentIndex = html.search(/<b>\s*附件[：:]/i);
@@ -109,7 +168,7 @@ const getAttachmentMeta = (isPdfFile: boolean, isImageFile: boolean): Attachment
   };
 };
 
-const AttachmentItem: React.FC<AttachmentItemProps> = ({
+export const AttachmentItem: React.FC<AttachmentItemProps> = ({
   att,
   idx,
   isSelected,
@@ -123,6 +182,8 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({
 
   const meta = getAttachmentMeta(isAttPdf, isAttImage);
   const actionButtonText = isCurrentPreview ? "收合" : meta.actionText;
+  const isMobile = isMobileDevice();
+  const pdfSrc = getPdfPreviewUrl(att.url, isMobile);
 
   return (
     <div
@@ -249,16 +310,15 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({
           }}
         >
           <iframe
-            src={`${att.url}#view=FitH`}
+            src={pdfSrc}
             title={att.name}
-            scrolling="no"
+            scrolling={isMobile ? "yes" : "no"}
             style={{
               width: "100%",
-              height: "min(68vh, 520px)",
+              height: isMobile ? "min(72vh, 560px)" : "min(68vh, 520px)",
               border: "none",
               display: "block",
               background: "#fff",
-              overflow: "hidden",
             }}
           />
         </div>
