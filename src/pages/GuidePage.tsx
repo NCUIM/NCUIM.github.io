@@ -204,16 +204,24 @@ const CategorySection = ({ cat }: Readonly<{ cat: ResourceCategory }>) => {
   );
 };
 
+const GUIDE_SHORT_LABELS: Readonly<Record<string, string>> = {
+  academic: "教務",
+  community: "生活",
+  "student-resources": "福利",
+  "tech-dev": "計中",
+  clubs: "社群",
+};
+
 const FILTER_TABS: readonly FilterChipTab<string>[] = [
   {
     id: "all",
-    label: "全部資源",
+    label: "全部",
     icon: SOLID_ICON[gridOutline] ?? gridOutline,
     iconColor: CATEGORY_ICON_COLORS.all,
   },
   ...guideCategories.map((cat) => ({
     id: cat.id,
-    label: cat.title,
+    label: GUIDE_SHORT_LABELS[cat.id] ?? cat.title,
     icon: SOLID_ICON[cat.icon] ?? cat.icon,
     iconColor: CATEGORY_ICON_COLORS[cat.id],
   })),

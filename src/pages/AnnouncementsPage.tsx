@@ -38,13 +38,13 @@ import { DepartmentNewsModal } from "../components/announcements/DepartmentNewsM
 import { FilterChips, type FilterChipTab } from "../components/common/FilterChips";
 
 const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] = [
-  { id: "最新消息", label: "最新消息", icon: newspaperOutline, iconColor: "var(--ncu-primary, #0284c7)" },
-  { id: "課程消息", label: "課程消息", icon: bookOutline, iconColor: "#2563eb" },
-  { id: "演講訊息", label: "演講訊息", icon: micOutline, iconColor: "#7c3aed" },
-  { id: "工讀獎學金", label: "工讀獎學金", icon: schoolOutline, iconColor: "#d97706" },
-  { id: "實習與企業徵才", label: "實習與企業徵才", icon: briefcaseOutline, iconColor: "var(--ncu-success, #0f766e)" },
-  { id: "榮譽榜", label: "榮譽榜", icon: trophyOutline, iconColor: "#e11d48" },
-  { id: "其他活動", label: "其他活動", icon: extensionPuzzleOutline, iconColor: "#64748b" },
+  { id: "最新消息", label: "最新", icon: newspaperOutline, iconColor: "var(--ncu-primary, #0284c7)" },
+  { id: "課程消息", label: "課程", icon: bookOutline, iconColor: "#2563eb" },
+  { id: "演講訊息", label: "演講", icon: micOutline, iconColor: "#7c3aed" },
+  { id: "工讀獎學金", label: "獎助", icon: schoolOutline, iconColor: "#d97706" },
+  { id: "實習與企業徵才", label: "徵才", icon: briefcaseOutline, iconColor: "var(--ncu-success, #0f766e)" },
+  { id: "榮譽榜", label: "榮譽", icon: trophyOutline, iconColor: "#e11d48" },
+  { id: "其他活動", label: "活動", icon: extensionPuzzleOutline, iconColor: "#64748b" },
 ];
 
 export const AnnouncementsPage: React.FC = () => {

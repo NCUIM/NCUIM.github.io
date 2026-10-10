@@ -37,7 +37,7 @@ export const HomeFooter: React.FC = () => (
       }}
     >
       <IonIcon icon={logoGithub} style={{ fontSize: 16 }} />
-      <span>歡迎參與專案貢獻 (GitHub) ↗</span>
+      <span>專案貢獻 ↗</span>
     </a>
 
     <div
