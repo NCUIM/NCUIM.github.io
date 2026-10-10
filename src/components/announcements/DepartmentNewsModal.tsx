@@ -9,6 +9,7 @@ import {
   IonContent,
   IonIcon,
   IonSpinner,
+  isPlatform,
 } from "@ionic/react";
 import {
   closeOutline,
@@ -49,6 +50,36 @@ const isImage = (name: string, url: string = ""): boolean => {
 const isPreviewable = (name: string, url: string = ""): boolean => {
   return isPdf(name, url) || isImage(name, url);
 };
+
+export const isMobileDevice = (): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    if (isPlatform("mobile") || isPlatform("android") || isPlatform("ios")) {
+      return true;
+    }
+  } catch {
+    // Ignore in non-browser or mock test environments
+  }
+  const hasTouchScreen =
+    (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0) ||
+    "ontouchstart" in window;
+  const isNarrowScreen =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(max-width: 768px)").matches;
+  const isMobileUserAgent =
+    typeof navigator !== "undefined" &&
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  return (hasTouchScreen && isNarrowScreen) || isMobileUserAgent;
+};
+
+export const getPdfPreviewUrl = (rawUrl: string, isMobile: boolean): string => {
+  if (isMobile) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
+  }
+  return `${rawUrl}#view=FitH`;
+};
+
 
 const extractTextSnippet = (html: string): string => {
   if (!html) return "";
@@ -123,6 +154,8 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({
 
   const meta = getAttachmentMeta(isAttPdf, isAttImage);
   const actionButtonText = isCurrentPreview ? "收合" : meta.actionText;
+  const isMobile = isMobileDevice();
+  const pdfSrc = getPdfPreviewUrl(att.url, isMobile);
 
   return (
     <div
@@ -249,16 +282,15 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({
           }}
         >
           <iframe
-            src={`${att.url}#view=FitH`}
+            src={pdfSrc}
             title={att.name}
-            scrolling="no"
+            scrolling={isMobile ? "yes" : "no"}
             style={{
               width: "100%",
-              height: "min(68vh, 520px)",
+              height: isMobile ? "min(72vh, 560px)" : "min(68vh, 520px)",
               border: "none",
               display: "block",
               background: "#fff",
-              overflow: "hidden",
             }}
           />
         </div>
