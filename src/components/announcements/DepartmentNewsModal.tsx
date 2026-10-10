@@ -348,7 +348,12 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
   }, [isOpen, newsId]);
 
   return (
-    <IonModal isOpen={isOpen} onDidDismiss={onDismiss}>
+    <IonModal
+      isOpen={isOpen}
+      onDidDismiss={onDismiss}
+      backdropDismiss={true}
+      className="department-news-floating-modal"
+    >
       <IonHeader>
         <IonToolbar>
           <IonTitle>公告詳情</IonTitle>
