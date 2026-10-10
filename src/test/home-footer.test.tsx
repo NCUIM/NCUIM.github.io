@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import HomeFooter from "../components/home/HomeFooter";
 
 describe("HomeFooter", () => {
@@ -25,5 +25,15 @@ describe("HomeFooter", () => {
     expect(visitorImg).toBeDefined();
     expect(visitorImg.src).toContain("hits.sh/ncuim.github.io.svg");
     expect(visitorImg.getAttribute("referrerpolicy")).toBe("no-referrer");
+  });
+
+  it("hides visitor counter badge gracefully when image error occurs", () => {
+    render(<HomeFooter />);
+
+    const visitorImg = screen.getByAltText("Visitors Counter");
+    fireEvent.error(visitorImg);
+
+    expect(screen.queryByAltText("Visitors Counter")).toBeNull();
+    expect(screen.getByAltText("GitHub Stars")).toBeDefined();
   });
 });
