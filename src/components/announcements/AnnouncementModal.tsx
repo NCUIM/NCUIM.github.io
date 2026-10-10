@@ -79,6 +79,12 @@ const isTodayAnnouncement = (item: AnnouncementItem): boolean => {
   );
 };
 
+const getPriorityBorderLeft = (priority: string): string => {
+  if (priority === "urgent") return "4px solid #ef4444";
+  if (priority === "high") return "4px solid #f97316";
+  return "1px solid var(--ncu-border, #e2e8f0)";
+};
+
 export const AnnouncementModal = ({
   isOpen,
   announcements,
@@ -160,12 +166,7 @@ export const AnnouncementModal = ({
                   style={{
                     margin: "0 0 14px",
                     border: "1px solid var(--ncu-border, #e2e8f0)",
-                    borderLeft:
-                      item.priority === "urgent"
-                        ? "4px solid #ef4444"
-                        : item.priority === "high"
-                        ? "4px solid #f97316"
-                        : "1px solid var(--ncu-border, #e2e8f0)",
+                    borderLeft: getPriorityBorderLeft(item.priority),
                     borderRadius: "var(--ncu-radius-lg, 12px)",
                     boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
                     background: "var(--ncu-surface, #ffffff)",
