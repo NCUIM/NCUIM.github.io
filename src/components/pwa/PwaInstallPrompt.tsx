@@ -30,7 +30,7 @@ export const checkIsDismissed = (): boolean => {
   try {
     const item = localStorage.getItem(DISMISSED_STORAGE_KEY);
     if (!item) return false;
-    const until = parseInt(item, 10);
+    const until = Number.parseInt(item, 10);
     return Date.now() < until;
   } catch {
     return false;
