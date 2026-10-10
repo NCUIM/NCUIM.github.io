@@ -36,6 +36,7 @@ export const AnnouncementsPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<DepartmentNewsCategory>("最新消息");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [items, setItems] = useState<readonly DepartmentNewsItem[]>([]);
+  const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -51,6 +52,7 @@ export const AnnouncementsPage: React.FC = () => {
       try {
         const res = await fetchDepartmentNews(category, page, forceRefresh);
         setItems(res.items);
+        setTotal(res.total);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "載入失敗");
       } finally {
@@ -91,6 +93,22 @@ export const AnnouncementsPage: React.FC = () => {
     if (!q) return items;
     return items.filter((item) => item.title.toLowerCase().includes(q));
   }, [items, searchQuery]);
+
+  const isLastPage = useMemo(() => {
+    if (items.length === 0) return true;
+    if (total > 20) {
+      return currentPage * 20 >= total;
+    }
+    return items.length < 20;
+  }, [items.length, total, currentPage]);
+
+  const totalPagesText = useMemo(() => {
+    if (total > 20) {
+      const maxPages = Math.ceil(total / 20);
+      return `第 ${currentPage} / ${maxPages} 頁`;
+    }
+    return `第 ${currentPage} 頁`;
+  }, [currentPage, total]);
 
   return (
     <IonPage>
@@ -171,7 +189,7 @@ export const AnnouncementsPage: React.FC = () => {
           <IonSearchbar
             value={searchQuery}
             onIonInput={(e) => setSearchQuery(e.detail.value ?? "")}
-            placeholder={`搜尋 ${activeCategory}...`}
+            placeholder={`搜尋本頁 ${activeCategory}...`}
             debounce={200}
             style={{ padding: "0 0 12px" }}
           />
@@ -345,13 +363,13 @@ export const AnnouncementsPage: React.FC = () => {
                   color: "var(--ncu-muted, #64748b)",
                 }}
               >
-                第 {currentPage} 頁
+                {totalPagesText}
               </span>
 
               <IonButton
                 size="small"
                 fill="outline"
-                disabled={items.length === 0 || loading}
+                disabled={isLastPage || loading}
                 onClick={() => setCurrentPage((p) => p + 1)}
               >
                 下一頁

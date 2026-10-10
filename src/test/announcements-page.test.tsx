@@ -164,5 +164,54 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
     fireEvent.click(previewBtn);
     expect(screen.getByAltText("演講海報.jpg")).toBeDefined();
   });
+
+  it("disables next page button when current page is the last page", async () => {
+    vi.spyOn(newsApi, "fetchDepartmentNews").mockResolvedValueOnce({
+      category: "最新消息",
+      page: 1,
+      total: 2,
+      items: mockNewsResponse.items,
+    });
+
+    render(<AnnouncementsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
+    });
+
+    const nextBtn = screen.getByText("下一頁").closest("ion-button") || screen.getByText("下一頁");
+    expect(nextBtn.getAttribute("disabled")).not.toBeNull();
+  });
+
+  it("identifies attachment as previewable when display name has no extension but URL has image extension", async () => {
+    const mockDetailNoExt: newsApi.DepartmentNewsDetail = {
+      id: "9531",
+      title: "附件海報測試",
+      date: "2026-10-09",
+      contentHtml: "<p>請點擊下方海報預覽。</p>",
+      attachments: [
+        {
+          name: "活動海報",
+          url: "https://im.mgt.ncu.edu.tw/uploads/event_poster.png",
+        },
+      ],
+      originalUrl: "https://im.mgt.ncu.edu.tw/homes/9531/post",
+    };
+
+    vi.spyOn(newsApi, "fetchDepartmentNewsDetail").mockResolvedValueOnce(mockDetailNoExt);
+
+    render(
+      <DepartmentNewsModal
+        isOpen={true}
+        newsId="9531"
+        onDismiss={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("活動海報")).toBeDefined();
+      expect(screen.getByText("圖片檔案 · 線上即時預覽")).toBeDefined();
+    });
+  });
 });
 

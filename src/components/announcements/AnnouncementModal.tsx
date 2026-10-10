@@ -25,6 +25,7 @@ import {
   CATEGORY_LABELS,
   PRIORITY_CONFIG,
 } from "../../services/announcement-api";
+import { useHistory } from "react-router-dom";
 import AnnouncementContent from "./AnnouncementContent";
 import { useModalHistorySync } from "../../utils/useModalHistorySync";
 
@@ -78,7 +79,13 @@ export const AnnouncementModal = ({
   onDismiss,
 }: AnnouncementModalProps) => {
   useModalHistorySync(isOpen, onDismiss, "announcement-modal");
+  const history = useHistory();
   const [selectedCategory, setSelectedCategory] = useState<AnnouncementCategory>("all");
+
+  const handleNavigateToAnnouncements = () => {
+    history.replace("/announcements");
+    onDismiss();
+  };
 
   const filtered =
     selectedCategory === "all"
@@ -121,8 +128,7 @@ export const AnnouncementModal = ({
               </div>
             </div>
             <IonButton
-              routerLink="/announcements"
-              onClick={onDismiss}
+              onClick={handleNavigateToAnnouncements}
               size="small"
               color="light"
               style={{ fontWeight: 700, flexShrink: 0 }}

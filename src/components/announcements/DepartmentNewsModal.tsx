@@ -37,13 +37,13 @@ export interface DepartmentNewsModalProps {
 }
 
 const isPdf = (name: string, url: string = ""): boolean => {
-  const target = (name || url).toLowerCase();
-  return /\.pdf(\?.*)?$/i.test(target);
+  const pdfRegex = /\.pdf(\?.*)?$/i;
+  return pdfRegex.test(name) || pdfRegex.test(url);
 };
 
 const isImage = (name: string, url: string = ""): boolean => {
-  const target = (name || url).toLowerCase();
-  return /\.(jpe?g|png|webp|gif|svg)(\?.*)?$/i.test(target);
+  const imgRegex = /\.(jpe?g|png|webp|gif|svg)(\?.*)?$/i;
+  return imgRegex.test(name) || imgRegex.test(url);
 };
 
 const isPreviewable = (name: string, url: string = ""): boolean => {
