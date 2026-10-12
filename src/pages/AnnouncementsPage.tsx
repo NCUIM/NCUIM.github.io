@@ -37,6 +37,10 @@ import {
 } from "../services/department-news-api";
 import { DepartmentNewsModal } from "../components/announcements/DepartmentNewsModal";
 import { FilterChips, type FilterChipTab } from "../components/common/FilterChips";
+import {
+  isModalDismissCooldown,
+  markModalDismissed,
+} from "../utils/useModalHistorySync";
 
 const CATEGORY_CHIP_META: Record<
   DepartmentNewsCategory,
@@ -105,15 +109,19 @@ export const AnnouncementsPage: React.FC = () => {
     event?.detail.complete();
   };
 
-  const handleOpenDetail = (id: string) => {
+  const handleOpenDetail = useCallback((id: string) => {
+    if (isModalDismissCooldown()) {
+      return;
+    }
     setSelectedNewsId(id);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleDismissModal = () => {
+  const handleDismissModal = useCallback(() => {
+    markModalDismissed();
     setIsModalOpen(false);
     setSelectedNewsId(null);
-  };
+  }, []);
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
