@@ -14,6 +14,10 @@ import {
   ParticleData,
   getStageIcon,
 } from "../components/home";
+import {
+  isModalDismissCooldown,
+  markModalDismissed,
+} from "../utils/useModalHistorySync";
 
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
@@ -176,9 +180,29 @@ const HomePage = () => {
     }, 2800);
   }, [isUnlocked, addParticle, triggerEasterEgg]);
 
+  const handleOpenQuiz = useCallback(() => {
+    if (isModalDismissCooldown()) return;
+    setShowQuizModal(true);
+  }, []);
+
+  const handleDismissQuiz = useCallback(() => {
+    markModalDismissed();
+    setShowQuizModal(false);
+  }, []);
+
+  const handleOpenAnnouncements = useCallback(() => {
+    if (isModalDismissCooldown()) return;
+    setShowAnnouncements(true);
+  }, []);
+
+  const handleDismissAnnouncements = useCallback(() => {
+    markModalDismissed();
+    setShowAnnouncements(false);
+  }, []);
+
   return (
     <IonPage>
-      <HomeHeader onOpenQuiz={() => setShowQuizModal(true)} />
+      <HomeHeader onOpenQuiz={handleOpenQuiz} />
       <HomeBody
         stage={easterEggStage}
         isUnlocked={isUnlocked}
@@ -188,16 +212,16 @@ const HomePage = () => {
         onHover={setHovered}
         onLeave={() => setHovered(null)}
         onLogoClick={handleSecretTap}
-        onOpenAnnouncements={() => setShowAnnouncements(true)}
+        onOpenAnnouncements={handleOpenAnnouncements}
       />
       <AnnouncementModal
         isOpen={showAnnouncements}
         announcements={announcements}
-        onDismiss={() => setShowAnnouncements(false)}
+        onDismiss={handleDismissAnnouncements}
       />
       <FacultyQuizModal
         isOpen={showQuizModal}
-        onDismiss={() => setShowQuizModal(false)}
+        onDismiss={handleDismissQuiz}
       />
     </IonPage>
   );

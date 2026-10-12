@@ -27,6 +27,10 @@ import {
   type CreditCalculationResult,
 } from "../data/im-curriculum";
 import CisLoginModal from "../components/CisLoginModal";
+import {
+  isModalDismissCooldown,
+  markModalDismissed,
+} from "../utils/useModalHistorySync";
 import TrackSelectorCard from "../components/credit/TrackSelectorCard";
 import CreditDashboardCard from "../components/credit/CreditDashboardCard";
 import SectionCard from "../components/credit/SectionCard";
@@ -278,7 +282,15 @@ const CreditPage: React.FC = () => {
     });
   }, [presentAlert, presentToast]);
 
-  const handleOpenCisModal = useCallback(() => setShowCisModal(true), []);
+  const handleOpenCisModal = useCallback(() => {
+    if (isModalDismissCooldown()) return;
+    setShowCisModal(true);
+  }, []);
+
+  const handleDismissCisModal = useCallback(() => {
+    markModalDismissed();
+    setShowCisModal(false);
+  }, []);
 
   return (
     <IonPage>
@@ -300,7 +312,7 @@ const CreditPage: React.FC = () => {
       />
       <CisLoginModal
         isOpen={showCisModal}
-        onDismiss={() => setShowCisModal(false)}
+        onDismiss={handleDismissCisModal}
       />
     </IonPage>
   );

@@ -20,7 +20,11 @@ import {
   mailOutline,
 } from "ionicons/icons";
 import type { TeacherProfile, MemeItem } from "../../types/faculty";
-import { useModalHistorySync } from "../../utils/useModalHistorySync";
+import {
+  useModalHistorySync,
+  isModalDismissCooldown,
+  markModalDismissed,
+} from "../../utils/useModalHistorySync";
 
 export interface FacultyCompendiumModalProps {
   readonly isOpen: boolean;
@@ -40,7 +44,14 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
   useModalHistorySync(isOpen, onDismiss, "faculty-compendium-modal");
   const [filter, setFilter] = useState<"all" | "unlocked" | "locked">("all");
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherProfile | null>(null);
-  useModalHistorySync(selectedTeacher !== null, () => setSelectedTeacher(null), "teacher-detail-modal");
+  useModalHistorySync(
+    selectedTeacher !== null,
+    () => {
+      markModalDismissed();
+      setSelectedTeacher(null);
+    },
+    "teacher-detail-modal"
+  );
 
   const unlockedSet = useMemo(() => new Set(unlockedIds), [unlockedIds]);
   const unlockedCount = teachers.filter((t) => unlockedSet.has(t.id)).length;
@@ -208,7 +219,9 @@ export const FacultyCompendiumModal: React.FC<FacultyCompendiumModalProps> = ({
                   key={teacher.id}
                   disabled={!isUnlocked}
                   onClick={() => {
-                    if (isUnlocked) setSelectedTeacher(teacher);
+                    if (isUnlocked && !isModalDismissCooldown()) {
+                      setSelectedTeacher(teacher);
+                    }
                   }}
                   style={{
                     background: "var(--ncu-surface)",

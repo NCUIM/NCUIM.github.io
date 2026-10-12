@@ -9,6 +9,10 @@ import { isCisLoggedIn, cisLogout } from "../services/cis-login";
 import { fetchCisSelectedCourses, parseBookmarkletPayload, type CisCourse } from "../services/cis-course-api";
 import { fetchImMasterCourses, type MasterCourseItem } from "../services/all-courses-api";
 import CisLoginModal from "../components/CisLoginModal";
+import {
+  isModalDismissCooldown,
+  markModalDismissed,
+} from "../utils/useModalHistorySync";
 import { TRACK_CONFIGS, matchCisToCurriculum, type TrackType } from "../data/im-curriculum";
 import {
   getDefaultDayIndex,
@@ -218,7 +222,13 @@ const TimetablePage = () => {
   }, []);
 
   const handleOpenCisModal = useCallback(() => {
+    if (isModalDismissCooldown()) return;
     setShowCisLogin(true);
+  }, []);
+
+  const handleDismissCisModal = useCallback(() => {
+    markModalDismissed();
+    setShowCisLogin(false);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -280,7 +290,7 @@ const TimetablePage = () => {
       </IonContent>
       <CisLoginModal
         isOpen={showCisLogin}
-        onDismiss={() => setShowCisLogin(false)}
+        onDismiss={handleDismissCisModal}
       />
     </IonPage>
   );
