@@ -1,21 +1,38 @@
 import { useEffect, useRef } from "react";
 
+let lastModalDismissTimestamp = 0;
+
 /**
- * Synchronizes an open modal with the browser history stack.
+ * Record the timestamp when any modal is dismissed.
+ * Used to guard against mobile ghost clicks (click-through) that occur
+ * when touch release (touchend) dispatches a synthetic click on whatever
+ * element was uncovered underneath the closing modal.
+ */
+export const markModalDismissed = (): void => {
+  lastModalDismissTimestamp = Date.now();
+};
+
+/**
+ * Checks whether a modal was dismissed very recently (within cooldownMs).
+ * Call this in modal-opening button handlers to prevent ghost clicks from
+ * immediately reopening the modal upon gesture or hardware back.
+ */
+export const isModalDismissCooldown = (cooldownMs = 400): boolean => {
+  return Date.now() - lastModalDismissTimestamp < cooldownMs;
+};
+
+/**
+ * Synchronizes an open modal with the browser history stack and CloseWatcher API.
  *
- * Problem on mobile:
- * When a user swipes from the screen edge to go back on mobile browsers (Safari / Chrome),
- * the browser triggers a history 'popstate' event. Because modals are rendered on top of
- * the page without updating the browser history, the browser attempts to navigate away from
- * the underlying page (causing a flash of the previous page/route), while the React modal
- * state remains open.
+ * Modern Android/Desktop CloseWatcher support:
+ * - If CloseWatcher is supported by the browser (Chrome 120+, modern Edge),
+ *   it directly intercepts close requests (hardware back button / gesture / Esc key)
+ *   without polluting or manipulating the browser's navigation history stack.
  *
- * Solution:
- * When the modal opens, this hook pushes a state entry onto window.history.
- * When the user swipes back or taps browser/system back:
- * - 'popstate' fires -> modal calls onDismiss() and closes cleanly without changing page!
- * When the modal is closed programmatically (via close button or backdrop):
- * - If the modal pushed history state, it calls window.history.back() to clean up the stack.
+ * Fallback (Safari / older browsers):
+ * - Pushes a dummy state onto window.history.
+ * - Listens for 'popstate' and triggers onDismiss().
+ * - Reverts the pushed state cleanly if closed via UI button.
  */
 export const useModalHistorySync = (
   isOpen: boolean,
@@ -24,9 +41,31 @@ export const useModalHistorySync = (
 ) => {
   const isPushedRef = useRef(false);
   const isPopstateClosingRef = useRef(false);
+  const onDismissRef = useRef(onDismiss);
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     if (isOpen) {
+      // 1. Try CloseWatcher API if available
+      if (typeof window !== "undefined" && "CloseWatcher" in window) {
+        try {
+          const watcher = new (window as any).CloseWatcher();
+          watcher.onclose = () => {
+            markModalDismissed();
+            onDismissRef.current();
+          };
+          return () => {
+            watcher.destroy();
+          };
+        } catch {
+          // Fall back to history manipulation if CloseWatcher instantiation fails
+        }
+      }
+
+      // 2. Fallback: window.history.pushState
       if (!isPushedRef.current) {
         window.history.pushState({ modal: modalKey }, "");
         isPushedRef.current = true;
@@ -37,7 +76,8 @@ export const useModalHistorySync = (
         if (isPushedRef.current) {
           isPushedRef.current = false;
           isPopstateClosingRef.current = true;
-          onDismiss();
+          markModalDismissed();
+          onDismissRef.current();
         }
       };
 
@@ -54,5 +94,5 @@ export const useModalHistorySync = (
       }
       isPopstateClosingRef.current = false;
     }
-  }, [isOpen, onDismiss, modalKey]);
+  }, [isOpen, modalKey]);
 };
