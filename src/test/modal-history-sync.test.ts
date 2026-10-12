@@ -78,6 +78,22 @@ describe("useModalHistorySync", () => {
     expect(isModalDismissCooldown(400)).toBe(false);
   });
 
+  it("blocks rapid reopen trigger handler when cooldown is active", () => {
+    markModalDismissed();
+    let opened = false;
+    const guardedTrigger = () => {
+      if (isModalDismissCooldown()) return;
+      opened = true;
+    };
+
+    guardedTrigger();
+    expect(opened).toBe(false);
+
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + 500);
+    guardedTrigger();
+    expect(opened).toBe(true);
+  });
+
   it("uses CloseWatcher when supported without manipulating history", () => {
     const pushSpy = vi.spyOn(window.history, "pushState");
     const onDismiss = vi.fn();
