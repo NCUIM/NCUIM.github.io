@@ -21,6 +21,28 @@ export const isModalDismissCooldown = (cooldownMs = 400): boolean => {
   return Date.now() - lastModalDismissTimestamp < cooldownMs;
 };
 
+const initCloseWatcher = (onClose: () => void): (() => void) | null => {
+  if (typeof window === "undefined" || !("CloseWatcher" in window)) {
+    return null;
+  }
+  try {
+    const watcher = new (window as any).CloseWatcher();
+    watcher.onclose = () => {
+      markModalDismissed();
+      onClose();
+    };
+    return () => watcher.destroy();
+  } catch {
+    return null;
+  }
+};
+
+const revertPushedHistoryState = (modalKey: string): void => {
+  if (window.history.state?.modal === modalKey) {
+    window.history.back();
+  }
+};
+
 /**
  * Synchronizes an open modal with the browser history stack and CloseWatcher API.
  *
@@ -48,51 +70,38 @@ export const useModalHistorySync = (
   }, [onDismiss]);
 
   useEffect(() => {
-    if (isOpen) {
-      // 1. Try CloseWatcher API if available
-      if (typeof window !== "undefined" && "CloseWatcher" in window) {
-        try {
-          const watcher = new (window as any).CloseWatcher();
-          watcher.onclose = () => {
-            markModalDismissed();
-            onDismissRef.current();
-          };
-          return () => {
-            watcher.destroy();
-          };
-        } catch {
-          // Fall back to history manipulation if CloseWatcher instantiation fails
-        }
-      }
-
-      // 2. Fallback: window.history.pushState
-      if (!isPushedRef.current) {
-        window.history.pushState({ modal: modalKey }, "");
-        isPushedRef.current = true;
-      }
-      isPopstateClosingRef.current = false;
-
-      const handlePopState = () => {
-        if (isPushedRef.current) {
-          isPushedRef.current = false;
-          isPopstateClosingRef.current = true;
-          markModalDismissed();
-          onDismissRef.current();
-        }
-      };
-
-      window.addEventListener("popstate", handlePopState);
-      return () => {
-        window.removeEventListener("popstate", handlePopState);
-      };
-    } else {
+    if (!isOpen) {
       if (isPushedRef.current && !isPopstateClosingRef.current) {
         isPushedRef.current = false;
-        if (window.history.state?.modal === modalKey) {
-          window.history.back();
-        }
+        revertPushedHistoryState(modalKey);
       }
       isPopstateClosingRef.current = false;
+      return;
     }
+
+    const cleanupWatcher = initCloseWatcher(() => onDismissRef.current());
+    if (cleanupWatcher) {
+      return cleanupWatcher;
+    }
+
+    if (!isPushedRef.current) {
+      window.history.pushState({ modal: modalKey }, "");
+      isPushedRef.current = true;
+    }
+    isPopstateClosingRef.current = false;
+
+    const handlePopState = () => {
+      if (isPushedRef.current) {
+        isPushedRef.current = false;
+        isPopstateClosingRef.current = true;
+        markModalDismissed();
+        onDismissRef.current();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [isOpen, modalKey]);
 };
