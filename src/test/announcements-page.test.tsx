@@ -62,7 +62,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
     expect(screen.getByText("系網公告")).toBeDefined();
 
     await waitFor(() => {
-      expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
+      expect(screen.getByText("115學年度入學碩士班必修科目表")).toBeDefined();
       expect(screen.getByText("系友講座公告：大數據與雲端應用")).toBeDefined();
     });
   });
@@ -89,7 +89,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
     render(<AnnouncementsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
+      expect(screen.getByText("115學年度入學碩士班必修科目表")).toBeDefined();
     });
 
     const courseBtn = screen.getByRole("tab", { name: "課程" });
@@ -176,7 +176,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
     render(<AnnouncementsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
+      expect(screen.getByText("115學年度入學碩士班必修科目表")).toBeDefined();
     });
 
     const nextBtn = screen.getByText("下一頁").closest("ion-button") || screen.getByText("下一頁");

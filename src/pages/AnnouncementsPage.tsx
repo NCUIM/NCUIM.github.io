@@ -31,6 +31,8 @@ import {
 } from "ionicons/icons";
 import {
   fetchDepartmentNews,
+  getCachedNewsDate,
+  parseAnnouncementMeta,
   DEPARTMENT_NEWS_CATEGORIES,
   type DepartmentNewsCategory,
   type DepartmentNewsItem,
@@ -244,8 +246,9 @@ export const AnnouncementsPage: React.FC = () => {
           {!loading && !error && filteredItems.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {filteredItems.map((item) => {
-                const isImportant =
-                  item.tag.includes("重要") || item.title.includes("【重要】");
+                const { isImportant, topicTag, cleanTitle } = parseAnnouncementMeta(item);
+                const itemDate = item.date || getCachedNewsDate(item.id);
+
                 return (
                   <button
                     key={item.id}
@@ -288,24 +291,31 @@ export const AnnouncementsPage: React.FC = () => {
                           重要
                         </span>
                       )}
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "var(--ncu-muted, #64748b)",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {item.category}
-                      </span>
-                      <span style={{ fontSize: 11, color: "var(--ncu-border, #cbd5e1)" }}>•</span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "var(--ncu-muted, #94a3b8)",
-                        }}
-                      >
-                        #{item.id}
-                      </span>
+                      {topicTag && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            background: "var(--ncu-surface-alt, #f1f5f9)",
+                            color: "var(--ncu-muted, #475569)",
+                          }}
+                        >
+                          {topicTag}
+                        </span>
+                      )}
+                      {itemDate && (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "var(--ncu-muted, #94a3b8)",
+                            marginLeft: "auto",
+                          }}
+                        >
+                          {itemDate}
+                        </span>
+                      )}
                     </div>
 
                     <h3
@@ -317,7 +327,7 @@ export const AnnouncementsPage: React.FC = () => {
                         color: "var(--ncu-ink, #0f172a)",
                       }}
                     >
-                      {item.title}
+                      {cleanTitle}
                     </h3>
                   </button>
                 );

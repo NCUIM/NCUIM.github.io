@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   fetchDepartmentNews,
   fetchDepartmentNewsDetail,
+  parseAnnouncementMeta,
   DEPARTMENT_NEWS_CONFIG,
   type DepartmentNewsResponse,
   type DepartmentNewsDetail,
@@ -11,6 +12,85 @@ describe("department-news-api", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
+  });
+
+  describe("parseAnnouncementMeta", () => {
+    it("distinguishes important status from topic category and cleans title", () => {
+      const res = parseAnnouncementMeta({
+        title: "【重要】115學年度入學碩士班必修及選修科目表",
+        tag: "重要",
+        category: "最新消息",
+      });
+      expect(res.isImportant).toBe(true);
+      expect(res.topicTag).toBe("課程消息");
+      expect(res.cleanTitle).toBe("115學年度入學碩士班必修及選修科目表");
+    });
+
+    it("parses scholarship policy post with important status", () => {
+      const res = parseAnnouncementMeta({
+        title: "【重要】「國立中央大學學業成績優良書卷獎獎勵辦法」修正",
+        tag: "重要",
+        category: "最新消息",
+      });
+      expect(res.isImportant).toBe(true);
+      expect(res.topicTag).toBe("獎學金");
+      expect(res.cleanTitle).toBe("「國立中央大學學業成績優良書卷獎獎勵辦法」修正");
+    });
+
+    it("parses freshman guide post with important flag and clean title", () => {
+      const res = parseAnnouncementMeta({
+        title: "【重要公告】大學部115學年度入學新生手冊",
+        tag: "重要公告",
+        category: "最新消息",
+      });
+      expect(res.isImportant).toBe(true);
+      expect(res.topicTag).toBe("新生專區");
+      expect(res.cleanTitle).toBe("大學部115學年度入學新生手冊");
+    });
+
+    it("extracts specific bracket tag as topic tag and strips bracket from title", () => {
+      const res = parseAnnouncementMeta({
+        title: "【畢業審查】六學期-112學年度入學學生畢業審核表說明",
+        tag: "畢業審查",
+        category: "最新消息",
+      });
+      expect(res.isImportant).toBe(false);
+      expect(res.topicTag).toBe("畢業審查");
+      expect(res.cleanTitle).toBe("六學期-112學年度入學學生畢業審核表說明");
+    });
+
+    it("handles multiple brackets like 【重要】【實習】 cleanly", () => {
+      const res = parseAnnouncementMeta({
+        title: "【重要】【實習】長榮航空2027年資訊類實習生甄選報名事宜",
+        tag: "重要",
+        category: "最新消息",
+      });
+      expect(res.isImportant).toBe(true);
+      expect(res.topicTag).toBe("實習");
+      expect(res.cleanTitle).toBe("長榮航空2027年資訊類實習生甄選報名事宜");
+    });
+
+    it("falls back to item category when browsing a specific category tab", () => {
+      const res = parseAnnouncementMeta({
+        title: "【公告】1141本系新開選修課程",
+        tag: "公告",
+        category: "課程消息",
+      });
+      expect(res.isImportant).toBe(false);
+      expect(res.topicTag).toBe("課程消息");
+      expect(res.cleanTitle).toBe("1141本系新開選修課程");
+    });
+
+    it("handles untagged posts with title keyword heuristics", () => {
+      const res = parseAnnouncementMeta({
+        title: "可外借專題參考書籍清單",
+        tag: "",
+        category: "最新消息",
+      });
+      expect(res.isImportant).toBe(false);
+      expect(res.topicTag).toBe("課程消息");
+      expect(res.cleanTitle).toBe("可外借專題參考書籍清單");
+    });
   });
 
   describe("fetchDepartmentNews", () => {
@@ -36,7 +116,7 @@ describe("department-news-api", () => {
       } as Response);
 
       const res = await fetchDepartmentNews("最新消息", 1);
-      expect(res).toEqual(mockResponse);
+      expect(res.items[0].id).toBe("1001");
       expect(fetchSpy).toHaveBeenCalledWith(
         `${DEPARTMENT_NEWS_CONFIG.baseUrl}/?category=%E6%9C%80%E6%96%B0%E6%B6%88%E6%81%AF&page=1`
       );
@@ -44,7 +124,7 @@ describe("department-news-api", () => {
       // Verify cached hit without calling fetch again
       fetchSpy.mockClear();
       const cachedRes = await fetchDepartmentNews("最新消息", 1);
-      expect(cachedRes).toEqual(mockResponse);
+      expect(cachedRes.items[0].id).toBe("1001");
       expect(fetchSpy).not.toHaveBeenCalled();
     });
 

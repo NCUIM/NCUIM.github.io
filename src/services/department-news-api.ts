@@ -9,6 +9,7 @@ export interface DepartmentNewsItem {
   readonly url: string;
   readonly tag: string;
   readonly category: string;
+  readonly date?: string;
 }
 
 export interface DepartmentNewsResponse {
@@ -109,6 +110,96 @@ function saveToCache<T>(key: string, data: T): void {
   }
 }
 
+export function getCachedNewsDate(id: string): string | null {
+  const detail = getFromCache<DepartmentNewsDetail>(
+    `detail_${id}`,
+    DEPARTMENT_NEWS_CONFIG.detailTtlMs
+  ) ?? getStaleCache<DepartmentNewsDetail>(`detail_${id}`);
+  return detail?.date?.trim() || null;
+}
+
+export interface ParsedAnnouncementMeta {
+  readonly isImportant: boolean;
+  readonly topicTag: string;
+  readonly cleanTitle: string;
+}
+
+const GENERIC_TAGS = new Set([
+  "重要",
+  "重要公告",
+  "公告",
+  "轉發",
+  "宣傳",
+  "其他",
+  "一般",
+]);
+
+/**
+ * Parses announcement metadata:
+ * 1. Distinguishes '重要' priority status from actual topic category
+ * 2. Strips leading brackets from title for clean display
+ * 3. Identifies specific topic category badge
+ */
+export function parseAnnouncementMeta(
+  item: Pick<DepartmentNewsItem, "title" | "tag"> & { readonly category?: string }
+): ParsedAnnouncementMeta {
+  const isImportant =
+    item.tag.includes("重要") ||
+    item.title.includes("【重要】") ||
+    item.title.includes("【重要公告】") ||
+    item.title.startsWith("重要：") ||
+    item.title.startsWith("重要:");
+
+  // Strip all leading bracket prefixes (e.g. 【重要】、【公告】、[重要])
+  const cleanTitle =
+    item.title.replace(/^([【\[][^】\]]+[】\]]\s*)+/, "").trim() || item.title;
+
+  // Extract all bracket tags from the original title
+  const matches = Array.from(item.title.matchAll(/【([^】]+)】|\[([^\]]+)\]/g));
+  const bracketTags = matches.map((m) => m[1] || m[2]).filter(Boolean);
+
+  const specificBracketTag = bracketTags.find((t) => !GENERIC_TAGS.has(t));
+  const specificItemTag =
+    item.tag && !GENERIC_TAGS.has(item.tag) ? item.tag : null;
+
+  let topicTag = specificBracketTag || specificItemTag || null;
+
+  if (!topicTag) {
+    if (item.category && item.category !== "最新消息") {
+      topicTag = item.category;
+    } else {
+      // Infer topic from title keywords for '最新消息' or unclassified posts
+      const t = item.title;
+      if (/獎學金|書卷獎|研修獎|揚帆|工讀|助學/.test(t)) {
+        topicTag = "獎學金";
+      } else if (
+        /科目表|選課|課表|學分抵免|抵免|學分|專題|論文|修課|課程|選修|必修/.test(t)
+      ) {
+        topicTag = "課程消息";
+      } else if (/實習|徵才|誠徵|招募|就業|職缺/.test(t)) {
+        topicTag = "實習徵才";
+      } else if (/演講|講座|論壇|座談|讀書會|分享會/.test(t)) {
+        topicTag = "演講訊息";
+      } else if (/獲獎|得獎|頒獎|榮譽|黑客松|競賽/.test(t)) {
+        topicTag = "榮譽競賽";
+      } else if (/畢業審查|畢業審核|離校|畢業/.test(t)) {
+        topicTag = "畢業審查";
+      } else if (/新生手冊|新生資訊|新生/.test(t)) {
+        topicTag = "新生專區";
+      } else {
+        topicTag = item.category && item.category !== "最新消息" ? item.category : "系所公告";
+      }
+    }
+  }
+
+  // Ensure topicTag is never empty
+  if (!topicTag) {
+    topicTag = item.category && item.category !== "最新消息" ? item.category : "系所公告";
+  }
+
+  return { isImportant, topicTag, cleanTitle };
+}
+
 /**
  * Fetch a page of department announcements by category.
  */
@@ -124,7 +215,15 @@ export async function fetchDepartmentNews(
       cacheKey,
       DEPARTMENT_NEWS_CONFIG.listTtlMs
     );
-    if (cached) return cached;
+    if (cached) {
+      // If some cached items are missing dates, fill from detail cache
+      const itemsWithDates = cached.items.map((item) => {
+        if (item.date) return item;
+        const cachedDate = getCachedNewsDate(item.id);
+        return cachedDate ? { ...item, date: cachedDate } : item;
+      });
+      return { ...cached, items: itemsWithDates };
+    }
   }
 
   const url = `${DEPARTMENT_NEWS_CONFIG.baseUrl}/?category=${encodeURIComponent(category)}&page=${page}`;
@@ -135,12 +234,36 @@ export async function fetchDepartmentNews(
       throw new Error(`系網公告載入失敗 (HTTP ${res.status})`);
     }
     const data = (await res.json()) as DepartmentNewsResponse;
-    saveToCache(cacheKey, data);
-    return data;
+
+    // Populate dates for all items: check cache or batch fetch details in background
+    const itemsWithDates = await Promise.all(
+      data.items.map(async (item) => {
+        if (item.date) return item;
+        const cachedDate = getCachedNewsDate(item.id);
+        if (cachedDate) {
+          return { ...item, date: cachedDate };
+        }
+        try {
+          const detail = await fetchDepartmentNewsDetail(item.id);
+          return { ...item, date: detail.date || undefined };
+        } catch {
+          return item;
+        }
+      })
+    );
+
+    const enrichedData = { ...data, items: itemsWithDates };
+    saveToCache(cacheKey, enrichedData);
+    return enrichedData;
   } catch (err) {
     const fallback = getStaleCache<DepartmentNewsResponse>(cacheKey);
     if (fallback) {
-      return fallback;
+      const itemsWithDates = fallback.items.map((item) => {
+        if (item.date) return item;
+        const cachedDate = getCachedNewsDate(item.id);
+        return cachedDate ? { ...item, date: cachedDate } : item;
+      });
+      return { ...fallback, items: itemsWithDates };
     }
     throw err;
   }
@@ -160,7 +283,12 @@ export async function fetchDepartmentNewsDetail(
       cacheKey,
       DEPARTMENT_NEWS_CONFIG.detailTtlMs
     );
-    if (cached && (cached.contentHtml?.trim() || (cached.attachments && cached.attachments.length > 0))) {
+    if (
+      cached &&
+      (cached.date?.trim() ||
+        cached.contentHtml?.trim() ||
+        (cached.attachments && cached.attachments.length > 0))
+    ) {
       return cached;
     }
   }
@@ -182,7 +310,11 @@ export async function fetchDepartmentNewsDetail(
       contentHtml,
     };
 
-    if (data.contentHtml || (data.attachments && data.attachments.length > 0)) {
+    if (
+      data.date ||
+      data.contentHtml ||
+      (data.attachments && data.attachments.length > 0)
+    ) {
       saveToCache(cacheKey, data);
     }
     return data;
