@@ -187,6 +187,8 @@ export const AnnouncementsPage: React.FC = () => {
             onSelectCategory={handleCategoryChange}
             tabs={ANNOUNCEMENT_TABS}
             ariaLabel="公告分類"
+            className="guide-chips-scroll"
+            labelClassName="guide-filter-chip-label"
           />
 
           {/* Search bar */}
