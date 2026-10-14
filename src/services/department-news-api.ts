@@ -136,75 +136,129 @@ const GENERIC_TAGS = new Set([
   "一般",
 ]);
 
+const NAMED_HTML_ENTITIES: Readonly<Record<string, string>> = {
+  "&amp;": "&",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&apos;": "'",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&nbsp;": " ",
+};
+
+/**
+ * Decodes standard and numeric HTML entities into plain text in a single pass.
+ */
+export function decodeHtmlEntities(text: string): string {
+  if (!text) return "";
+  return text.replace(
+    /&(?:amp|quot|#39|apos|lt|gt|nbsp|#\d+|#x[0-9a-fA-F]+);/g,
+    (match) => {
+      const named = NAMED_HTML_ENTITIES[match];
+      if (named !== undefined) {
+        return named;
+      }
+      if (match.startsWith("&#x") || match.startsWith("&#X")) {
+        const hex = match.slice(3, -1);
+        const code = Number.parseInt(hex, 16);
+        return !Number.isNaN(code) ? String.fromCodePoint(code) : match;
+      }
+      if (match.startsWith("&#")) {
+        const dec = match.slice(2, -1);
+        const code = Number.parseInt(dec, 10);
+        return !Number.isNaN(code) ? String.fromCodePoint(code) : match;
+      }
+      return match;
+    }
+  );
+}
+
+const CATEGORY_TOPIC_MAP: Readonly<Record<string, string>> = {
+  "實習與企業徵才": "實習徵才",
+  "演講訊息": "演講講座",
+  "工讀與獎學金": "獎助學金",
+  "工讀獎學金": "獎助學金",
+  "榮譽榜": "活動競賽",
+};
+
+const KEYWORD_TOPIC_RULES: readonly [RegExp, string][] = [
+  [/實習|徵才|誠徵|招募|就業|職缺/, "實習徵才"],
+  [/演講|講座|論壇|座談|讀書會|分享會/, "演講講座"],
+  [/獎學金|書卷獎|研修獎|揚帆|工讀|助學/, "獎學金"],
+  [/科目表|選課|課表|學分抵免|抵免|學分|專題|論文|修課|課程|選修|必修/, "課程消息"],
+  [/獲獎|得獎|頒獎|榮譽|黑客松|競賽/, "活動競賽"],
+  [/畢業審查|畢業審核|離校|畢業/, "畢業審查"],
+  [/新生手冊|新生資訊|新生/, "新生專區"],
+];
+
+function inferTopicTagFromTitle(title: string, category?: string): string {
+  for (const [regex, tag] of KEYWORD_TOPIC_RULES) {
+    if (regex.test(title)) return tag;
+  }
+  return category === "其他活動" ? "其他動態" : "系所情報";
+}
+
+function resolveTopicTag(
+  rawTitle: string,
+  rawTag: string,
+  category?: string
+): string {
+  const matches = Array.from(rawTitle.matchAll(/【([^】]+)】|\[([^\]]+)\]/g));
+  const bracketTags = matches.map((m) => m[1] || m[2]).filter(Boolean);
+  const specificBracketTag = bracketTags.find((t) => !GENERIC_TAGS.has(t));
+  if (specificBracketTag) return specificBracketTag;
+
+  if (rawTag && !GENERIC_TAGS.has(rawTag)) return rawTag;
+
+  if (category && CATEGORY_TOPIC_MAP[category]) {
+    return CATEGORY_TOPIC_MAP[category];
+  }
+
+  return inferTopicTagFromTitle(rawTitle, category);
+}
+
+function stripLeadingBrackets(text: string): string {
+  let cleaned = text;
+  while (/^[【[][^】\]]+[】\]]\s*/.test(cleaned)) {
+    cleaned = cleaned.replace(/^[【[][^】\]]+[】\]]\s*/, "");
+  }
+  return cleaned.trim() || text;
+}
+
 /**
  * Parses announcement metadata:
  * 1. Distinguishes '重要' priority status from actual topic category
- * 2. Strips leading brackets from title for clean display
+ * 2. Decodes HTML entities and strips leading brackets from title for clean display
  * 3. Identifies specific topic category badge
  */
 export function parseAnnouncementMeta(
   item: Pick<DepartmentNewsItem, "title" | "tag"> & { readonly category?: string }
 ): ParsedAnnouncementMeta {
+  const rawTitle = decodeHtmlEntities(item.title || "");
+  const rawTag = decodeHtmlEntities(item.tag || "");
+
   const isImportant =
-    item.tag.includes("重要") ||
-    item.title.includes("【重要】") ||
-    item.title.includes("【重要公告】") ||
-    item.title.startsWith("重要：") ||
-    item.title.startsWith("重要:");
+    rawTag.includes("重要") ||
+    rawTitle.includes("【重要】") ||
+    rawTitle.includes("【重要公告】") ||
+    rawTitle.startsWith("重要：") ||
+    rawTitle.startsWith("重要:");
 
-  // Strip all leading bracket prefixes (e.g. 【重要】、【公告】、[重要])
-  const cleanTitle =
-    item.title.replace(/^([【\[][^】\]]+[】\]]\s*)+/, "").trim() || item.title;
-
-  // Extract all bracket tags from the original title
-  const matches = Array.from(item.title.matchAll(/【([^】]+)】|\[([^\]]+)\]/g));
-  const bracketTags = matches.map((m) => m[1] || m[2]).filter(Boolean);
-
-  const specificBracketTag = bracketTags.find((t) => !GENERIC_TAGS.has(t));
-  const specificItemTag =
-    item.tag && !GENERIC_TAGS.has(item.tag) ? item.tag : null;
-
-  let topicTag = specificBracketTag || specificItemTag || null;
-
-  if (!topicTag) {
-    if (item.category && item.category !== "最新消息" && item.category !== "其他活動") {
-      if (item.category === "實習與企業徵才") topicTag = "實習徵才";
-      else if (item.category === "演講訊息") topicTag = "演講講座";
-      else if (item.category === "工讀與獎學金" || item.category === "工讀獎學金") topicTag = "獎助學金";
-      else if (item.category === "榮譽榜") topicTag = "活動競賽";
-      else topicTag = item.category;
-    } else {
-      // Infer topic from title keywords
-      const t = item.title;
-      if (/實習|徵才|誠徵|招募|就業|職缺/.test(t)) {
-        topicTag = "實習徵才";
-      } else if (/演講|講座|論壇|座談|讀書會|分享會/.test(t)) {
-        topicTag = "演講講座";
-      } else if (/獎學金|書卷獎|研修獎|揚帆|工讀|助學/.test(t)) {
-        topicTag = "獎學金";
-      } else if (
-        /科目表|選課|課表|學分抵免|抵免|學分|專題|論文|修課|課程|選修|必修/.test(t)
-      ) {
-        topicTag = "課程消息";
-      } else if (/獲獎|得獎|頒獎|榮譽|黑客松|競賽/.test(t)) {
-        topicTag = "活動競賽";
-      } else if (/畢業審查|畢業審核|離校|畢業/.test(t)) {
-        topicTag = "畢業審查";
-      } else if (/新生手冊|新生資訊|新生/.test(t)) {
-        topicTag = "新生專區";
-      } else if (item.category === "其他活動") {
-        topicTag = "其他動態";
-      } else {
-        topicTag = "系所情報";
-      }
-    }
-  }
-
-  if (!topicTag) {
-    topicTag = "系所情報";
-  }
+  const cleanTitle = stripLeadingBrackets(rawTitle);
+  const topicTag = resolveTopicTag(rawTitle, rawTag, item.category);
 
   return { isImportant, topicTag, cleanTitle };
+}
+
+function hydrateNewsItem(rawItem: DepartmentNewsItem): DepartmentNewsItem {
+  const item: DepartmentNewsItem = {
+    ...rawItem,
+    title: decodeHtmlEntities(rawItem.title || ""),
+    tag: decodeHtmlEntities(rawItem.tag || ""),
+  };
+  if (item.date) return item;
+  const cachedDate = getCachedNewsDate(item.id);
+  return cachedDate ? { ...item, date: cachedDate } : item;
 }
 
 /**
@@ -223,13 +277,7 @@ export async function fetchDepartmentNews(
       DEPARTMENT_NEWS_CONFIG.listTtlMs
     );
     if (cached) {
-      // If some cached items are missing dates, fill from detail cache
-      const itemsWithDates = cached.items.map((item) => {
-        if (item.date) return item;
-        const cachedDate = getCachedNewsDate(item.id);
-        return cachedDate ? { ...item, date: cachedDate } : item;
-      });
-      return { ...cached, items: itemsWithDates };
+      return { ...cached, items: cached.items.map(hydrateNewsItem) };
     }
   }
 
@@ -244,12 +292,9 @@ export async function fetchDepartmentNews(
 
     // Populate dates for all items: check cache or batch fetch details in background
     const itemsWithDates = await Promise.all(
-      data.items.map(async (item) => {
+      data.items.map(async (rawItem) => {
+        const item = hydrateNewsItem(rawItem);
         if (item.date) return item;
-        const cachedDate = getCachedNewsDate(item.id);
-        if (cachedDate) {
-          return { ...item, date: cachedDate };
-        }
         try {
           const detail = await fetchDepartmentNewsDetail(item.id);
           return { ...item, date: detail.date || undefined };
@@ -265,12 +310,7 @@ export async function fetchDepartmentNews(
   } catch (err) {
     const fallback = getStaleCache<DepartmentNewsResponse>(cacheKey);
     if (fallback) {
-      const itemsWithDates = fallback.items.map((item) => {
-        if (item.date) return item;
-        const cachedDate = getCachedNewsDate(item.id);
-        return cachedDate ? { ...item, date: cachedDate } : item;
-      });
-      return { ...fallback, items: itemsWithDates };
+      return { ...fallback, items: fallback.items.map(hydrateNewsItem) };
     }
     throw err;
   }
@@ -312,8 +352,16 @@ export async function fetchDepartmentNewsDetail(
       .replace(/src=["']\/(?!\/)/g, 'src="https://im.mgt.ncu.edu.tw/')
       .replace(/href=["']\/(?!\/)/g, 'href="https://im.mgt.ncu.edu.tw/');
 
+    const title = decodeHtmlEntities(rawData.title || "");
+    const attachments = (rawData.attachments || []).map((att) => ({
+      ...att,
+      name: decodeHtmlEntities(att.name || ""),
+    }));
+
     const data: DepartmentNewsDetail = {
       ...rawData,
+      title,
+      attachments,
       contentHtml,
     };
 

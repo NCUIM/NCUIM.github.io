@@ -30,6 +30,7 @@ import {
   fetchDepartmentNews,
   getCachedNewsDate,
   parseAnnouncementMeta,
+  decodeHtmlEntities,
   DEPARTMENT_NEWS_CATEGORIES,
   type DepartmentNewsCategory,
   type DepartmentNewsItem,
@@ -122,7 +123,10 @@ export const AnnouncementsPage: React.FC = () => {
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((item) => item.title.toLowerCase().includes(q));
+    return items.filter((item) => {
+      const title = decodeHtmlEntities(item.title).toLowerCase();
+      return title.includes(q);
+    });
   }, [items, searchQuery]);
 
   const isLastPage = useMemo(() => {

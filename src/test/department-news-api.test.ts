@@ -3,6 +3,7 @@ import {
   fetchDepartmentNews,
   fetchDepartmentNewsDetail,
   parseAnnouncementMeta,
+  decodeHtmlEntities,
   DEPARTMENT_NEWS_CONFIG,
   type DepartmentNewsResponse,
   type DepartmentNewsDetail,
@@ -15,91 +16,102 @@ describe("department-news-api", () => {
   });
 
   describe("parseAnnouncementMeta", () => {
-    it("distinguishes important status from topic category and cleans title", () => {
-      const res = parseAnnouncementMeta({
-        title: "【重要】115學年度入學碩士班必修及選修科目表",
-        tag: "重要",
-        category: "其他活動",
-      });
-      expect(res.isImportant).toBe(true);
-      expect(res.cleanTitle).toBe("115學年度入學碩士班必修及選修科目表");
+    it.each([
+      [
+        "【重要】115學年度入學碩士班必修及選修科目表",
+        "重要",
+        "其他活動",
+        true,
+        "課程消息",
+        "115學年度入學碩士班必修及選修科目表",
+      ],
+      [
+        "【重要】「國立中央大學學業成績優良書卷獎獎勵辦法」修正",
+        "重要",
+        "最新消息",
+        true,
+        "獎學金",
+        "「國立中央大學學業成績優良書卷獎獎勵辦法」修正",
+      ],
+      [
+        "【重要公告】大學部115學年度入學新生手冊",
+        "重要公告",
+        "最新消息",
+        true,
+        "新生專區",
+        "大學部115學年度入學新生手冊",
+      ],
+      [
+        "【畢業審查】六學期-112學年度入學學生畢業審核表說明",
+        "畢業審查",
+        "最新消息",
+        false,
+        "畢業審查",
+        "六學期-112學年度入學學生畢業審核表說明",
+      ],
+      [
+        "【重要】【實習】長榮航空2027年資訊類實習生甄選報名事宜",
+        "重要",
+        "最新消息",
+        true,
+        "實習",
+        "長榮航空2027年資訊類實習生甄選報名事宜",
+      ],
+      [
+        "【公告】1141本系新開選修課程",
+        "公告",
+        "課程消息",
+        false,
+        "課程消息",
+        "1141本系新開選修課程",
+      ],
+      [
+        "可外借專題參考書籍清單",
+        "",
+        "最新消息",
+        false,
+        "課程消息",
+        "可外借專題參考書籍清單",
+      ],
+      [
+        "系辦公室會議室使用異動說明",
+        "",
+        "",
+        false,
+        "系所情報",
+        "系辦公室會議室使用異動說明",
+      ],
+      [
+        "【重要】獲獎名單出爐&amp;金質獎畢典出席調查",
+        "重要",
+        "榮譽榜",
+        true,
+        "活動競賽",
+        "獲獎名單出爐&金質獎畢典出席調查",
+      ],
+    ])(
+      "correctly parses metadata for: %s",
+      (title, tag, category, isImportant, topicTag, cleanTitle) => {
+        const res = parseAnnouncementMeta({ title, tag, category });
+        expect(res).toEqual({ isImportant, topicTag, cleanTitle });
+      }
+    );
+  });
+
+  describe("decodeHtmlEntities", () => {
+    it("decodes named HTML entities correctly", () => {
+      expect(decodeHtmlEntities("A&amp;B")).toBe("A&B");
+      expect(decodeHtmlEntities("&quot;Hello&quot; &amp; &#39;World&#39;")).toBe('"Hello" & \'World\'');
+      expect(decodeHtmlEntities("&lt;tag&gt;&nbsp;content")).toBe("<tag> content");
     });
 
-    it("parses scholarship policy post with important status", () => {
-      const res = parseAnnouncementMeta({
-        title: "【重要】「國立中央大學學業成績優良書卷獎獎勵辦法」修正",
-        tag: "重要",
-        category: "最新消息",
-      });
-      expect(res.isImportant).toBe(true);
-      expect(res.topicTag).toBe("獎學金");
-      expect(res.cleanTitle).toBe("「國立中央大學學業成績優良書卷獎獎勵辦法」修正");
+    it("decodes decimal and hexadecimal numeric entities", () => {
+      expect(decodeHtmlEntities("Test&#8211;Case")).toBe("Test\u2013Case");
+      expect(decodeHtmlEntities("Test&#x2013;Case")).toBe("Test\u2013Case");
     });
 
-    it("parses freshman guide post with important flag and clean title", () => {
-      const res = parseAnnouncementMeta({
-        title: "【重要公告】大學部115學年度入學新生手冊",
-        tag: "重要公告",
-        category: "最新消息",
-      });
-      expect(res.isImportant).toBe(true);
-      expect(res.topicTag).toBe("新生專區");
-      expect(res.cleanTitle).toBe("大學部115學年度入學新生手冊");
-    });
-
-    it("extracts specific bracket tag as topic tag and strips bracket from title", () => {
-      const res = parseAnnouncementMeta({
-        title: "【畢業審查】六學期-112學年度入學學生畢業審核表說明",
-        tag: "畢業審查",
-        category: "最新消息",
-      });
-      expect(res.isImportant).toBe(false);
-      expect(res.topicTag).toBe("畢業審查");
-      expect(res.cleanTitle).toBe("六學期-112學年度入學學生畢業審核表說明");
-    });
-
-    it("handles multiple brackets like 【重要】【實習】 cleanly", () => {
-      const res = parseAnnouncementMeta({
-        title: "【重要】【實習】長榮航空2027年資訊類實習生甄選報名事宜",
-        tag: "重要",
-        category: "最新消息",
-      });
-      expect(res.isImportant).toBe(true);
-      expect(res.topicTag).toBe("實習");
-      expect(res.cleanTitle).toBe("長榮航空2027年資訊類實習生甄選報名事宜");
-    });
-
-    it("falls back to item category when browsing a specific category tab", () => {
-      const res = parseAnnouncementMeta({
-        title: "【公告】1141本系新開選修課程",
-        tag: "公告",
-        category: "課程消息",
-      });
-      expect(res.isImportant).toBe(false);
-      expect(res.topicTag).toBe("課程消息");
-      expect(res.cleanTitle).toBe("1141本系新開選修課程");
-    });
-
-    it("handles untagged posts with title keyword heuristics", () => {
-      const res = parseAnnouncementMeta({
-        title: "可外借專題參考書籍清單",
-        tag: "",
-        category: "最新消息",
-      });
-      expect(res.isImportant).toBe(false);
-      expect(res.topicTag).toBe("課程消息");
-      expect(res.cleanTitle).toBe("可外借專題參考書籍清單");
-    });
-
-    it("guarantees a fallback topic tag when post has no tag, no category, and no keyword match", () => {
-      const res = parseAnnouncementMeta({
-        title: "系辦公室會議室使用異動說明",
-        tag: "",
-        category: "",
-      });
-      expect(res.isImportant).toBe(false);
-      expect(res.topicTag).toBe("系所情報");
-      expect(res.cleanTitle).toBe("系辦公室會議室使用異動說明");
+    it("handles empty or falsy inputs gracefully", () => {
+      expect(decodeHtmlEntities("")).toBe("");
     });
   });
 
@@ -116,6 +128,7 @@ describe("department-news-api", () => {
             url: "https://im.mgt.ncu.edu.tw/homes/1001/post",
             tag: "重要",
             category: "實習與企業徵才",
+            date: "2026-10-14",
           },
         ],
       };
@@ -150,6 +163,7 @@ describe("department-news-api", () => {
             url: "https://im.mgt.ncu.edu.tw/homes/2001/post",
             tag: "",
             category: "工讀與獎學金",
+            date: "2026-10-10",
           },
         ],
       };
