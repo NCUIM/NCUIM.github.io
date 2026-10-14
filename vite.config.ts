@@ -181,6 +181,7 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
+    pool: "threads",
     globals: true,
     exclude: [...configDefaults.exclude, "tests/e2e/**", "functions/**"],
     setupFiles: "./src/test/setup.ts",
