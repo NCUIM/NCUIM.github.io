@@ -25,6 +25,7 @@ import {
 } from "ionicons/icons";
 import {
   fetchDepartmentNewsDetail,
+  parseAnnouncementMeta,
   type DepartmentNewsDetail,
 } from "../../services/department-news-api";
 import { useModalHistorySync } from "../../utils/useModalHistorySync";
@@ -585,19 +586,60 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
           </div>
         )}
 
-        {detail && !loading && (
-          <article style={{ maxWidth: 720, margin: "0 auto", paddingBottom: 32 }}>
-            <h2
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: 700,
-                lineHeight: 1.4,
-                margin: "0 0 12px",
-                color: "var(--ncu-ink)",
-              }}
-            >
-              {detail.title}
-            </h2>
+        {detail && !loading && (() => {
+          const meta = parseAnnouncementMeta({ title: detail.title, tag: "" });
+          return (
+            <article style={{ maxWidth: 720, margin: "0 auto", paddingBottom: 32 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  marginBottom: 8,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
+              >
+                {meta.isImportant && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      background: "#fef3c7",
+                      color: "#b45309",
+                    }}
+                  >
+                    重要
+                  </span>
+                )}
+                {meta.topicTag && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      background: "var(--ncu-surface-alt, #f1f5f9)",
+                      color: "var(--ncu-muted, #475569)",
+                    }}
+                  >
+                    {meta.topicTag}
+                  </span>
+                )}
+              </div>
+
+              <h2
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                  margin: "0 0 12px",
+                  color: "var(--ncu-ink)",
+                }}
+              >
+                {meta.cleanTitle}
+              </h2>
 
             <div
               style={{
@@ -612,7 +654,13 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
               }}
             >
               {detail.date && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
                   <IonIcon icon={calendarOutline} />
                   <span>{detail.date}</span>
                 </span>
@@ -740,7 +788,8 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
               </section>
             )}
           </article>
-        )}
+        );
+      })()}
       </IonContent>
     </IonModal>
   );

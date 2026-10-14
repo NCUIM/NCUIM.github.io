@@ -21,16 +21,15 @@ import {
   chevronForwardOutline,
   warningOutline,
   documentTextOutline,
-  newspaperOutline,
-  bookOutline,
   micOutline,
   schoolOutline,
   briefcaseOutline,
   trophyOutline,
-  extensionPuzzleOutline,
 } from "ionicons/icons";
 import {
   fetchDepartmentNews,
+  parseAnnouncementMeta,
+  decodeHtmlEntities,
   DEPARTMENT_NEWS_CATEGORIES,
   type DepartmentNewsCategory,
   type DepartmentNewsItem,
@@ -46,13 +45,10 @@ const CATEGORY_CHIP_META: Record<
   DepartmentNewsCategory,
   { label: string; icon: string; iconColor: string }
 > = {
-  "最新消息": { label: "最新", icon: newspaperOutline, iconColor: "var(--ncu-primary, #0284c7)" },
-  "課程消息": { label: "課程", icon: bookOutline, iconColor: "#2563eb" },
-  "演講訊息": { label: "演講", icon: micOutline, iconColor: "#7c3aed" },
-  "工讀獎學金": { label: "獎助工讀", icon: schoolOutline, iconColor: "#d97706" },
   "實習與企業徵才": { label: "實習徵才", icon: briefcaseOutline, iconColor: "var(--ncu-success, #0f766e)" },
-  "榮譽榜": { label: "榮譽", icon: trophyOutline, iconColor: "#e11d48" },
-  "其他活動": { label: "其他活動", icon: extensionPuzzleOutline, iconColor: "#64748b" },
+  "演講訊息": { label: "演講講座", icon: micOutline, iconColor: "#7c3aed" },
+  "工讀與獎學金": { label: "獎助學金", icon: schoolOutline, iconColor: "#d97706" },
+  "榮譽榜": { label: "活動競賽", icon: trophyOutline, iconColor: "#e11d48" },
 };
 
 const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] =
@@ -64,7 +60,7 @@ const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] =
   }));
 
 export const AnnouncementsPage: React.FC = () => {
-  const [activeCategory, setActiveCategory] = useState<DepartmentNewsCategory>("最新消息");
+  const [activeCategory, setActiveCategory] = useState<DepartmentNewsCategory>("實習與企業徵才");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [items, setItems] = useState<readonly DepartmentNewsItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -126,7 +122,10 @@ export const AnnouncementsPage: React.FC = () => {
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((item) => item.title.toLowerCase().includes(q));
+    return items.filter((item) => {
+      const title = decodeHtmlEntities(item.title).toLowerCase();
+      return title.includes(q);
+    });
   }, [items, searchQuery]);
 
   const isLastPage = useMemo(() => {
@@ -187,6 +186,8 @@ export const AnnouncementsPage: React.FC = () => {
             onSelectCategory={handleCategoryChange}
             tabs={ANNOUNCEMENT_TABS}
             ariaLabel="公告分類"
+            className="guide-chips-scroll"
+            labelClassName="guide-filter-chip-label"
           />
 
           {/* Search bar */}
@@ -242,8 +243,12 @@ export const AnnouncementsPage: React.FC = () => {
           {!loading && !error && filteredItems.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {filteredItems.map((item) => {
-                const isImportant =
-                  item.tag.includes("重要") || item.title.includes("【重要】");
+                const { isImportant, topicTag, cleanTitle } = parseAnnouncementMeta({
+                  ...item,
+                  category: item.category || activeCategory,
+                });
+                const itemDate = item.date;
+
                 return (
                   <button
                     key={item.id}
@@ -286,24 +291,31 @@ export const AnnouncementsPage: React.FC = () => {
                           重要
                         </span>
                       )}
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "var(--ncu-muted, #64748b)",
-                          fontWeight: 500,
-                        }}
-                      >
-                        {item.category}
-                      </span>
-                      <span style={{ fontSize: 11, color: "var(--ncu-border, #cbd5e1)" }}>•</span>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: "var(--ncu-muted, #94a3b8)",
-                        }}
-                      >
-                        #{item.id}
-                      </span>
+                      {topicTag && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            background: "var(--ncu-surface-alt, #f1f5f9)",
+                            color: "var(--ncu-muted, #475569)",
+                          }}
+                        >
+                          {topicTag}
+                        </span>
+                      )}
+                      {itemDate && (
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: "var(--ncu-muted, #94a3b8)",
+                            marginLeft: "auto",
+                          }}
+                        >
+                          {itemDate}
+                        </span>
+                      )}
                     </div>
 
                     <h3
@@ -315,7 +327,7 @@ export const AnnouncementsPage: React.FC = () => {
                         color: "var(--ncu-ink, #0f172a)",
                       }}
                     >
-                      {item.title}
+                      {cleanTitle}
                     </h3>
                   </button>
                 );

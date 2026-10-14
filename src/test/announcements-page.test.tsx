@@ -19,7 +19,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
   });
 
   const mockNewsResponse: newsApi.DepartmentNewsResponse = {
-    category: "最新消息",
+    category: "實習與企業徵才",
     page: 1,
     total: 2,
     items: [
@@ -28,14 +28,14 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
         title: "【重要】115學年度入學碩士班必修科目表",
         url: "https://im.mgt.ncu.edu.tw/homes/9518/post",
         tag: "重要",
-        category: "最新消息",
+        category: "實習與企業徵才",
       },
       {
         id: "9520",
         title: "系友講座公告：大數據與雲端應用",
         url: "https://im.mgt.ncu.edu.tw/homes/9520/post",
         tag: "講座",
-        category: "最新消息",
+        category: "實習與企業徵才",
       },
     ],
   };
@@ -62,7 +62,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
     expect(screen.getByText("系網公告")).toBeDefined();
 
     await waitFor(() => {
-      expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
+      expect(screen.getByText("115學年度入學碩士班必修科目表")).toBeDefined();
       expect(screen.getByText("系友講座公告：大數據與雲端應用")).toBeDefined();
     });
   });
@@ -72,16 +72,16 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
       .spyOn(newsApi, "fetchDepartmentNews")
       .mockResolvedValueOnce(mockNewsResponse)
       .mockResolvedValueOnce({
-        category: "課程消息",
+        category: "演講訊息",
         page: 1,
         total: 1,
         items: [
           {
             id: "9600",
-            title: "微積分課程異動通知",
+            title: "微積分講座通知",
             url: "https://im.mgt.ncu.edu.tw/homes/9600/post",
-            tag: "課程",
-            category: "課程消息",
+            tag: "演講",
+            category: "演講訊息",
           },
         ],
       });
@@ -89,15 +89,15 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
     render(<AnnouncementsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
+      expect(screen.getByText("115學年度入學碩士班必修科目表")).toBeDefined();
     });
 
-    const courseBtn = screen.getByRole("tab", { name: "課程" });
-    fireEvent.click(courseBtn);
+    const lectureBtn = screen.getByRole("tab", { name: "演講講座" });
+    fireEvent.click(lectureBtn);
 
     await waitFor(() => {
-      expect(fetchSpy).toHaveBeenCalledWith("課程消息", 1, false);
-      expect(screen.getByText("微積分課程異動通知")).toBeDefined();
+      expect(fetchSpy).toHaveBeenCalledWith("演講訊息", 1, false);
+      expect(screen.getByText("微積分講座通知")).toBeDefined();
     });
   });
 
@@ -167,7 +167,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
 
   it("disables next page button when current page is the last page", async () => {
     vi.spyOn(newsApi, "fetchDepartmentNews").mockResolvedValueOnce({
-      category: "最新消息",
+      category: "實習與企業徵才",
       page: 1,
       total: 2,
       items: mockNewsResponse.items,
@@ -176,7 +176,7 @@ describe("AnnouncementsPage & DepartmentNewsModal", () => {
     render(<AnnouncementsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("【重要】115學年度入學碩士班必修科目表")).toBeDefined();
+      expect(screen.getByText("115學年度入學碩士班必修科目表")).toBeDefined();
     });
 
     const nextBtn = screen.getByText("下一頁").closest("ion-button") || screen.getByText("下一頁");
