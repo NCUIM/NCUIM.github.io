@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { TRACK_CONFIGS, matchCisToCurriculum } from "../data/im-curriculum";
 import type { CisCourse } from "../services/cis-course-api";

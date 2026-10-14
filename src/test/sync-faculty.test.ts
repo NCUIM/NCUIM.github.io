@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 // @ts-expect-error - import mjs script in test environment
 import { parseFacultyHtml } from "../../scripts/sync-faculty.mjs";
