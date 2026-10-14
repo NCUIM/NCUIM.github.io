@@ -320,21 +320,9 @@ export async function fetchDepartmentNews(
     }
     const data = (await res.json()) as DepartmentNewsResponse;
 
-    // Populate dates for all items: check cache or batch fetch details in background
-    const itemsWithDates = await Promise.all(
-      data.items.map(async (rawItem) => {
-        const item = hydrateNewsItem(rawItem);
-        if (item.date) return item;
-        try {
-          const detail = await fetchDepartmentNewsDetail(item.id);
-          return { ...item, date: detail.date || undefined };
-        } catch {
-          return item;
-        }
-      })
-    );
-
-    const enrichedData = { ...data, items: itemsWithDates };
+    // Hydrate items: decode HTML entities and populate date from cache if available
+    const items = data.items.map(hydrateNewsItem);
+    const enrichedData = { ...data, items };
     saveToCache(cacheKey, enrichedData);
     return enrichedData;
   } catch (err) {

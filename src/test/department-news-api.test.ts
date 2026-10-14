@@ -151,6 +151,48 @@ describe("department-news-api", () => {
       expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it("does not issue per-item network requests when date is missing and hydrates cached date if present", async () => {
+      localStorage.setItem(
+        `${DEPARTMENT_NEWS_CONFIG.storagePrefix}detail_1002`,
+        JSON.stringify({
+          timestamp: Date.now(),
+          data: { id: "1002", title: "公告 2", date: "2026-10-12" },
+        })
+      );
+
+      const mockResponse: DepartmentNewsResponse = {
+        category: "演講訊息",
+        page: 1,
+        total: 2,
+        items: [
+          {
+            id: "1001",
+            title: "公告 1 (無日期)",
+            url: "https://im.mgt.ncu.edu.tw/homes/1001/post",
+            tag: "",
+            category: "演講訊息",
+          },
+          {
+            id: "1002",
+            title: "公告 2 (快取有日期)",
+            url: "https://im.mgt.ncu.edu.tw/homes/1002/post",
+            tag: "",
+            category: "演講訊息",
+          },
+        ],
+      };
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      } as Response);
+
+      const res = await fetchDepartmentNews("演講訊息", 1);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(res.items[0].date).toBeUndefined();
+      expect(res.items[1].date).toBe("2026-10-12");
+    });
+
     it("falls back to stale cache on network failure", async () => {
       const mockCached: DepartmentNewsResponse = {
         category: "工讀與獎學金",

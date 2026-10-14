@@ -28,7 +28,6 @@ import {
 } from "ionicons/icons";
 import {
   fetchDepartmentNews,
-  getCachedNewsDate,
   parseAnnouncementMeta,
   decodeHtmlEntities,
   DEPARTMENT_NEWS_CATEGORIES,
@@ -248,7 +247,7 @@ export const AnnouncementsPage: React.FC = () => {
                   ...item,
                   category: item.category || activeCategory,
                 });
-                const itemDate = item.date || getCachedNewsDate(item.id);
+                const itemDate = item.date;
 
                 return (
                   <button
