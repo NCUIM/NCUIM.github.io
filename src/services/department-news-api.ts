@@ -198,13 +198,39 @@ function inferTopicTagFromTitle(title: string, category?: string): string {
   return category === "其他活動" ? "其他動態" : "系所情報";
 }
 
+function extractBracketTags(title: string): string[] {
+  const tags: string[] = [];
+  let start = -1;
+  let closeChar = "";
+
+  for (let i = 0; i < title.length; i++) {
+    const ch = title[i];
+    if (start === -1) {
+      if (ch === "【") {
+        start = i + 1;
+        closeChar = "】";
+      } else if (ch === "[") {
+        start = i + 1;
+        closeChar = "]";
+      }
+    } else if (ch === closeChar) {
+      const tag = title.slice(start, i).trim();
+      if (tag) {
+        tags.push(tag);
+      }
+      start = -1;
+    }
+  }
+
+  return tags;
+}
+
 function resolveTopicTag(
   rawTitle: string,
   rawTag: string,
   category?: string
 ): string {
-  const matches = Array.from(rawTitle.matchAll(/【([^】]+)】|\[([^\]]+)\]/g));
-  const bracketTags = matches.map((m) => m[1] || m[2]).filter(Boolean);
+  const bracketTags = extractBracketTags(rawTitle);
   const specificBracketTag = bracketTags.find((t) => !GENERIC_TAGS.has(t));
   if (specificBracketTag) return specificBracketTag;
 
@@ -218,11 +244,15 @@ function resolveTopicTag(
 }
 
 function stripLeadingBrackets(text: string): string {
-  let cleaned = text;
-  while (/^[【[][^】\]]+[】\]]\s*/.test(cleaned)) {
-    cleaned = cleaned.replace(/^[【[][^】\]]+[】\]]\s*/, "");
+  let cleaned = text.trim();
+  while (cleaned.startsWith("【") || cleaned.startsWith("[")) {
+    const closeIdx = cleaned.startsWith("【")
+      ? cleaned.indexOf("】")
+      : cleaned.indexOf("]");
+    if (closeIdx === -1) break;
+    cleaned = cleaned.slice(closeIdx + 1).trim();
   }
-  return cleaned.trim() || text;
+  return cleaned || text;
 }
 
 /**
