@@ -21,13 +21,10 @@ import {
   chevronForwardOutline,
   warningOutline,
   documentTextOutline,
-  newspaperOutline,
-  bookOutline,
   micOutline,
   schoolOutline,
   briefcaseOutline,
   trophyOutline,
-  extensionPuzzleOutline,
 } from "ionicons/icons";
 import {
   fetchDepartmentNews,
@@ -48,13 +45,10 @@ const CATEGORY_CHIP_META: Record<
   DepartmentNewsCategory,
   { label: string; icon: string; iconColor: string }
 > = {
-  "最新消息": { label: "最新", icon: newspaperOutline, iconColor: "var(--ncu-primary, #0284c7)" },
-  "課程消息": { label: "課程", icon: bookOutline, iconColor: "#2563eb" },
-  "演講訊息": { label: "演講", icon: micOutline, iconColor: "#7c3aed" },
-  "工讀獎學金": { label: "獎助工讀", icon: schoolOutline, iconColor: "#d97706" },
   "實習與企業徵才": { label: "實習徵才", icon: briefcaseOutline, iconColor: "var(--ncu-success, #0f766e)" },
-  "榮譽榜": { label: "榮譽", icon: trophyOutline, iconColor: "#e11d48" },
-  "其他活動": { label: "其他活動", icon: extensionPuzzleOutline, iconColor: "#64748b" },
+  "演講訊息": { label: "演講講座", icon: micOutline, iconColor: "#7c3aed" },
+  "工讀與獎學金": { label: "獎助學金", icon: schoolOutline, iconColor: "#d97706" },
+  "榮譽榜": { label: "活動競賽", icon: trophyOutline, iconColor: "#e11d48" },
 };
 
 const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] =
@@ -66,7 +60,7 @@ const ANNOUNCEMENT_TABS: readonly FilterChipTab<DepartmentNewsCategory>[] =
   }));
 
 export const AnnouncementsPage: React.FC = () => {
-  const [activeCategory, setActiveCategory] = useState<DepartmentNewsCategory>("最新消息");
+  const [activeCategory, setActiveCategory] = useState<DepartmentNewsCategory>("實習與企業徵才");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [items, setItems] = useState<readonly DepartmentNewsItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -246,7 +240,10 @@ export const AnnouncementsPage: React.FC = () => {
           {!loading && !error && filteredItems.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {filteredItems.map((item) => {
-                const { isImportant, topicTag, cleanTitle } = parseAnnouncementMeta(item);
+                const { isImportant, topicTag, cleanTitle } = parseAnnouncementMeta({
+                  ...item,
+                  category: item.category || activeCategory,
+                });
                 const itemDate = item.date || getCachedNewsDate(item.id);
 
                 return (

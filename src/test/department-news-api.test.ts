@@ -19,10 +19,9 @@ describe("department-news-api", () => {
       const res = parseAnnouncementMeta({
         title: "【重要】115學年度入學碩士班必修及選修科目表",
         tag: "重要",
-        category: "最新消息",
+        category: "其他活動",
       });
       expect(res.isImportant).toBe(true);
-      expect(res.topicTag).toBe("課程消息");
       expect(res.cleanTitle).toBe("115學年度入學碩士班必修及選修科目表");
     });
 
@@ -91,12 +90,23 @@ describe("department-news-api", () => {
       expect(res.topicTag).toBe("課程消息");
       expect(res.cleanTitle).toBe("可外借專題參考書籍清單");
     });
+
+    it("guarantees a fallback topic tag when post has no tag, no category, and no keyword match", () => {
+      const res = parseAnnouncementMeta({
+        title: "系辦公室會議室使用異動說明",
+        tag: "",
+        category: "",
+      });
+      expect(res.isImportant).toBe(false);
+      expect(res.topicTag).toBe("系所情報");
+      expect(res.cleanTitle).toBe("系辦公室會議室使用異動說明");
+    });
   });
 
   describe("fetchDepartmentNews", () => {
-    it("fetches and returns announcement list successfully and caches it", async () => {
+    it("fetches and returns announcement list successfully and caches it with default category", async () => {
       const mockResponse: DepartmentNewsResponse = {
-        category: "最新消息",
+        category: "實習與企業徵才",
         page: 1,
         total: 20,
         items: [
@@ -105,7 +115,7 @@ describe("department-news-api", () => {
             title: "測試公告 1",
             url: "https://im.mgt.ncu.edu.tw/homes/1001/post",
             tag: "重要",
-            category: "最新消息",
+            category: "實習與企業徵才",
           },
         ],
       };
@@ -115,22 +125,22 @@ describe("department-news-api", () => {
         json: async () => mockResponse,
       } as Response);
 
-      const res = await fetchDepartmentNews("最新消息", 1);
+      const res = await fetchDepartmentNews();
       expect(res.items[0].id).toBe("1001");
       expect(fetchSpy).toHaveBeenCalledWith(
-        `${DEPARTMENT_NEWS_CONFIG.baseUrl}/?category=%E6%9C%80%E6%96%B0%E6%B6%88%E6%81%AF&page=1`
+        `${DEPARTMENT_NEWS_CONFIG.baseUrl}/?category=${encodeURIComponent("實習與企業徵才")}&page=1`
       );
 
       // Verify cached hit without calling fetch again
       fetchSpy.mockClear();
-      const cachedRes = await fetchDepartmentNews("最新消息", 1);
+      const cachedRes = await fetchDepartmentNews("實習與企業徵才", 1);
       expect(cachedRes.items[0].id).toBe("1001");
       expect(fetchSpy).not.toHaveBeenCalled();
     });
 
     it("falls back to stale cache on network failure", async () => {
       const mockCached: DepartmentNewsResponse = {
-        category: "課程消息",
+        category: "工讀與獎學金",
         page: 1,
         total: 1,
         items: [
@@ -139,14 +149,14 @@ describe("department-news-api", () => {
             title: "舊快取公告",
             url: "https://im.mgt.ncu.edu.tw/homes/2001/post",
             tag: "",
-            category: "課程消息",
+            category: "工讀與獎學金",
           },
         ],
       };
 
       // Populate stale cache (timestamp in the distant past)
       localStorage.setItem(
-        `${DEPARTMENT_NEWS_CONFIG.storagePrefix}list_${encodeURIComponent("課程消息")}_1`,
+        `${DEPARTMENT_NEWS_CONFIG.storagePrefix}list_${encodeURIComponent("工讀與獎學金")}_1`,
         JSON.stringify({
           timestamp: Date.now() - 99999999,
           data: mockCached,
@@ -156,7 +166,7 @@ describe("department-news-api", () => {
       // Network fails
       vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Network Error"));
 
-      const res = await fetchDepartmentNews("課程消息", 1);
+      const res = await fetchDepartmentNews("工讀與獎學金", 1);
       expect(res).toEqual(mockCached);
     });
 

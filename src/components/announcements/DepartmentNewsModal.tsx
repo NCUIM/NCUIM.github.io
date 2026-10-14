@@ -654,7 +654,13 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
               }}
             >
               {detail.date && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
                   <IonIcon icon={calendarOutline} />
                   <span>{detail.date}</span>
                 </span>

@@ -34,13 +34,10 @@ export interface DepartmentNewsDetail {
 }
 
 export const DEPARTMENT_NEWS_CATEGORIES = [
-  "最新消息",
-  "課程消息",
-  "演講訊息",
-  "工讀獎學金",
   "實習與企業徵才",
+  "演講訊息",
+  "工讀與獎學金",
   "榮譽榜",
-  "其他活動",
 ] as const;
 
 export type DepartmentNewsCategory = (typeof DEPARTMENT_NEWS_CATEGORIES)[number];
@@ -49,14 +46,19 @@ export const DEPARTMENT_NEWS_CONFIG = {
   baseUrl: "https://ncuim-news-proxy.g1014308.workers.dev",
   listTtlMs: 10 * 60 * 1000, // 10 minutes
   detailTtlMs: 60 * 60 * 1000, // 60 minutes
-  storagePrefix: "ncuim_news_v3_",
+  storagePrefix: "ncuim_news_v5_",
 };
 
 // Clean legacy caches from previous versions
 try {
   if (typeof localStorage !== "undefined") {
     Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("ncuim_news_cache_") || key.startsWith("ncuim_news_v2_")) {
+      if (
+        key.startsWith("ncuim_news_cache_") ||
+        key.startsWith("ncuim_news_v2_") ||
+        key.startsWith("ncuim_news_v3_") ||
+        key.startsWith("ncuim_news_v4_")
+      ) {
         localStorage.removeItem(key);
       }
     });
@@ -165,36 +167,41 @@ export function parseAnnouncementMeta(
   let topicTag = specificBracketTag || specificItemTag || null;
 
   if (!topicTag) {
-    if (item.category && item.category !== "最新消息") {
-      topicTag = item.category;
+    if (item.category && item.category !== "最新消息" && item.category !== "其他活動") {
+      if (item.category === "實習與企業徵才") topicTag = "實習徵才";
+      else if (item.category === "演講訊息") topicTag = "演講講座";
+      else if (item.category === "工讀與獎學金" || item.category === "工讀獎學金") topicTag = "獎助學金";
+      else if (item.category === "榮譽榜") topicTag = "活動競賽";
+      else topicTag = item.category;
     } else {
-      // Infer topic from title keywords for '最新消息' or unclassified posts
+      // Infer topic from title keywords
       const t = item.title;
-      if (/獎學金|書卷獎|研修獎|揚帆|工讀|助學/.test(t)) {
+      if (/實習|徵才|誠徵|招募|就業|職缺/.test(t)) {
+        topicTag = "實習徵才";
+      } else if (/演講|講座|論壇|座談|讀書會|分享會/.test(t)) {
+        topicTag = "演講講座";
+      } else if (/獎學金|書卷獎|研修獎|揚帆|工讀|助學/.test(t)) {
         topicTag = "獎學金";
       } else if (
         /科目表|選課|課表|學分抵免|抵免|學分|專題|論文|修課|課程|選修|必修/.test(t)
       ) {
         topicTag = "課程消息";
-      } else if (/實習|徵才|誠徵|招募|就業|職缺/.test(t)) {
-        topicTag = "實習徵才";
-      } else if (/演講|講座|論壇|座談|讀書會|分享會/.test(t)) {
-        topicTag = "演講訊息";
       } else if (/獲獎|得獎|頒獎|榮譽|黑客松|競賽/.test(t)) {
-        topicTag = "榮譽競賽";
+        topicTag = "活動競賽";
       } else if (/畢業審查|畢業審核|離校|畢業/.test(t)) {
         topicTag = "畢業審查";
       } else if (/新生手冊|新生資訊|新生/.test(t)) {
         topicTag = "新生專區";
+      } else if (item.category === "其他活動") {
+        topicTag = "其他動態";
       } else {
-        topicTag = item.category && item.category !== "最新消息" ? item.category : "系所公告";
+        topicTag = "系所情報";
       }
     }
   }
 
-  // Ensure topicTag is never empty
   if (!topicTag) {
-    topicTag = item.category && item.category !== "最新消息" ? item.category : "系所公告";
+    topicTag = "系所情報";
   }
 
   return { isImportant, topicTag, cleanTitle };
@@ -204,7 +211,7 @@ export function parseAnnouncementMeta(
  * Fetch a page of department announcements by category.
  */
 export async function fetchDepartmentNews(
-  category: string = "最新消息",
+  category: string = "實習與企業徵才",
   page: number = 1,
   forceRefresh: boolean = false
 ): Promise<DepartmentNewsResponse> {
