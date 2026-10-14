@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import masterSnapshot from "../data/im-master-snapshot.json";
 import { getRequiredFact, REQUIRED_COURSE_FACTS } from "../data/im-curriculum";

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInitialRotation, createPortraitCloud, isFrontAligned } from "../components/faculty/portrait-cloud";
 import * as random from "../utils/random";
