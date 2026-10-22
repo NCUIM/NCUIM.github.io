@@ -28,10 +28,29 @@
 ### 2. 嚴禁自主 Push (No Autonomous Push)
 **嚴禁自主執行 `git push`**。預設僅進行本地 Commit。唯有使用者明確要求 Push 時方可執行。
 
-### 3. 嚴格原子化 Commit (Strict Atomic Commits)
-每一次 Commit 僅能代表一個獨立邏輯變更。無關修改必須分開提交。
+### 3. 嚴格原子化 Commit 與暫存紀律 (Strict Atomic Staging & Commits)
+- **領域隔離 (Domain Isolation)**：跨子系統（如 `scripts/` 工具、`src/` 核心邏輯、`docs/` 文件）之變更絕不打包進同一個 Commit。
+- **精確暫存 (Strict Staging)**：**嚴格禁止大量暫存 (`git add -A` 或 `git add .`)**。一律明確指定具體檔案路徑進行暫存（例如 `git add src/test/setup.ts`）。
+- **可還原獨立性 (Revert Independence)**：每一次 Commit 僅能代表一個獨立邏輯變更，確保單一 Commit 具備獨立可 Revert 特性。
 
-### 4. Commit 訊息格式強制全英文 (Commit Message Format)
+### 4. 分支範疇與命名規範 (Branch Scope & Naming Discipline)
+- **單一焦點規則 (Single Scope Rule)**：每個分支僅能處理單一特定功能或問題。若任務涉及多個主題，必須拆分多個 PR。
+- **禁止複合後綴 (No Compound Suffixes)**：禁止以連字號無限制拼接複合主題。
+- **嚴格單詞與長度限制 (Strict Word & Length Limits)**：
+  - 分支後綴僅能包含 **2 到 3 個英文單詞**。
+  - 分支後綴長度 **不得超過 25 個字元**（例如 `feat/pr-tool` 為 7 字元、`refactor/cis-sync` 為 8 字元）。
+- **事前宣告協議 (Pre-Branch Agreement)**：建立或推送任何新分支前，**必須向使用者明確宣告擬定之分支名稱與後綴字元數**，取得明確授權後方可建立。
+
+### 5. PR 生命週期紅線與意圖嚴格解讀 (PR Lifecycle Red Line)
+- **嚴格意圖解讀 (Strict Intent Interpretation)**：使用者的「修」、「改」、「處理」等指令，**嚴格限定為修改本地程式碼並提交修復**。嚴禁擅自解讀為關閉 PR、放棄分支或重開新分支。
+- **嚴禁自主關閉或放棄 PR (Never Autonomously Close/Abandon PRs)**：現有 PR 除非使用者在該輪對話中逐字明確要求（例如「關閉 PR」、「放棄此分支」），否則**絕對嚴禁自主執行 `gh pr close` 或拋棄分支**。所有 CI 失敗、靜態分析警告或 Review 回饋一律在原分支追加原子化 Commit 修復。
+- **外部變更指令零容忍 (Zero-Tolerance for Unauthorized PR Mutation)**：嚴禁未經逐一獨立授權逕自執行 `gh pr close`、`gh pr edit`、`gh pr merge`、`git push --delete`、`git push --force`。
+
+### 6. PR 審查安全與討論串關閉守則 (Review Thread Safety & Closure Protocol)
+- **禁止自主留言**：嚴禁自主在 GitHub PR 留言區發表、回覆、編輯或刪除 Review 評論。
+- **討論串關閉程序 (Review Thread Closure Protocol)**：修復完畢且 CI 全數通過後，主動且具體列出所有尚未解決的 Review Thread ID 與對應修復 Commit SHA，並**明確向使用者請求 Resolve 授權**後方可關閉，或由使用者自行在 GitHub 介面關閉。
+
+### 7. Commit 訊息格式強制全英文 (Commit Message Format)
 所有 Commit 訊息一律遵循 Conventional Commits 格式，且**必須全英文書寫**：
 
 ```text
@@ -46,7 +65,10 @@
 - **Allowed Scopes**：`app`, `auth`, `firestore`, `functions`, `hosting`, `rules`, `ui`, `challenge`, `admin`, `i18n`, `ci`, `deps`, `docs`, `test`, `security`, `spec`, `schema`, `offline`, `qr`, `lottery`, `leaderboard`, `grouping`, `privacy`, `workflow`, `quality`, `setup`, `style`
 - **Body**：必須為以 `1. ` 開始的英文數字編號清單。
 
-### 5. 使用者拒絕或撤回 = 立即中止 (User Revocation = Immediate Stop)
+### 8. 專用工作流工具 (Workflow Automation Tool)
+- 統一以 `node scripts/pr-tool.mjs` 作為本地驗證、PR 建立與審查輔助之標準工具，避免手動組合 Shell 命令造成 Markdown 模板破版或參數遺漏。
+
+### 9. 使用者拒絕或撤回 = 立即中止 (User Revocation = Immediate Stop)
 若使用者表達拒絕或撤回指令，立即停止一切變更操作。
 
 ---
@@ -84,5 +106,3 @@
 - `ready-for-agent`：需求明確、規格完整，可由 AI 代理人獨立承接執行。
 - `ready-for-human`：涉及主觀設計決策、架構重大調整或需人工審查。
 - `wontfix`：經評估後不予處理或超出專案範圍之項目。
-
-
