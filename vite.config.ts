@@ -125,7 +125,7 @@ const spa404Plugin = (): Plugin => ({
 export default defineConfig({
   base: "/",
   plugins: [react(), cisValidatePlugin(), spa404Plugin()],
-  envPrefix: ["VITE_", "FIREBASE_"],
+  envPrefix: ["VITE_"],
   server: {
     proxy: {
       // Proxy the NCU OAuth token exchange through the dev server to
@@ -173,7 +173,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("firebase")) return "firebase-vendor";
+
           return "vendor";
         },
       },
@@ -183,7 +183,7 @@ export default defineConfig({
     environment: "happy-dom",
     pool: "threads",
     globals: true,
-    exclude: [...configDefaults.exclude, "tests/e2e/**", "functions/**"],
+    exclude: [...configDefaults.exclude, "tests/e2e/**"],
     setupFiles: "./src/test/setup.ts",
   },
 });
