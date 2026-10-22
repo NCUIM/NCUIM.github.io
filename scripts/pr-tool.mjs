@@ -19,6 +19,7 @@ import { execFileSync, execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { validatePrBody } from "./commit-policy.mjs";
 
 export const BRANCH_LIMITS = {
   minWords: 2,
@@ -94,11 +95,21 @@ export function validateBranchName(branchName) {
  * Runs a command safely and returns stdout.
  */
 function run(cmd, args = [], options = {}) {
-  return execFileSync(cmd, args, {
+  if (cmd === "npm" || cmd === "npx") {
+    const fullCmd = [cmd, ...args].join(" ");
+    const result = execSync(fullCmd, {
+      encoding: "utf8",
+      stdio: options.stdio || "pipe",
+      ...options,
+    });
+    return typeof result === "string" ? result.trim() : "";
+  }
+  const result = execFileSync(cmd, args, {
     encoding: "utf8",
     stdio: options.stdio || "pipe",
     ...options,
-  }).trim();
+  });
+  return typeof result === "string" ? result.trim() : "";
 }
 
 /**
@@ -107,7 +118,7 @@ function run(cmd, args = [], options = {}) {
 export function getCurrentBranch() {
   try {
     return run("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
-  } catch {
+  } catch (err) {
     return "HEAD";
   }
 }
@@ -131,7 +142,7 @@ export function getLocalCommits(baseRef = "origin/main") {
         const [sha, subject, body] = entry.split("\x00");
         return { sha, subject, body: (body || "").trim() };
       });
-  } catch {
+  } catch (err) {
     return [];
   }
 }
@@ -162,8 +173,8 @@ export function renderPrBody(commits = [], customSummary = "") {
   }
 
   return template
-    .replace(/## Summary\s*/i, `## Summary\n\n${summaryText}\n\n`)
-    .replace(/## Key Changes\s*(?:\r?\n\s*1\.\s*)?/i, `## Key Changes\n\n${keyChanges}\n\n`)
+    .replace(/## Summary[\s\S]*?(?=## Key Changes)/i, `## Summary\n\n${summaryText}\n\n`)
+    .replace(/## Key Changes[\s\S]*?(?=## Verification)/i, `## Key Changes\n\n${keyChanges}\n\n`)
     .replace(/- \[ \] `npx tsc --noEmit` passes/g, "- [x] `npx tsc --noEmit` passes")
     .replace(/- \[ \] `npx vitest run` — all tests pass/g, "- [x] `npx vitest run` — all tests pass")
     .replace(/- \[ \] No sensitive data committed/g, "- [x] No sensitive data committed");
@@ -189,15 +200,15 @@ export function runPrepare() {
   console.log("🛠️ Running TypeScript typecheck...");
   try {
     run("npm", ["run", "typecheck"], { stdio: "inherit" });
-  } catch {
-    console.error("❌ TypeScript typecheck failed.");
+  } catch (err) {
+    console.error("❌ TypeScript typecheck failed.", err?.message || err);
     process.exit(1);
   }
 
   console.log("📋 Running Commit policy self-test...");
   try {
     run("npm", ["run", "test:policy"], { stdio: "inherit" });
-  } catch {
+  } catch (err) {
     console.error("❌ Commit policy self-test failed.");
     process.exit(1);
   }
@@ -205,7 +216,7 @@ export function runPrepare() {
   console.log("📚 Running Documentation checks...");
   try {
     run("npm", ["run", "test:docs"], { stdio: "inherit" });
-  } catch {
+  } catch (err) {
     console.error("❌ Documentation checks failed.");
     process.exit(1);
   }
@@ -213,7 +224,7 @@ export function runPrepare() {
   console.log("🧪 Running Unit test suite...");
   try {
     run("npm", ["test"], { stdio: "inherit" });
-  } catch {
+  } catch (err) {
     console.error("❌ Unit tests failed.");
     process.exit(1);
   }
@@ -262,6 +273,46 @@ export function resolveReviewThread(threadId) {
 /**
  * CLI Entrypoint.
  */
+export function selfTest() {
+  const failures = [];
+  function check(name, ok, expected = true) {
+    if (ok !== expected) {
+      failures.push(`Check "${name}" failed: got ${ok}, expected ${expected}`);
+    }
+  }
+
+  // Branch validation checks
+  check("valid 2-word branch", validateBranchName("feat/pr-tool").valid, true);
+  check("valid 3-word branch", validateBranchName("refactor/cis-sync-flow").valid, true);
+  check("1-word suffix rejected", validateBranchName("feat/tool").valid, false);
+  check("4-word suffix rejected", validateBranchName("chore/test-and-build-hygiene").valid, false);
+  check("suffix exceeding 25 chars rejected", validateBranchName("feat/this-is-a-very-long-branch-exceeding-limit").valid, false);
+  check("invalid branch type rejected", validateBranchName("unknown/pr-tool").valid, false);
+  check("main branch allowed", validateBranchName("main").valid, true);
+  check("master branch allowed", validateBranchName("master").valid, true);
+
+  // Template / renderPrBody checks
+  const mockCommits = [
+    {
+      sha: "abcdef1",
+      subject: "feat(ci): implement pr-tool workflow automation script",
+      body: "1. Add pr-tool script\n2. Add preflight checks",
+    },
+  ];
+  const rendered = renderPrBody(mockCommits, "Automated PR created via pr-tool.");
+  const bodyErrors = validatePrBody(rendered);
+  if (bodyErrors.length > 0) {
+    failures.push(`renderPrBody failed commit-policy validation: ${bodyErrors.join("; ")}`);
+  }
+
+  if (failures.length > 0) {
+    console.error(`❌ pr-tool self-test failed (${failures.length} errors):`);
+    for (const f of failures) console.error(`  - ${f}`);
+    process.exit(1);
+  }
+  console.log("✅ pr-tool self-test passed (all branch rules and PR body templates verified).");
+}
+
 function main() {
   const args = process.argv.slice(2);
   const command = args[0] || "help";
@@ -323,6 +374,10 @@ function main() {
     }
     case "resolve": {
       resolveReviewThread(args[1]);
+      break;
+    }
+    case "self-test": {
+      selfTest();
       break;
     }
     case "help":

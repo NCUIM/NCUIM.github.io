@@ -19,7 +19,7 @@
   "scripts": {
     "prepare": "node scripts/install-hooks.mjs",
     "pr-tool": "node scripts/pr-tool.mjs",
-    "test:policy": "node scripts/commit-policy.mjs self-test",
+    "test:policy": "node scripts/commit-policy.mjs self-test && node scripts/pr-tool.mjs self-test",
     "test:docs": "node scripts/check-docs.mjs",
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc -b && vite build",
