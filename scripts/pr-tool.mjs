@@ -409,29 +409,21 @@ export function runCreate({ title: customTitle = "", bodyFile = "", execute = fa
   }
 }
 
-/**
- * Clickra-inspired read-only audit of PR review comments and discussion threads.
- */
-export function runAudit(prArg = "") {
-  const repo = getRepoOrigin();
+function resolvePrNumber(prArg, repo) {
+  if (prArg) return String(prArg);
   const currentBranch = getCurrentBranch();
-  let prNumber = prArg;
-  if (!prNumber) {
+  try {
     const prListRaw = run("gh", ["pr", "list", "--repo", repo, "--head", currentBranch, "--json", "number"]).trim();
-    try {
-      const prList = JSON.parse(prListRaw);
-      if (prList.length > 0) prNumber = String(prList[0].number);
-    } catch {
-      // ignore
-    }
+    const prList = JSON.parse(prListRaw);
+    if (prList.length > 0) return String(prList[0].number);
+  } catch {
+    // Return empty if lookup fails
   }
-  if (!prNumber) {
-    console.error("❌ No PR found for current branch. Provide PR number: node scripts/pr-tool.mjs audit <pr-number>");
-    process.exit(1);
-  }
+  console.error("❌ No PR found for current branch. Provide PR number: node scripts/pr-tool.mjs audit <pr-number>");
+  process.exit(1);
+}
 
-  console.log(`🔍 Auditing PR #${prNumber} on ${repo}...`);
-
+function fetchReviewThreads(repo, prNumber) {
   const [owner, name] = repo.split("/");
   const query = `
     query($owner: String!, $name: String!, $number: Int!) {
@@ -456,8 +448,6 @@ export function runAudit(prArg = "") {
       }
     }
   `;
-
-  let threads = [];
   try {
     const raw = run("gh", [
       "api",
@@ -472,18 +462,20 @@ export function runAudit(prArg = "") {
       `number=${prNumber}`,
     ]).trim();
     const parsed = JSON.parse(raw);
-    threads = parsed?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
+    return parsed?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
   } catch (err) {
     console.error("⚠️ Failed to fetch review threads:", err?.message || err);
+    return [];
   }
+}
 
+function printReviewThreads(threads, prNumber) {
   const unresolved = threads.filter((t) => !t.isResolved);
   const outdatedUnresolved = unresolved.filter((t) => t.isOutdated);
 
-  console.log(`\n📊 PR #${prNumber} Review Audit Summary:`);
-  console.log(`   Total Discussion Threads: ${threads.length}`);
-  console.log(`   Unresolved Threads:       ${unresolved.length}`);
-  console.log(`   Outdated Unresolved:      ${outdatedUnresolved.length}`);
+  console.log(`📊 PR #${prNumber} Review Discussion Threads:`);
+  console.log(`   Total Threads:      ${threads.length}`);
+  console.log(`   Unresolved Threads: ${unresolved.length} (${outdatedUnresolved.length} outdated)`);
 
   if (unresolved.length > 0) {
     console.log(`\n📌 Unresolved Review Threads:`);
@@ -495,8 +487,82 @@ export function runAudit(prArg = "") {
       console.log(`     By @${author}: "${preview}..."`);
     }
   } else {
-    console.log(`\n✅ All review discussion threads are resolved!`);
+    console.log(`   ✅ All review discussion threads are resolved!`);
   }
+}
+
+export async function fetchSonarIssues(repo, prNumber) {
+  try {
+    const projectKey = repo.replace("/", "_");
+    const url = `https://sonarcloud.io/api/issues/search?componentKeys=${projectKey}&pullRequest=${prNumber}&resolved=false`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.issues || [];
+  } catch {
+    // Return null if SonarCloud cannot be queried or project has no setup.
+    return null;
+  }
+}
+
+function printSonarIssues(issues, prNumber) {
+  console.log(`\n☁️  PR #${prNumber} SonarCloud Quality Issues:`);
+  if (issues === null) {
+    console.log("   ⚠️ SonarCloud analysis not available or unreachable.");
+    return;
+  }
+
+  if (issues.length === 0) {
+    console.log("   ✅ 0 open issues! SonarCloud code analysis is clean.");
+    return;
+  }
+
+  const counts = {};
+  for (const issue of issues) {
+    counts[issue.severity] = (counts[issue.severity] || 0) + 1;
+  }
+
+  const summary = Object.entries(counts)
+    .map(([sev, count]) => `${sev}: ${count}`)
+    .join(", ");
+  console.log(`   Total Open Issues: ${issues.length} (${summary})`);
+  console.log("\n📌 Open SonarCloud Issues:");
+  for (const issue of issues) {
+    const file = issue.component.replace(/^[^:]+:/, "");
+    console.log(`   - [${issue.severity}] ${issue.rule} (${file}:${issue.line || "-"})`);
+    console.log(`     ${issue.message}`);
+  }
+}
+
+function printChecksStatus(prNumber) {
+  console.log(`\n🚦 PR #${prNumber} GitHub Checks Status:`);
+  try {
+    const checksOutput = run("gh", ["pr", "checks", prNumber]).trim();
+    if (checksOutput) {
+      console.log(checksOutput.split("\n").map((line) => `   ${line}`).join("\n"));
+    } else {
+      console.log("   No checks reported.");
+    }
+  } catch {
+    console.log("   ⚠️ Could not retrieve checks status via gh CLI.");
+  }
+}
+
+/**
+ * Clickra-inspired read-only audit of PR review comments, Sonar issues, and CI status.
+ */
+export async function runAudit(prArg = "") {
+  const repo = getRepoOrigin();
+  const prNumber = resolvePrNumber(prArg, repo);
+  console.log(`🔍 Auditing PR #${prNumber} on ${repo}...\n`);
+
+  const threads = fetchReviewThreads(repo, prNumber);
+  printReviewThreads(threads, prNumber);
+
+  const sonarIssues = await fetchSonarIssues(repo, prNumber);
+  printSonarIssues(sonarIssues, prNumber);
+
+  printChecksStatus(prNumber);
 }
 
 /**
@@ -671,7 +737,7 @@ Usage:
 `);
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   const command = args[0] || "help";
 
@@ -681,14 +747,14 @@ function main() {
     "render-body": () => handleRenderBody(args),
     "push": () => handlePush(args),
     "create": () => handleCreate(args),
-    "audit": () => runAudit(args[1] || ""),
+    "audit": async () => await runAudit(args[1] || ""),
     "resolve": () => handleResolve(args),
     "self-test": () => selfTest(),
     "help": () => printHelp(),
   };
 
   const handler = commandHandlers[command] || commandHandlers.help;
-  handler();
+  await handler();
 }
 
 if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
