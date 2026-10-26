@@ -737,7 +737,7 @@ Usage:
 `);
 }
 
-async function main() {
+if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
   const args = process.argv.slice(2);
   const command = args[0] || "help";
 
@@ -747,7 +747,7 @@ async function main() {
     "render-body": () => handleRenderBody(args),
     "push": () => handlePush(args),
     "create": () => handleCreate(args),
-    "audit": async () => await runAudit(args[1] || ""),
+    "audit": () => runAudit(args[1] || ""),
     "resolve": () => handleResolve(args),
     "self-test": () => selfTest(),
     "help": () => printHelp(),
@@ -755,8 +755,4 @@ async function main() {
 
   const handler = commandHandlers[command] || commandHandlers.help;
   await handler();
-}
-
-if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
-  main();
 }
