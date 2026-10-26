@@ -303,6 +303,51 @@ function validateHeadingOrder(headingMatches, errors) {
   }
 }
 
+function validateKeyChangesSection(heading, content, errors) {
+  const rawLines = content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^(?:\d+[.)]|[-*+])\s+\S+/.test(line));
+
+  const rawCommitHeaderPattern = /^(?:\d+[.)]|[-*+])\s+[a-z]+(?:\([^)]+\))?!?:/i;
+  const copiedCommitLines = rawLines.filter((line) => rawCommitHeaderPattern.test(line));
+  if (copiedCommitLines.length > 0) {
+    errors.push(
+      `Section "${heading}" must describe behavior and contracts from a reviewer perspective, not dump raw commit subjects (found: "${copiedCommitLines[0]}"). See Clickra PR guidelines.`,
+    );
+  }
+
+  const listItems = rawLines
+    .map((line) => line.replace(/^(?:\d+[.)]|[-*+])\s+/, "").trim());
+
+  const meaningfulItems = listItems.filter((item) => !isVagueContent(item));
+  if (meaningfulItems.length === 0) {
+    errors.push(`Section "${heading}" must contain at least one meaningful list item (e.g. "1. " or "- ").`);
+  }
+}
+
+function validateVerificationSection(heading, content, errors) {
+  const rawChecklistLines = content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^[-*+]\s+\[[ xX]\]/.test(line));
+
+  for (const rawLine of rawChecklistLines) {
+    if (/(?:^|[^\\])\\[\s\S]*$/.test(rawLine) && (/\\$/.test(rawLine) || /^[-*+]\s+\[[ xX]\]\s*\\/.test(rawLine))) {
+      errors.push(`Checklist item contains invalid or escaped backslashes: "${rawLine}".`);
+    }
+  }
+
+  const checklistItems = rawChecklistLines
+    .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
+    .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
+
+  const meaningfulChecks = checklistItems.filter((item) => !isVagueContent(item));
+  if (meaningfulChecks.length === 0) {
+    errors.push(`Section "${heading}" must contain at least one meaningful checklist item (e.g. "- [x]" or "- [ ]").`);
+  }
+}
+
 function validateSection(heading, content, errors) {
   const lower = heading.toLowerCase();
   if (lower.includes("summary")) {
@@ -313,50 +358,12 @@ function validateSection(heading, content, errors) {
   }
 
   if (lower.includes("key changes")) {
-    const rawLines = content
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => /^(?:\d+[.)]|[-*+])\s+\S+/.test(line))
-      ;
-
-    const rawCommitHeaderPattern = /^(?:\d+[.)]|[-*+])\s+[a-z]+(?:\([^)]+\))?!?:/i;
-    const copiedCommitLines = rawLines.filter((line) => rawCommitHeaderPattern.test(line));
-    if (copiedCommitLines.length > 0) {
-      errors.push(
-        `Section "${heading}" must describe behavior and contracts from a reviewer perspective, not dump raw commit subjects (found: "${copiedCommitLines[0]}"). See Clickra PR guidelines.`,
-      );
-    }
-
-    const listItems = rawLines
-      .map((line) => line.replace(/^(?:\d+[.)]|[-*+])\s+/, "").trim());
-
-    const meaningfulItems = listItems.filter((item) => !isVagueContent(item));
-    if (meaningfulItems.length === 0) {
-      errors.push(`Section "${heading}" must contain at least one meaningful list item (e.g. "1. " or "- ").`);
-    }
+    validateKeyChangesSection(heading, content, errors);
     return;
   }
 
   if (lower.includes("verification")) {
-    const rawChecklistLines = content
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => /^[-*+]\s+\[[ xX]\]/.test(line));
-
-    for (const rawLine of rawChecklistLines) {
-      if (/(?:^|[^\\])\\[\s\S]*$/.test(rawLine) && (/\\$/.test(rawLine) || /^[-*+]\s+\[[ xX]\]\s*\\/.test(rawLine))) {
-        errors.push(`Checklist item contains invalid or escaped backslashes: "${rawLine}".`);
-      }
-    }
-
-    const checklistItems = rawChecklistLines
-      .filter((line) => /^[-*+]\s+\[[ xX]\]\s+\S+/.test(line))
-      .map((line) => line.replace(/^[-*+]\s+\[[ xX]\]\s+/, "").trim());
-
-    const meaningfulChecks = checklistItems.filter((item) => !isVagueContent(item));
-    if (meaningfulChecks.length === 0) {
-      errors.push(`Section "${heading}" must contain at least one meaningful checklist item (e.g. "- [x]" or "- [ ]").`);
-    }
+    validateVerificationSection(heading, content, errors);
   }
 }
 
