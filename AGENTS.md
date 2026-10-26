@@ -36,6 +36,7 @@
 ### 4. 分支範疇與命名規範 (Branch Scope & Naming Discipline)
 - **單一焦點規則 (Single Scope Rule)**：每個分支僅能處理單一特定功能或問題。若任務涉及多個主題，必須拆分多個 PR。
 - **禁止複合後綴 (No Compound Suffixes)**：禁止以連字號無限制拼接複合主題。
+- **禁止序列與版本標記 (No Sequence or Version Markers)**：嚴禁在分支名稱使用 `-pr2`、`phase-1`、`post-nine` 等無語意序號標記，亦嚴禁包含版本號（如 `v1.0`），分支名稱必須實質描述變更邏輯。
 - **嚴格單詞與長度限制 (Strict Word & Length Limits)**：
   - 分支後綴僅能包含 **2 到 3 個英文單詞**。
   - 分支後綴長度 **不得超過 25 個字元**（例如 `feat/pr-tool` 為 7 字元、`refactor/cis-sync` 為 8 字元）。
@@ -66,7 +67,10 @@
 - **Body**：必須為以 `1. ` 開始的英文數字編號清單。
 
 ### 8. 專用工作流工具 (Workflow Automation Tool)
-- 統一以 `node scripts/pr-tool.mjs` 作為本地驗證、PR 建立與審查輔助之標準工具，避免手動組合 Shell 命令造成 Markdown 模板破版或參數遺漏。
+- 統一以 `node scripts/pr-tool.mjs` 作為門禁、推送與審查標準工具，避免手動組合 Shell 命令造成破版或參數遺漏：
+  - **兩階段安全推送**：使用 `node scripts/pr-tool.mjs push` 產生授權 Token；取得使用者授權後以 `--authorize <branch:SHA> --execute` 執行推送，完成後自動以 `git ls-remote` 檢驗遠端一致性。
+  - **兩階段 PR 建立**：使用 `node scripts/pr-tool.mjs create` 檢驗遠端 HEAD 一致性並產生指紋 Token，執行後以 `gh pr view` 驗證 PR 狀態。
+  - **審查盤點與關閉**：使用 `node scripts/pr-tool.mjs audit` 唯讀盤點所有 Review Threads，嚴禁自主留言；修復並取得授權後以 `node scripts/pr-tool.mjs resolve <id> --authorize <id> --execute` 關閉討論串。
 
 ### 9. 使用者拒絕或撤回 = 立即中止 (User Revocation = Immediate Stop)
 若使用者表達拒絕或撤回指令，立即停止一切變更操作。
