@@ -548,6 +548,26 @@ function printChecksStatus(prNumber) {
   }
 }
 
+function printPrMergeStatus(prNumber) {
+  console.log(`\n🛡️  PR #${prNumber} Mergeability Status:`);
+  try {
+    const raw = run("gh", ["pr", "view", prNumber, "--json", "mergeStateStatus,mergeable,reviewDecision,state"]).trim();
+    const data = JSON.parse(raw);
+    const state = data.mergeStateStatus || "UNKNOWN";
+    if (state === "CLEAN") {
+      console.log(`   ✅ PR is CLEAN and ready to merge! (mergeable: ${data.mergeable})`);
+    } else if (state === "BLOCKED") {
+      console.log(`   ❌ PR is BLOCKED! Merging is prohibited by branch rules or unresolved review threads.`);
+    } else {
+      console.log(`   ⚠️ PR Merge State: ${state} (mergeable: ${data.mergeable})`);
+    }
+    return state;
+  } catch {
+    console.log("   ⚠️ Could not retrieve merge state via gh CLI.");
+    return "UNKNOWN";
+  }
+}
+
 /**
  * Clickra-inspired read-only audit of PR review comments, Sonar issues, and CI status.
  */
@@ -563,6 +583,14 @@ export async function runAudit(prArg = "") {
   printSonarIssues(sonarIssues, prNumber);
 
   printChecksStatus(prNumber);
+  const mergeState = printPrMergeStatus(prNumber);
+
+  const unresolved = threads.filter((t) => !t.isResolved);
+  if (mergeState === "BLOCKED" || unresolved.length > 0 || (sonarIssues && sonarIssues.length > 0)) {
+    console.log(`\n⚠️  AUDIT CONCLUSION: PR #${prNumber} is NOT ready for merge. Resolve blockers first.`);
+  } else {
+    console.log(`\n🎉 AUDIT CONCLUSION: PR #${prNumber} is completely clean, passing, and ready for merge!`);
+  }
 }
 
 /**
@@ -614,6 +642,69 @@ export function resolveReviewThread(threadId, { authorization = "", execute = fa
     console.error("❌ Failed to resolve review thread via GraphQL.", err.message);
     process.exit(1);
   }
+}
+
+/**
+ * Batch-resolves all review discussion threads on a PR with two-phase verification.
+ */
+export function resolveAllReviewThreads(prArg = "", { authorization = "", execute = false } = {}) {
+  const repo = getRepoOrigin();
+  const prNumber = resolvePrNumber(prArg, repo);
+  const threads = fetchReviewThreads(repo, prNumber);
+  const unresolved = threads.filter((t) => !t.isResolved);
+
+  if (unresolved.length === 0) {
+    console.log(`✅ All review discussion threads for PR #${prNumber} are already resolved.`);
+    return;
+  }
+
+  const expectedToken = `pr-${prNumber}:${unresolved.length}:threads`;
+
+  if (!execute) {
+    console.log(`🔒 Batch thread resolution preview:`);
+    console.log(`   PR: #${prNumber}`);
+    console.log(`   Unresolved threads count: ${unresolved.length}`);
+    console.log(`   Expected Token: ${expectedToken}`);
+    console.log(`\nTo execute resolution, request explicit user authorization and rerun:`);
+    console.log(`   node scripts/pr-tool.mjs resolve --all ${prNumber} --authorize "${expectedToken}" --execute`);
+    return expectedToken;
+  }
+
+  if (authorization !== expectedToken) {
+    console.error(`❌ Batch resolution authorization mismatch: expected "${expectedToken}", got "${authorization}"`);
+    process.exit(1);
+  }
+
+  console.log(`Resolving ${unresolved.length} review threads on PR #${prNumber}...`);
+  const query = `
+    mutation ResolveThread($threadId: ID!) {
+      resolveReviewThread(input: { threadId: $threadId }) {
+        thread {
+          id
+          isResolved
+        }
+      }
+    }
+  `;
+
+  let count = 0;
+  for (const t of unresolved) {
+    try {
+      run("gh", [
+        "api",
+        "graphql",
+        "-f",
+        `query=${query}`,
+        "-F",
+        `threadId=${t.id}`,
+      ]);
+      count++;
+      process.stdout.write(`\r   Resolved: ${count}/${unresolved.length}`);
+    } catch (err) {
+      console.error(`\n❌ Failed to resolve thread ${t.id}:`, err?.message || err);
+    }
+  }
+  console.log(`\n✅ Finished resolving ${count} review threads for PR #${prNumber}.`);
 }
 
 /**
@@ -714,11 +805,19 @@ function handleCreate(args) {
 }
 
 function handleResolve(args) {
-  const threadId = args[1];
+  const isAll = args.includes("--all");
   const authIdx = args.indexOf("--authorize");
   const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
   const execute = args.includes("--execute");
-  resolveReviewThread(threadId, { authorization, execute });
+
+  if (isAll) {
+    const nonFlags = args.slice(1).filter((a) => !a.startsWith("-"));
+    const prNumber = nonFlags[0] || "";
+    resolveAllReviewThreads(prNumber, { authorization, execute });
+  } else {
+    const threadId = args[1];
+    resolveReviewThread(threadId, { authorization, execute });
+  }
 }
 
 function printHelp() {
