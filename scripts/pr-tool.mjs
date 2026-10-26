@@ -187,31 +187,31 @@ export function getLocalCommits(baseRef = "origin/main") {
 /**
  * Renders PR body matching .github/pull_request_template.md
  */
-export function renderPrBody(commits = [], customSummary = "") {
+export function renderPrBody({ summary = "", keyChanges = [] } = {}) {
   const templatePath = path.resolve(process.cwd(), ".github/pull_request_template.md");
   let template = "";
   if (existsSync(templatePath)) {
     template = readFileSync(templatePath, "utf8");
   }
 
-  const summaryText =
-    customSummary ||
-    (commits.length > 0
-      ? commits[0].subject.replace(/^[a-z]+(?:\([^)]+\))?:\s*/i, "")
-      : "Automated PR created via pr-tool.");
+  const summaryText = summary || "Describe the high-level intent and architectural impact of this PR.";
 
-  const keyChanges =
-    commits.length > 0
-      ? commits.map((c, i) => `${i + 1}. ${c.subject}`).join("\n")
-      : "1. Core changes implemented.";
+  let formattedChanges = "";
+  if (Array.isArray(keyChanges) && keyChanges.length > 0) {
+    formattedChanges = keyChanges.map((c, i) => `${i + 1}. ${c}`).join("\n");
+  } else if (typeof keyChanges === "string" && keyChanges.trim()) {
+    formattedChanges = keyChanges.trim();
+  } else {
+    formattedChanges = "1. **Architecture & Scope**: Describe component-level changes.\n2. **Behavior & Contracts**: Detail modified contracts or behaviors.";
+  }
 
   if (!template) {
-    return `## Summary\n\n${summaryText}\n\n## Key Changes\n\n${keyChanges}\n\n## Verification\n\n- [x] \`npx tsc --noEmit\` passes\n- [x] \`npx vitest run\` — all tests pass\n- [x] No sensitive data committed\n`;
+    return `## Summary\n\n${summaryText}\n\n## Key Changes\n\n${formattedChanges}\n\n## Verification\n\n- [x] \`npx tsc --noEmit\` passes\n- [x] \`npx vitest run\` — all tests pass\n- [x] No sensitive data committed\n`;
   }
 
   return template
     .replace(/## Summary[\s\S]*?(?=## Key Changes)/i, `## Summary\n\n${summaryText}\n\n`)
-    .replace(/## Key Changes[\s\S]*?(?=## Verification)/i, `## Key Changes\n\n${keyChanges}\n\n`)
+    .replace(/## Key Changes[\s\S]*?(?=## Verification)/i, `## Key Changes\n\n${formattedChanges}\n\n`)
     .replace(/- \[ \] `npx tsc --noEmit` passes/g, "- [x] `npx tsc --noEmit` passes")
     .replace(/- \[ \] `npx vitest run` — all tests pass/g, "- [x] `npx vitest run` — all tests pass")
     .replace(/- \[ \] No sensitive data committed/g, "- [x] No sensitive data committed");
@@ -324,7 +324,7 @@ export function runPush(authorization = "", { execute = false } = {}) {
 /**
  * Clickra-inspired guarded PR creation with two-phase authorization and post-creation verification.
  */
-export function runCreate({ title: customTitle = "", execute = false, authorization = "", draft = false } = {}) {
+export function runCreate({ title: customTitle = "", bodyFile = "", execute = false, authorization = "", draft = false } = {}) {
   runPrepare();
   const branch = getCurrentBranch();
   const sha = run("git", ["rev-parse", "HEAD"]).trim();
@@ -339,9 +339,25 @@ export function runCreate({ title: customTitle = "", execute = false, authorizat
     process.exit(1);
   }
 
-  const commits = getLocalCommits();
-  const title = customTitle || (commits.length > 0 ? commits[0].subject : `feat: update ${branch}`);
-  const body = renderPrBody(commits);
+  let body = "";
+  if (bodyFile && existsSync(bodyFile)) {
+    body = readFileSync(bodyFile, "utf8");
+  } else {
+    console.error("❌ Clickra PR policy requires an explicit reviewer-facing body file (--body-file <path>).");
+    console.error("   PR bodies must describe component behavior and contracts, not auto-generated commit ledgers.");
+    console.error("   Generate a template via: node scripts/pr-tool.mjs render-body --output pr_body.md");
+    process.exit(1);
+  }
+
+  // Validate body against commit-policy
+  const bodyProblems = validatePrBody(body);
+  if (bodyProblems.length > 0) {
+    console.error("❌ PR body validation failed:");
+    bodyProblems.forEach((err) => console.error(`   - ${err}`));
+    process.exit(1);
+  }
+
+  const title = customTitle || `feat: update ${branch}`;
 
   // Calculate fingerprint
   const fingerprint = crypto.createHash("sha256").update(`${title}\n${body}`).digest("hex").slice(0, 16);
@@ -560,17 +576,23 @@ export function selfTest() {
   check("version identifier rejected", validateBranchName("feat/api-v1.0").valid, false);
 
   // Template / renderPrBody checks
-  const mockCommits = [
-    {
-      sha: "abcdef1",
-      subject: "feat(ci): implement pr-tool workflow automation script",
-      body: "1. Add pr-tool script\n2. Add preflight checks",
-    },
-  ];
-  const rendered = renderPrBody(mockCommits, "Automated PR created via pr-tool.");
-  const bodyErrors = validatePrBody(rendered);
-  if (bodyErrors.length > 0) {
-    failures.push(`renderPrBody failed commit-policy validation: ${bodyErrors.join("; ")}`);
+  const validRendered = renderPrBody({
+    summary: "Refactor storage layer to standardize CIS synchronization flow.",
+    keyChanges: [
+      "**CIS Sync Flow**: Unify duplicate bookmarklet sync into useCisBookmarkletSync hook.",
+      "**Architecture Boundary**: Enforce storage domain boundary in architectural tests.",
+    ],
+  });
+  const validErrors = validatePrBody(validRendered);
+  if (validErrors.length > 0) {
+    failures.push(`renderPrBody failed commit-policy validation: ${validErrors.join("; ")}`);
+  }
+
+  // Negative test: verify that raw commit header dump is rejected
+  const rawDumpBody = "## Summary\nValid summary\n\n## Key Changes\n1. feat(ci): implement tool\n\n## Verification\n- [x] OK\n";
+  const dumpErrors = validatePrBody(rawDumpBody);
+  if (dumpErrors.length === 0) {
+    failures.push("validatePrBody failed to reject raw commit header in Key Changes");
   }
 
   if (failures.length > 0) {
@@ -604,8 +626,7 @@ function main() {
     case "render-body": {
       const outIdx = args.indexOf("--output");
       const outputPath = outIdx !== -1 ? args[outIdx + 1] : null;
-      const commits = getLocalCommits();
-      const body = renderPrBody(commits);
+      const body = renderPrBody();
       if (outputPath) {
         writeFileSync(outputPath, body, "utf8");
         console.log(`✅ PR body written to ${outputPath}`);
@@ -624,11 +645,13 @@ function main() {
     case "create": {
       const isDraft = args.includes("--draft");
       const titleIdx = args.indexOf("--title");
+      const bodyIdx = args.indexOf("--body-file");
       const authIdx = args.indexOf("--authorize");
       const title = titleIdx !== -1 ? args[titleIdx + 1] : "";
+      const bodyFile = bodyIdx !== -1 ? args[bodyIdx + 1] : "";
       const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
       const execute = args.includes("--execute");
-      runCreate({ title, draft: isDraft, execute, authorization });
+      runCreate({ title, bodyFile, draft: isDraft, execute, authorization });
       break;
     }
     case "audit": {
