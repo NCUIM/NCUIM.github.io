@@ -152,7 +152,8 @@ export function getCurrentBranch() {
 export function getRepoOrigin() {
   try {
     const url = run("git", ["remote", "get-url", "origin"]).trim();
-    const match = url.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
+    const originPattern = /github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/;
+    const match = originPattern.exec(url);
     if (!match) return "NCUIM/NCUIM.github.io";
     return `${match[1]}/${match[2]}`;
   } catch {
@@ -179,7 +180,8 @@ export function getLocalCommits(baseRef = "origin/main") {
         const [sha, subject, body] = entry.split("\x00");
         return { sha, subject, body: (body || "").trim() };
       });
-  } catch (err) {
+  } catch {
+    // Return empty list if baseRef does not exist or git log fails.
     return [];
   }
 }
@@ -212,9 +214,9 @@ export function renderPrBody({ summary = "", keyChanges = [] } = {}) {
   return template
     .replace(/## Summary[\s\S]*?(?=## Key Changes)/i, `## Summary\n\n${summaryText}\n\n`)
     .replace(/## Key Changes[\s\S]*?(?=## Verification)/i, `## Key Changes\n\n${formattedChanges}\n\n`)
-    .replace(/- \[ \] `npx tsc --noEmit` passes/g, "- [x] `npx tsc --noEmit` passes")
-    .replace(/- \[ \] `npx vitest run` — all tests pass/g, "- [x] `npx vitest run` — all tests pass")
-    .replace(/- \[ \] No sensitive data committed/g, "- [x] No sensitive data committed");
+    .replaceAll("- [ ] `npx tsc --noEmit` passes", "- [x] `npx tsc --noEmit` passes")
+    .replaceAll("- [ ] `npx vitest run` — all tests pass", "- [x] `npx vitest run` — all tests pass")
+    .replaceAll("- [ ] No sensitive data committed", "- [x] No sensitive data committed");
 }
 
 /**
@@ -511,7 +513,7 @@ export function resolveReviewThread(threadId, { authorization = "", execute = fa
     console.log(`   Thread ID: ${threadId}`);
     console.log(`\nTo execute resolution, request explicit user authorization and rerun:`);
     console.log(`   node scripts/pr-tool.mjs resolve "${threadId}" --authorize "${threadId}" --execute`);
-    return { preview: threadId };
+    return threadId;
   }
 
   if (authorization !== threadId) {
@@ -603,77 +605,58 @@ export function selfTest() {
   console.log("✅ pr-tool self-test passed (all branch rules, sequence guards, and templates verified).");
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  const command = args[0] || "help";
+function handleValidateBranch(args) {
+  const target = args[1] || getCurrentBranch();
+  const res = validateBranchName(target);
+  if (!res.valid) {
+    console.error(`❌ Invalid branch name "${target}":`);
+    res.errors.forEach((e) => console.error(`  - ${e}`));
+    process.exit(1);
+  }
+  console.log(`✅ Branch "${target}" complies with Clickra limits (suffix length: ${res.length}, words: ${res.wordCount}).`);
+}
 
-  switch (command) {
-    case "validate-branch": {
-      const target = args[1] || getCurrentBranch();
-      const res = validateBranchName(target);
-      if (!res.valid) {
-        console.error(`❌ Invalid branch name "${target}":`);
-        res.errors.forEach((e) => console.error(`  - ${e}`));
-        process.exit(1);
-      }
-      console.log(`✅ Branch "${target}" complies with Clickra limits (suffix length: ${res.length}, words: ${res.wordCount}).`);
-      break;
-    }
-    case "prepare": {
-      runPrepare();
-      break;
-    }
-    case "render-body": {
-      const outIdx = args.indexOf("--output");
-      const outputPath = outIdx !== -1 ? args[outIdx + 1] : null;
-      const body = renderPrBody();
-      if (outputPath) {
-        writeFileSync(outputPath, body, "utf8");
-        console.log(`✅ PR body written to ${outputPath}`);
-      } else {
-        console.log(body);
-      }
-      break;
-    }
-    case "push": {
-      const authIdx = args.indexOf("--authorize");
-      const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
-      const execute = args.includes("--execute");
-      runPush(authorization, { execute });
-      break;
-    }
-    case "create": {
-      const isDraft = args.includes("--draft");
-      const titleIdx = args.indexOf("--title");
-      const bodyIdx = args.indexOf("--body-file");
-      const authIdx = args.indexOf("--authorize");
-      const title = titleIdx !== -1 ? args[titleIdx + 1] : "";
-      const bodyFile = bodyIdx !== -1 ? args[bodyIdx + 1] : "";
-      const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
-      const execute = args.includes("--execute");
-      runCreate({ title, bodyFile, draft: isDraft, execute, authorization });
-      break;
-    }
-    case "audit": {
-      const prNumber = args[1] || "";
-      runAudit(prNumber);
-      break;
-    }
-    case "resolve": {
-      const threadId = args[1];
-      const authIdx = args.indexOf("--authorize");
-      const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
-      const execute = args.includes("--execute");
-      resolveReviewThread(threadId, { authorization, execute });
-      break;
-    }
-    case "self-test": {
-      selfTest();
-      break;
-    }
-    case "help":
-    default:
-      console.log(`
+function handleRenderBody(args) {
+  const outIdx = args.indexOf("--output");
+  const outputPath = outIdx !== -1 ? args[outIdx + 1] : null;
+  const body = renderPrBody();
+  if (outputPath) {
+    writeFileSync(outputPath, body, "utf8");
+    console.log(`✅ PR body written to ${outputPath}`);
+  } else {
+    console.log(body);
+  }
+}
+
+function handlePush(args) {
+  const authIdx = args.indexOf("--authorize");
+  const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
+  const execute = args.includes("--execute");
+  runPush(authorization, { execute });
+}
+
+function handleCreate(args) {
+  const isDraft = args.includes("--draft");
+  const titleIdx = args.indexOf("--title");
+  const bodyIdx = args.indexOf("--body-file");
+  const authIdx = args.indexOf("--authorize");
+  const title = titleIdx !== -1 ? args[titleIdx + 1] : "";
+  const bodyFile = bodyIdx !== -1 ? args[bodyIdx + 1] : "";
+  const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
+  const execute = args.includes("--execute");
+  runCreate({ title, bodyFile, draft: isDraft, execute, authorization });
+}
+
+function handleResolve(args) {
+  const threadId = args[1];
+  const authIdx = args.indexOf("--authorize");
+  const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
+  const execute = args.includes("--execute");
+  resolveReviewThread(threadId, { authorization, execute });
+}
+
+function printHelp() {
+  console.log(`
 Clickra PR Workflow Automation Tool
 
 Usage:
@@ -686,8 +669,26 @@ Usage:
   node scripts/pr-tool.mjs resolve <thread-id>      Resolve PR review thread via GraphQL
   node scripts/pr-tool.mjs self-test                Run built-in policy tests
 `);
-      break;
-  }
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const command = args[0] || "help";
+
+  const commandHandlers = {
+    "validate-branch": () => handleValidateBranch(args),
+    "prepare": () => runPrepare(),
+    "render-body": () => handleRenderBody(args),
+    "push": () => handlePush(args),
+    "create": () => handleCreate(args),
+    "audit": () => runAudit(args[1] || ""),
+    "resolve": () => handleResolve(args),
+    "self-test": () => selfTest(),
+    "help": () => printHelp(),
+  };
+
+  const handler = commandHandlers[command] || commandHandlers.help;
+  handler();
 }
 
 if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
