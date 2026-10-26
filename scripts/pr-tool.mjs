@@ -4,21 +4,24 @@
  *
  * Clickra-inspired PR workflow automation and safety gate.
  * Ensures strict branch naming, atomic staging, template compliance,
- * and review thread closure protocols.
+ * two-phase push/create gates, review thread auditing, and closure protocols.
  *
  * CLI usage:
  *   node scripts/pr-tool.mjs validate-branch [branch-name]
  *   node scripts/pr-tool.mjs prepare
  *   node scripts/pr-tool.mjs render-body [--output <file>]
- *   node scripts/pr-tool.mjs create [--title <title>] [--draft]
- *   node scripts/pr-tool.mjs verify [pr-number]
- *   node scripts/pr-tool.mjs resolve <thread-id>
+ *   node scripts/pr-tool.mjs push [--authorize <branch:sha>] [--execute]
+ *   node scripts/pr-tool.mjs create [--title <title>] [--authorize <token>] [--execute] [--draft]
+ *   node scripts/pr-tool.mjs audit [pr-number]
+ *   node scripts/pr-tool.mjs resolve <thread-id> [--authorize <thread-id>] [--execute]
+ *   node scripts/pr-tool.mjs self-test
  */
 
 import { execFileSync, execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import crypto from "node:crypto";
 import { validatePrBody } from "./commit-policy.mjs";
 
 export const BRANCH_LIMITS = {
@@ -38,6 +41,14 @@ export const BRANCH_LIMITS = {
     "ci",
   ],
 };
+
+export const PR_SEQUENCE_PATTERNS = [
+  /(?:^|[-_/])pr\d+(?=$|[-_/])/i,
+  /(?:^|[-_/])post-[a-z0-9]+(?=$|[-_/])/i,
+  /(?:^|[-_/])phase-\d+(?=$|[-_/])/i,
+];
+
+export const VERSION_PATTERN = /\bv?\d+\.\d+/i;
 
 /**
  * Validates a branch name according to Clickra branch discipline.
@@ -64,6 +75,18 @@ export function validateBranchName(branchName) {
   if (!BRANCH_LIMITS.allowedTypes.includes(type)) {
     errors.push(
       `Branch type "${type}" is invalid. Allowed types: ${BRANCH_LIMITS.allowedTypes.join(", ")}.`,
+    );
+  }
+
+  if (PR_SEQUENCE_PATTERNS.some((pattern) => pattern.test(name))) {
+    errors.push(
+      "Branch name must describe the change; PR sequence suffixes or markers such as -pr2 or phase-1 are prohibited.",
+    );
+  }
+
+  if (VERSION_PATTERN.test(suffix)) {
+    errors.push(
+      "Branch name must not contain version identifiers (e.g., v1.0).",
     );
   }
 
@@ -120,6 +143,20 @@ export function getCurrentBranch() {
     return run("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
   } catch (err) {
     return "HEAD";
+  }
+}
+
+/**
+ * Gets remote repository origin slug (e.g. NCUIM/NCUIM.github.io).
+ */
+export function getRepoOrigin() {
+  try {
+    const url = run("git", ["remote", "get-url", "origin"]).trim();
+    const match = url.match(/github\.com[:/]([^/]+)\/([^/]+?)(?:\.git)?$/);
+    if (!match) return "NCUIM/NCUIM.github.io";
+    return `${match[1]}/${match[2]}`;
+  } catch {
+    return "NCUIM/NCUIM.github.io";
   }
 }
 
@@ -181,7 +218,7 @@ export function renderPrBody(commits = [], customSummary = "") {
 }
 
 /**
- * Preflight checks before PR creation.
+ * Preflight checks before PR creation or push.
  */
 export function runPrepare() {
   console.log("🔍 Running Clickra preflight checks...");
@@ -233,12 +270,237 @@ export function runPrepare() {
 }
 
 /**
- * Resolves a GitHub PR review thread via GraphQL.
+ * Clickra-inspired guarded push with two-phase authorization and remote verification.
  */
-export function resolveReviewThread(threadId) {
+export function runPush(authorization = "", { execute = false } = {}) {
+  const branch = getCurrentBranch();
+  const sha = run("git", ["rev-parse", "HEAD"]).trim();
+
+  const branchCheck = validateBranchName(branch);
+  if (!branchCheck.valid) {
+    console.error("❌ Cannot push invalid branch:");
+    branchCheck.errors.forEach((err) => console.error(`   - ${err}`));
+    process.exit(1);
+  }
+
+  const status = run("git", ["status", "--porcelain"]).trim();
+  if (status) {
+    console.error("❌ Worktree must be clean before publication.");
+    process.exit(1);
+  }
+
+  const expectedAuth = `${branch}:${sha}`;
+  if (!execute) {
+    console.log(`🔒 Push preview authorization token:`);
+    console.log(`   ${expectedAuth}`);
+    console.log(`\nTo execute push, request explicit user authorization and rerun:`);
+    console.log(`   node scripts/pr-tool.mjs push --authorize "${expectedAuth}" --execute`);
+    return { preview: expectedAuth };
+  }
+
+  if (authorization !== expectedAuth) {
+    console.error(`❌ Push authorization mismatch:`);
+    console.error(`   Expected: "${expectedAuth}"`);
+    console.error(`   Received: "${authorization}"`);
+    process.exit(1);
+  }
+
+  console.log(`🚀 Executing explicitly authorized push for ${expectedAuth}...`);
+  run("git", ["push", "origin", `refs/heads/${branch}:refs/heads/${branch}`], { stdio: "inherit" });
+
+  // Post-push verification via git ls-remote
+  console.log(`🔍 Verifying remote HEAD matches local committed commit...`);
+  const remoteOutput = run("git", ["ls-remote", "origin", `refs/heads/${branch}`]).trim();
+  const remoteSha = remoteOutput.split(/\s+/)[0];
+  if (remoteSha !== sha) {
+    console.error(`❌ Push outcome unconfirmed: remote SHA (${remoteSha || "none"}) does not match local HEAD (${sha})`);
+    process.exit(1);
+  }
+
+  console.log(`✅ Push confirmed: remote refs/heads/${branch} is at ${sha}`);
+  return { pushed: expectedAuth };
+}
+
+/**
+ * Clickra-inspired guarded PR creation with two-phase authorization and post-creation verification.
+ */
+export function runCreate({ title: customTitle = "", execute = false, authorization = "", draft = false } = {}) {
+  runPrepare();
+  const branch = getCurrentBranch();
+  const sha = run("git", ["rev-parse", "HEAD"]).trim();
+  const repo = getRepoOrigin();
+
+  // Verify remote branch exists and is at local HEAD
+  const remoteOutput = run("git", ["ls-remote", "origin", `refs/heads/${branch}`]).trim();
+  const remoteSha = remoteOutput.split(/\s+/)[0];
+  if (remoteSha !== sha) {
+    console.error(`❌ Remote branch refs/heads/${branch} is not up-to-date with local HEAD (remote: ${remoteSha || "none"}, local: ${sha}).`);
+    console.error(`   Please push using "node scripts/pr-tool.mjs push" first!`);
+    process.exit(1);
+  }
+
+  const commits = getLocalCommits();
+  const title = customTitle || (commits.length > 0 ? commits[0].subject : `feat: update ${branch}`);
+  const body = renderPrBody(commits);
+
+  // Calculate fingerprint
+  const fingerprint = crypto.createHash("sha256").update(`${title}\n${body}`).digest("hex").slice(0, 16);
+  const expectedAuth = `${repo}:${branch}:${sha}:${fingerprint}`;
+
+  if (!execute) {
+    console.log(`🔒 PR creation preview authorization token:`);
+    console.log(`   ${expectedAuth}`);
+    console.log(`📌 Title: "${title}"`);
+    console.log(`\nTo execute PR creation, request explicit user authorization and rerun:`);
+    console.log(`   node scripts/pr-tool.mjs create --title "${title}" --authorize "${expectedAuth}" --execute`);
+    return { preview: expectedAuth };
+  }
+
+  if (authorization !== expectedAuth) {
+    console.error(`❌ PR creation authorization mismatch:`);
+    console.error(`   Expected: "${expectedAuth}"`);
+    console.error(`   Received: "${authorization}"`);
+    process.exit(1);
+  }
+
+  const tempFile = path.join(os.tmpdir(), `pr_body_${Date.now()}.md`);
+  try {
+    writeFileSync(tempFile, body, "utf8");
+    const ghArgs = ["pr", "create", "--repo", repo, "--base", "main", "--head", branch, "--title", title, "--body-file", tempFile];
+    if (draft) ghArgs.push("--draft");
+    console.log(`🚀 Creating PR: "${title}"...`);
+    const out = run("gh", ghArgs, { stdio: "inherit" });
+    console.log(out || "✅ PR created successfully.");
+
+    // Verify created PR
+    console.log(`🔍 Verifying created PR state...`);
+    const prListRaw = run("gh", ["pr", "list", "--repo", repo, "--head", branch, "--json", "number,headRefOid,baseRefName,url"]).trim();
+    if (prListRaw) {
+      try {
+        const prList = JSON.parse(prListRaw);
+        if (prList.length > 0) {
+          const pr = prList[0];
+          console.log(`✅ PR #${pr.number} verified: ${pr.url} (HEAD: ${pr.headRefOid.slice(0, 7)}, Base: ${pr.baseRefName})`);
+        }
+      } catch {
+        // ignore json parse error
+      }
+    }
+  } finally {
+    if (existsSync(tempFile)) unlinkSync(tempFile);
+  }
+}
+
+/**
+ * Clickra-inspired read-only audit of PR review comments and discussion threads.
+ */
+export function runAudit(prArg = "") {
+  const repo = getRepoOrigin();
+  const currentBranch = getCurrentBranch();
+  let prNumber = prArg;
+  if (!prNumber) {
+    const prListRaw = run("gh", ["pr", "list", "--repo", repo, "--head", currentBranch, "--json", "number"]).trim();
+    try {
+      const prList = JSON.parse(prListRaw);
+      if (prList.length > 0) prNumber = String(prList[0].number);
+    } catch {
+      // ignore
+    }
+  }
+  if (!prNumber) {
+    console.error("❌ No PR found for current branch. Provide PR number: node scripts/pr-tool.mjs audit <pr-number>");
+    process.exit(1);
+  }
+
+  console.log(`🔍 Auditing PR #${prNumber} on ${repo}...`);
+
+  const [owner, name] = repo.split("/");
+  const query = `
+    query($owner: String!, $name: String!, $number: Int!) {
+      repository(owner: $owner, name: $name) {
+        pullRequest(number: $number) {
+          reviewThreads(first: 100) {
+            nodes {
+              id
+              isResolved
+              isOutdated
+              path
+              line
+              comments(first: 5) {
+                nodes {
+                  author { login }
+                  body
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  let threads = [];
+  try {
+    const raw = run("gh", [
+      "api",
+      "graphql",
+      "-f",
+      `query=${query}`,
+      "-F",
+      `owner=${owner}`,
+      "-F",
+      `name=${name}`,
+      "-F",
+      `number=${prNumber}`,
+    ]).trim();
+    const parsed = JSON.parse(raw);
+    threads = parsed?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
+  } catch (err) {
+    console.error("⚠️ Failed to fetch review threads:", err?.message || err);
+  }
+
+  const unresolved = threads.filter((t) => !t.isResolved);
+  const outdatedUnresolved = unresolved.filter((t) => t.isOutdated);
+
+  console.log(`\n📊 PR #${prNumber} Review Audit Summary:`);
+  console.log(`   Total Discussion Threads: ${threads.length}`);
+  console.log(`   Unresolved Threads:       ${unresolved.length}`);
+  console.log(`   Outdated Unresolved:      ${outdatedUnresolved.length}`);
+
+  if (unresolved.length > 0) {
+    console.log(`\n📌 Unresolved Review Threads:`);
+    for (const t of unresolved) {
+      const topComment = t.comments?.nodes?.[0];
+      const author = topComment?.author?.login || "unknown";
+      const preview = (topComment?.body || "").slice(0, 80).replace(/\r?\n/g, " ");
+      console.log(`   - Thread ID: ${t.id} (${t.path || "general"}:${t.line || "-"}) [${t.isOutdated ? "OUTDATED" : "ACTIVE"}]`);
+      console.log(`     By @${author}: "${preview}..."`);
+    }
+  } else {
+    console.log(`\n✅ All review discussion threads are resolved!`);
+  }
+}
+
+/**
+ * Resolves a GitHub PR review thread via GraphQL with optional two-phase authorization.
+ */
+export function resolveReviewThread(threadId, { authorization = "", execute = false } = {}) {
   if (!threadId) {
-    console.error("Usage: pr-tool resolve <thread-id>");
+    console.error("Usage: pr-tool resolve <thread-id> [--authorize <thread-id>] [--execute]");
     process.exit(2);
+  }
+
+  if (!execute) {
+    console.log(`🔒 Thread resolution preview:`);
+    console.log(`   Thread ID: ${threadId}`);
+    console.log(`\nTo execute resolution, request explicit user authorization and rerun:`);
+    console.log(`   node scripts/pr-tool.mjs resolve "${threadId}" --authorize "${threadId}" --execute`);
+    return { preview: threadId };
+  }
+
+  if (authorization !== threadId) {
+    console.error(`❌ Thread authorization mismatch: expected "${threadId}", got "${authorization}"`);
+    process.exit(1);
   }
 
   const query = `
@@ -271,7 +533,7 @@ export function resolveReviewThread(threadId) {
 }
 
 /**
- * CLI Entrypoint.
+ * CLI Entrypoint & Automated Self-Test.
  */
 export function selfTest() {
   const failures = [];
@@ -290,6 +552,12 @@ export function selfTest() {
   check("invalid branch type rejected", validateBranchName("unknown/pr-tool").valid, false);
   check("main branch allowed", validateBranchName("main").valid, true);
   check("master branch allowed", validateBranchName("master").valid, true);
+
+  // Clickra sequence and version pattern checks
+  check("PR sequence pattern pr2 rejected", validateBranchName("feat/add-pr2").valid, false);
+  check("PR sequence pattern phase-1 rejected", validateBranchName("fix/phase-1").valid, false);
+  check("PR sequence pattern post-nine rejected", validateBranchName("chore/post-nine").valid, false);
+  check("version identifier rejected", validateBranchName("feat/api-v1.0").valid, false);
 
   // Template / renderPrBody checks
   const mockCommits = [
@@ -310,7 +578,7 @@ export function selfTest() {
     for (const f of failures) console.error(`  - ${f}`);
     process.exit(1);
   }
-  console.log("✅ pr-tool self-test passed (all branch rules and PR body templates verified).");
+  console.log("✅ pr-tool self-test passed (all branch rules, sequence guards, and templates verified).");
 }
 
 function main() {
@@ -346,34 +614,34 @@ function main() {
       }
       break;
     }
+    case "push": {
+      const authIdx = args.indexOf("--authorize");
+      const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
+      const execute = args.includes("--execute");
+      runPush(authorization, { execute });
+      break;
+    }
     case "create": {
-      runPrepare();
       const isDraft = args.includes("--draft");
       const titleIdx = args.indexOf("--title");
-      const commits = getLocalCommits();
-      const title =
-        titleIdx !== -1 && args[titleIdx + 1]
-          ? args[titleIdx + 1]
-          : commits.length > 0
-            ? commits[0].subject
-            : `feat: update ${getCurrentBranch()}`;
-
-      const tempFile = path.join(os.tmpdir(), `pr_body_${Date.now()}.md`);
-      try {
-        const body = renderPrBody(commits);
-        writeFileSync(tempFile, body, "utf8");
-        const ghArgs = ["pr", "create", "--title", title, "--body-file", tempFile];
-        if (isDraft) ghArgs.push("--draft");
-        console.log(`🚀 Creating PR: "${title}"...`);
-        const out = run("gh", ghArgs, { stdio: "inherit" });
-        console.log(out || "✅ PR created successfully.");
-      } finally {
-        if (existsSync(tempFile)) unlinkSync(tempFile);
-      }
+      const authIdx = args.indexOf("--authorize");
+      const title = titleIdx !== -1 ? args[titleIdx + 1] : "";
+      const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
+      const execute = args.includes("--execute");
+      runCreate({ title, draft: isDraft, execute, authorization });
+      break;
+    }
+    case "audit": {
+      const prNumber = args[1] || "";
+      runAudit(prNumber);
       break;
     }
     case "resolve": {
-      resolveReviewThread(args[1]);
+      const threadId = args[1];
+      const authIdx = args.indexOf("--authorize");
+      const authorization = authIdx !== -1 ? args[authIdx + 1] : "";
+      const execute = args.includes("--execute");
+      resolveReviewThread(threadId, { authorization, execute });
       break;
     }
     case "self-test": {
@@ -389,8 +657,11 @@ Usage:
   node scripts/pr-tool.mjs validate-branch [branch]  Validate branch scope and length limits
   node scripts/pr-tool.mjs prepare                  Run all preflight checks
   node scripts/pr-tool.mjs render-body [--output f] Render safe PR body from template
-  node scripts/pr-tool.mjs create [--title t]       Safe PR creation via body-file
+  node scripts/pr-tool.mjs push [--authorize token] Push branch with two-phase verification
+  node scripts/pr-tool.mjs create [--title t]       Safe PR creation with two-phase verification
+  node scripts/pr-tool.mjs audit [pr]               Read-only review discussion audit
   node scripts/pr-tool.mjs resolve <thread-id>      Resolve PR review thread via GraphQL
+  node scripts/pr-tool.mjs self-test                Run built-in policy tests
 `);
       break;
   }
