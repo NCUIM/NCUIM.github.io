@@ -18,7 +18,7 @@
  */
 
 import { execFileSync, execSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdtempSync, rmdirSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
@@ -44,7 +44,7 @@ export const BRANCH_LIMITS = {
 
 export const PR_SEQUENCE_PATTERNS = [
   /(?:^|[-_/])pr\d+(?=$|[-_/])/i,
-  /(?:^|[-_/])post-[a-z0-9]+(?=$|[-_/])/i,
+  /(?:^|[-_/])post-(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)(?=$|[-_/])/i,
   /(?:^|[-_/])phase-\d+(?=$|[-_/])/i,
 ];
 
@@ -118,11 +118,13 @@ export function validateBranchName(branchName) {
  * Runs a command safely and returns stdout.
  */
 function run(cmd, args = [], options = {}) {
+  const timeout = options.timeout || 60000;
   if (cmd === "npm" || cmd === "npx") {
     const fullCmd = [cmd, ...args].join(" ");
     const result = execSync(fullCmd, {
       encoding: "utf8",
       stdio: options.stdio || "pipe",
+      timeout,
       ...options,
     });
     return typeof result === "string" ? result.trim() : "";
@@ -130,6 +132,7 @@ function run(cmd, args = [], options = {}) {
   const result = execFileSync(cmd, args, {
     encoding: "utf8",
     stdio: options.stdio || "pipe",
+    timeout,
     ...options,
   });
   return typeof result === "string" ? result.trim() : "";
@@ -275,7 +278,14 @@ export function runPrepare() {
  * Clickra-inspired guarded push with two-phase authorization and remote verification.
  */
 export function runPush(authorization = "", { execute = false } = {}) {
+  runPrepare();
+
   const branch = getCurrentBranch();
+  if (branch === "main" || branch === "master" || branch === "HEAD") {
+    console.error(`❌ Refusing to push protected or detached branch "${branch}".`);
+    process.exit(1);
+  }
+
   const sha = run("git", ["rev-parse", "HEAD"]).trim();
 
   const branchCheck = validateBranchName(branch);
@@ -381,9 +391,10 @@ export function runCreate({ title: customTitle = "", bodyFile = "", execute = fa
     process.exit(1);
   }
 
-  const tempFile = path.join(os.tmpdir(), `pr_body_${Date.now()}.md`);
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), "pr-tool-"));
+  const tempFile = path.join(tempDir, "pr_body.md");
   try {
-    writeFileSync(tempFile, body, "utf8");
+    writeFileSync(tempFile, body, { encoding: "utf8", mode: 0o600 });
     const ghArgs = ["pr", "create", "--repo", repo, "--base", "main", "--head", branch, "--title", title, "--body-file", tempFile];
     if (draft) ghArgs.push("--draft");
     console.log(`🚀 Creating PR: "${title}"...`);
@@ -406,6 +417,7 @@ export function runCreate({ title: customTitle = "", bodyFile = "", execute = fa
     }
   } finally {
     if (existsSync(tempFile)) unlinkSync(tempFile);
+    if (existsSync(tempDir)) rmdirSync(tempDir);
   }
 }
 
@@ -425,48 +437,68 @@ function resolvePrNumber(prArg, repo) {
 
 function fetchReviewThreads(repo, prNumber) {
   const [owner, name] = repo.split("/");
-  const query = `
-    query($owner: String!, $name: String!, $number: Int!) {
-      repository(owner: $owner, name: $name) {
-        pullRequest(number: $number) {
-          reviewThreads(first: 100) {
-            nodes {
-              id
-              isResolved
-              isOutdated
-              path
-              line
-              comments(first: 5) {
-                nodes {
-                  author { login }
-                  body
+  const threads = [];
+  let hasNextPage = true;
+  let cursor = null;
+
+  while (hasNextPage) {
+    const afterClause = cursor ? `, after: "${cursor}"` : "";
+    const query = `
+      query($owner: String!, $name: String!, $number: Int!) {
+        repository(owner: $owner, name: $name) {
+          pullRequest(number: $number) {
+            reviewThreads(first: 100${afterClause}) {
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              nodes {
+                id
+                isResolved
+                isOutdated
+                path
+                line
+                comments(first: 5) {
+                  nodes {
+                    author { login }
+                    body
+                  }
                 }
               }
             }
           }
         }
       }
+    `;
+    try {
+      const raw = run("gh", [
+        "api",
+        "graphql",
+        "-f",
+        `query=${query}`,
+        "-F",
+        `owner=${owner}`,
+        "-F",
+        `name=${name}`,
+        "-F",
+        `number=${prNumber}`,
+      ]).trim();
+      const parsed = JSON.parse(raw);
+      if (parsed.errors && parsed.errors.length > 0) {
+        console.error("⚠️ GraphQL error fetching review threads:", parsed.errors[0].message);
+        break;
+      }
+      const threadData = parsed?.data?.repository?.pullRequest?.reviewThreads;
+      const nodes = threadData?.nodes || [];
+      threads.push(...nodes);
+      hasNextPage = Boolean(threadData?.pageInfo?.hasNextPage);
+      cursor = threadData?.pageInfo?.endCursor || null;
+    } catch (err) {
+      console.error("⚠️ Failed to fetch review threads:", err?.message || err);
+      break;
     }
-  `;
-  try {
-    const raw = run("gh", [
-      "api",
-      "graphql",
-      "-f",
-      `query=${query}`,
-      "-F",
-      `owner=${owner}`,
-      "-F",
-      `name=${name}`,
-      "-F",
-      `number=${prNumber}`,
-    ]).trim();
-    const parsed = JSON.parse(raw);
-    return parsed?.data?.repository?.pullRequest?.reviewThreads?.nodes || [];
-  } catch (err) {
-    console.error("⚠️ Failed to fetch review threads:", err?.message || err);
-    return [];
   }
+  return threads;
 }
 
 function printReviewThreads(threads, prNumber) {
@@ -636,6 +668,11 @@ export function resolveReviewThread(threadId, { authorization = "", execute = fa
       "-F",
       `threadId=${threadId}`,
     ]);
+    const parsed = JSON.parse(result);
+    if (parsed.errors && parsed.errors.length > 0) {
+      console.error("❌ Failed to resolve thread:", parsed.errors[0].message);
+      process.exit(1);
+    }
     console.log("✅ Review thread marked as resolved.");
     return result;
   } catch (err) {
