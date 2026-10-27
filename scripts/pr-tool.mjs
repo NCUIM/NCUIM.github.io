@@ -848,8 +848,7 @@ function handleResolve(args) {
   const execute = args.includes("--execute");
 
   if (isAll) {
-    const nonFlags = args.slice(1).filter((a) => !a.startsWith("-"));
-    const prNumber = nonFlags[0] || "";
+    const prNumber = args.slice(1).find((a) => !a.startsWith("-")) || "";
     resolveAllReviewThreads(prNumber, { authorization, execute });
   } else {
     const threadId = args[1];
