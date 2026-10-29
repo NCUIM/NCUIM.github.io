@@ -174,7 +174,30 @@ export default defineConfig({
         manualChunks(id) {
           if (!id.includes("node_modules")) return undefined;
 
-          return "vendor";
+          if (id.includes("/@ionic/core/components/")) {
+            const fileName = id.split("/@ionic/core/components/")[1];
+            if (fileName && fileName.startsWith("p-")) {
+              return "vendor-ionic-stencil";
+            }
+            if (fileName && fileName.startsWith("ion-") && fileName[4] <= "m") {
+              return "vendor-ionic-components-a";
+            }
+            return "vendor-ionic-components-b";
+          }
+
+          if (id.includes("/@ionic/core/")) {
+            return "vendor-ionic-core";
+          }
+
+          if (
+            id.includes("/@ionic/react/") ||
+            id.includes("/@ionic/react-router/") ||
+            id.includes("/ionicons/")
+          ) {
+            return "vendor-ionic-react";
+          }
+
+          return "vendor-framework";
         },
       },
     },
