@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import { IonPage, useIonAlert } from "@ionic/react";
 import {
   AnnouncementItem,
@@ -6,8 +6,6 @@ import {
   fetchAnnouncements,
 } from "../services/announcement-api";
 import { CTF_CONFIG, isCtfEnded } from "../services/ctf-challenge";
-import AnnouncementModal from "../components/announcements/AnnouncementModal";
-import { FacultyQuizModal } from "../components/faculty/FacultyQuizModal";
 import {
   HomeHeader,
   HomeBody,
@@ -19,9 +17,16 @@ import {
   markModalDismissed,
 } from "../utils/useModalHistorySync";
 
+const AnnouncementModal = lazy(() => import("../components/announcements/AnnouncementModal"));
+const FacultyQuizModal = lazy(() =>
+  import("../components/faculty/FacultyQuizModal").then((m) => ({ default: m.FacultyQuizModal }))
+);
+
 const HomePage = () => {
   const [hovered, setHovered] = useState<string | null>(null);
+  const [hasOpenedAnnouncements, setHasOpenedAnnouncements] = useState(false);
   const [showAnnouncements, setShowAnnouncements] = useState(false);
+  const [hasOpenedQuiz, setHasOpenedQuiz] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [announcements, setAnnouncements] = useState<readonly AnnouncementItem[]>(BUILTIN_ANNOUNCEMENTS);
   const [easterEggStage, setEasterEggStage] = useState(0);
@@ -182,6 +187,7 @@ const HomePage = () => {
 
   const handleOpenQuiz = useCallback(() => {
     if (isModalDismissCooldown()) return;
+    setHasOpenedQuiz(true);
     setShowQuizModal(true);
   }, []);
 
@@ -192,6 +198,7 @@ const HomePage = () => {
 
   const handleOpenAnnouncements = useCallback(() => {
     if (isModalDismissCooldown()) return;
+    setHasOpenedAnnouncements(true);
     setShowAnnouncements(true);
   }, []);
 
@@ -214,15 +221,23 @@ const HomePage = () => {
         onLogoClick={handleSecretTap}
         onOpenAnnouncements={handleOpenAnnouncements}
       />
-      <AnnouncementModal
-        isOpen={showAnnouncements}
-        announcements={announcements}
-        onDismiss={handleDismissAnnouncements}
-      />
-      <FacultyQuizModal
-        isOpen={showQuizModal}
-        onDismiss={handleDismissQuiz}
-      />
+      {hasOpenedAnnouncements && (
+        <Suspense fallback={null}>
+          <AnnouncementModal
+            isOpen={showAnnouncements}
+            announcements={announcements}
+            onDismiss={handleDismissAnnouncements}
+          />
+        </Suspense>
+      )}
+      {hasOpenedQuiz && (
+        <Suspense fallback={null}>
+          <FacultyQuizModal
+            isOpen={showQuizModal}
+            onDismiss={handleDismissQuiz}
+          />
+        </Suspense>
+      )}
     </IonPage>
   );
 };

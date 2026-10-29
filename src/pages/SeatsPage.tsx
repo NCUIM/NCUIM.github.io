@@ -16,14 +16,15 @@ import {
   IonSegmentButton,
 } from "@ionic/react";
 import { diceOutline } from "ionicons/icons";
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { ROOM_LAYOUTS, type RoomLayout } from "../data/room-layouts";
 import SeatGrid from "../components/seats/SeatGrid";
-import MealLotteryModal from "../components/seats/MealLotteryModal";
 import {
   isModalDismissCooldown,
   markModalDismissed,
 } from "../utils/useModalHistorySync";
+
+const MealLotteryModal = lazy(() => import("../components/seats/MealLotteryModal"));
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -133,11 +134,13 @@ const SeatsBody = ({
 
 const SeatsPage = () => {
   const [selectedRoom, setSelectedRoom] = useState("209");
+  const [hasOpenedLottery, setHasOpenedLottery] = useState(false);
   const [isLotteryOpen, setIsLotteryOpen] = useState(false);
   const currentLayout = ROOM_LAYOUTS.find((r) => r.id === selectedRoom);
 
   const handleOpenLottery = useCallback(() => {
     if (isModalDismissCooldown()) return;
+    setHasOpenedLottery(true);
     setIsLotteryOpen(true);
   }, []);
 
@@ -154,11 +157,15 @@ const SeatsPage = () => {
         currentLayout={currentLayout}
         onSelectRoom={setSelectedRoom}
       />
-      <MealLotteryModal
-        isOpen={isLotteryOpen}
-        defaultRoomId={selectedRoom}
-        onDismiss={handleDismissLottery}
-      />
+      {hasOpenedLottery && (
+        <Suspense fallback={null}>
+          <MealLotteryModal
+            isOpen={isLotteryOpen}
+            defaultRoomId={selectedRoom}
+            onDismiss={handleDismissLottery}
+          />
+        </Suspense>
+      )}
     </IonPage>
   );
 };

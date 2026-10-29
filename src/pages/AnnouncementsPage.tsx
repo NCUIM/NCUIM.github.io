@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import {
   IonPage,
   IonHeader,
@@ -34,12 +34,15 @@ import {
   type DepartmentNewsCategory,
   type DepartmentNewsItem,
 } from "../services/department-news-api";
-import { DepartmentNewsModal } from "../components/announcements/DepartmentNewsModal";
 import { FilterChips, type FilterChipTab } from "../components/common/FilterChips";
 import {
   isModalDismissCooldown,
   markModalDismissed,
 } from "../utils/useModalHistorySync";
+
+const DepartmentNewsModal = lazy(() =>
+  import("../components/announcements/DepartmentNewsModal").then((m) => ({ default: m.DepartmentNewsModal }))
+);
 
 const CATEGORY_CHIP_META: Record<
   DepartmentNewsCategory,
@@ -69,6 +72,7 @@ export const AnnouncementsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Modal state
+  const [hasOpenedModal, setHasOpenedModal] = useState<boolean>(false);
   const [selectedNewsId, setSelectedNewsId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
@@ -109,6 +113,7 @@ export const AnnouncementsPage: React.FC = () => {
     if (isModalDismissCooldown()) {
       return;
     }
+    setHasOpenedModal(true);
     setSelectedNewsId(id);
     setIsModalOpen(true);
   }, []);
@@ -396,11 +401,15 @@ export const AnnouncementsPage: React.FC = () => {
         </div>
 
         {/* Post Detail Reader Modal */}
-        <DepartmentNewsModal
-          isOpen={isModalOpen}
-          newsId={selectedNewsId}
-          onDismiss={handleDismissModal}
-        />
+        {hasOpenedModal && (
+          <Suspense fallback={null}>
+            <DepartmentNewsModal
+              isOpen={isModalOpen}
+              newsId={selectedNewsId}
+              onDismiss={handleDismissModal}
+            />
+          </Suspense>
+        )}
       </IonContent>
     </IonPage>
   );
