@@ -176,10 +176,10 @@ export default defineConfig({
 
           if (id.includes("/@ionic/core/components/")) {
             const fileName = id.split("/@ionic/core/components/")[1];
-            if (fileName && fileName.startsWith("p-")) {
+            if (fileName?.startsWith("p-")) {
               return "vendor-ionic-stencil";
             }
-            if (fileName && fileName.startsWith("ion-") && fileName[4] <= "m") {
+            if (fileName?.startsWith("ion-") && fileName[4] <= "m") {
               return "vendor-ionic-components-a";
             }
             return "vendor-ionic-components-b";
