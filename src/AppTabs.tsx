@@ -1,8 +1,20 @@
+import { lazy, Suspense } from "react";
 import { Route, Switch } from "react-router-dom";
 
-import LotteryPage from "./pages/LotteryPage";
-import LotteryAdminPage from "./pages/LotteryAdminPage";
+import RouteLoadingFallback from "./components/common/RouteLoadingFallback";
 import TabsShell from "./TabsShell";
+
+const withRouteSuspense = (LazyComponent: React.LazyExoticComponent<React.ComponentType<any>>) => {
+  const RouteSuspendedComponent: React.FC = (props) => (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <LazyComponent {...props} />
+    </Suspense>
+  );
+  return RouteSuspendedComponent;
+};
+
+const LotteryPage = withRouteSuspense(lazy(() => import("./pages/LotteryPage")));
+const LotteryAdminPage = withRouteSuspense(lazy(() => import("./pages/LotteryAdminPage")));
 
 // Depth: Switch(1) > Route(2) > TabsShell/LotteryPage(3) — within limit.
 // Switch preserves original routing: lottery pages bypass IonTabs so tab animations stay smooth.

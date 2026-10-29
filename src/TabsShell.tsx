@@ -1,14 +1,25 @@
+import { lazy, Suspense } from "react";
 import { IonTabs, IonRouterOutlet, IonTabBar, IonTabButton, IonIcon, IonLabel } from "@ionic/react";
 import { Route, Redirect } from "react-router-dom";
 import { grid, book, newspaper } from "ionicons/icons";
+import RouteLoadingFallback from "./components/common/RouteLoadingFallback";
 
-import HomePage from "./pages/HomePage";
-import AnnouncementsPage from "./pages/AnnouncementsPage";
-import SeatsPage from "./pages/SeatsPage";
-import TimetablePage from "./pages/TimetablePage";
-import FoodPage from "./pages/FoodPage";
-import CreditPage from "./pages/CreditPage";
-import GuidePage from "./pages/GuidePage";
+const withRouteSuspense = (LazyComponent: React.LazyExoticComponent<React.ComponentType<any>>) => {
+  const RouteSuspendedComponent: React.FC = (props) => (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <LazyComponent {...props} />
+    </Suspense>
+  );
+  return RouteSuspendedComponent;
+};
+
+const HomePage = withRouteSuspense(lazy(() => import("./pages/HomePage")));
+const GuidePage = withRouteSuspense(lazy(() => import("./pages/GuidePage")));
+const AnnouncementsPage = withRouteSuspense(lazy(() => import("./pages/AnnouncementsPage")));
+const SeatsPage = withRouteSuspense(lazy(() => import("./pages/SeatsPage")));
+const TimetablePage = withRouteSuspense(lazy(() => import("./pages/TimetablePage")));
+const FoodPage = withRouteSuspense(lazy(() => import("./pages/FoodPage")));
+const CreditPage = withRouteSuspense(lazy(() => import("./pages/CreditPage")));
 
 // Depth: IonTabs(1) > IonRouterOutlet/IonTabBar(2) > Route/IonTabButton(3) > IonIcon/IonLabel(4)
 const TabsShell = () => (
