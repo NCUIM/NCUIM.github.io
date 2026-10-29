@@ -9,6 +9,7 @@ import {
   getStoredSelectedCourses,
   setStoredSelectedCourses,
   setStoredCisCourses,
+  isValidCisCourse,
 } from "../services/cis-storage";
 import {
   TRACK_CONFIGS,
@@ -31,7 +32,10 @@ export function generateSyncToastMessage(
   currentCount: number,
   historyCount: number,
   matchedCount: number,
-): string {
+): string | null {
+  if (currentCount <= 0 && historyCount <= 0) {
+    return null;
+  }
   if (currentCount > 0 && historyCount > 0) {
     return `🎉 成功同步！已匯入 ${currentCount} 門本學期課表與 ${historyCount} 門歷年修課（自動配對 ${matchedCount} 門必選修）！`;
   }
@@ -52,38 +56,54 @@ export function useCisBookmarkletSync(options: UseCisBookmarkletSyncOptions = {}
       const payload = parseBookmarkletPayload(hash);
       if (!payload) return;
 
+      let hasProcessed = false;
       try {
-        const { currentCourses, historyCourses } = payload;
-        let matchedIds: string[] = [];
+        const validCurrentCourses = payload.currentCourses.filter(isValidCisCourse);
+        const validHistoryCourses = payload.historyCourses.filter(isValidCisCourse);
 
-        if (currentCourses.length > 0) {
-          setStoredCisCourses(currentCourses);
+        if (validCurrentCourses.length === 0 && validHistoryCourses.length === 0) {
+          return;
         }
 
-        if (historyCourses.length > 0) {
+        hasProcessed = true;
+        let matchedIds: string[] = [];
+
+        if (validCurrentCourses.length > 0) {
+          setStoredCisCourses(validCurrentCourses);
+        }
+
+        if (validHistoryCourses.length > 0) {
           const track = optionsRef.current.currentTrack || getStoredTrack();
           const config = TRACK_CONFIGS[track] || TRACK_CONFIGS.mgmt;
-          matchedIds = matchCisToCurriculum(historyCourses, config, track);
+          matchedIds = matchCisToCurriculum(validHistoryCourses, config, track);
           const prevSelected = getStoredSelectedCourses();
           const merged = Array.from(new Set([...prevSelected, ...matchedIds]));
           setStoredSelectedCourses(merged);
         }
 
         const message = generateSyncToastMessage(
-          currentCourses.length,
-          historyCourses.length,
+          validCurrentCourses.length,
+          validHistoryCourses.length,
           matchedIds.length,
         );
 
-        presentToast({
-          message,
-          duration: 4000,
-          color: "success",
-          position: "top",
-        });
+        if (message) {
+          presentToast({
+            message,
+            duration: 4000,
+            color: "success",
+            position: "top",
+          });
+        }
 
-        optionsRef.current.onSyncSuccess?.(payload, matchedIds);
+        const sanitizedPayload: CisSyncPayload = {
+          currentCourses: validCurrentCourses,
+          historyCourses: validHistoryCourses,
+        };
+
+        optionsRef.current.onSyncSuccess?.(sanitizedPayload, matchedIds);
       } catch (err) {
+        hasProcessed = true;
         presentToast({
           message: "課務資料解析失敗，請重新嘗試同步",
           duration: 3000,
@@ -92,7 +112,9 @@ export function useCisBookmarkletSync(options: UseCisBookmarkletSyncOptions = {}
         });
         optionsRef.current.onSyncError?.(err);
       } finally {
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        if (hasProcessed) {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
       }
     };
 
