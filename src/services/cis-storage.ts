@@ -7,6 +7,30 @@ export const STORAGE_KEY_PREREQS = "ncu_selected_prereqs";
 export const STORAGE_KEY_GATES = "ncu_selected_gates";
 export const STORAGE_KEY_CIS_COURSES = "ncu_my_cis_courses";
 
+function safeStorageGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeStorageSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // ignore quota or blocked storage errors
+  }
+}
+
+function safeStorageRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
 function safeJsonParse<T>(raw: string | null, fallback: T): T {
   if (!raw) return fallback;
   try {
@@ -17,61 +41,75 @@ function safeJsonParse<T>(raw: string | null, fallback: T): T {
   }
 }
 
+export function isValidCisCourse(course: unknown): course is CisCourse {
+  if (!course || typeof course !== "object") return false;
+  const c = course as Partial<CisCourse>;
+  return (
+    typeof c.serialNo === "string" &&
+    typeof c.name === "string" &&
+    typeof c.classNo === "string" &&
+    Array.isArray(c.classTimes) &&
+    c.classTimes.every((t) => typeof t === "string")
+  );
+}
+
 export function getStoredTrack(): TrackType {
-  const saved = localStorage.getItem(STORAGE_KEY_TRACK);
+  const saved = safeStorageGet(STORAGE_KEY_TRACK);
   return saved === "sys" ? "sys" : "mgmt";
 }
 
 export function setStoredTrack(track: TrackType): void {
-  localStorage.setItem(STORAGE_KEY_TRACK, track);
+  safeStorageSet(STORAGE_KEY_TRACK, track);
 }
 
 export function getStoredSelectedCourses(): string[] {
-  const raw = localStorage.getItem(STORAGE_KEY_SELECTED_COURSES);
+  const raw = safeStorageGet(STORAGE_KEY_SELECTED_COURSES);
   const parsed = safeJsonParse<unknown>(raw, []);
-  return Array.isArray(parsed) ? (parsed.filter((item): item is string => typeof item === "string")) : [];
+  return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
 }
 
 export function setStoredSelectedCourses(courses: readonly string[]): void {
-  localStorage.setItem(STORAGE_KEY_SELECTED_COURSES, JSON.stringify(courses));
+  safeStorageSet(STORAGE_KEY_SELECTED_COURSES, JSON.stringify(courses));
 }
 
 export function getStoredPrereqs(): string[] {
-  const raw = localStorage.getItem(STORAGE_KEY_PREREQS);
+  const raw = safeStorageGet(STORAGE_KEY_PREREQS);
   const parsed = safeJsonParse<unknown>(raw, []);
-  return Array.isArray(parsed) ? (parsed.filter((item): item is string => typeof item === "string")) : [];
+  return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
 }
 
 export function setStoredPrereqs(prereqs: readonly string[]): void {
-  localStorage.setItem(STORAGE_KEY_PREREQS, JSON.stringify(prereqs));
+  safeStorageSet(STORAGE_KEY_PREREQS, JSON.stringify(prereqs));
 }
 
 export function getStoredGates(): string[] {
-  const raw = localStorage.getItem(STORAGE_KEY_GATES);
+  const raw = safeStorageGet(STORAGE_KEY_GATES);
   const parsed = safeJsonParse<unknown>(raw, []);
-  return Array.isArray(parsed) ? (parsed.filter((item): item is string => typeof item === "string")) : [];
+  return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
 }
 
 export function setStoredGates(gates: readonly string[]): void {
-  localStorage.setItem(STORAGE_KEY_GATES, JSON.stringify(gates));
+  safeStorageSet(STORAGE_KEY_GATES, JSON.stringify(gates));
 }
 
 export function getStoredCisCourses(): CisCourse[] {
-  const raw = localStorage.getItem(STORAGE_KEY_CIS_COURSES);
+  const raw = safeStorageGet(STORAGE_KEY_CIS_COURSES);
   const parsed = safeJsonParse<unknown>(raw, []);
-  return Array.isArray(parsed) ? (parsed as CisCourse[]) : [];
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(isValidCisCourse);
 }
 
 export function setStoredCisCourses(courses: readonly CisCourse[]): void {
-  localStorage.setItem(STORAGE_KEY_CIS_COURSES, JSON.stringify(courses));
+  const validCourses = courses.filter(isValidCisCourse);
+  safeStorageSet(STORAGE_KEY_CIS_COURSES, JSON.stringify(validCourses));
 }
 
 export function clearCreditStorage(): void {
-  localStorage.removeItem(STORAGE_KEY_SELECTED_COURSES);
-  localStorage.removeItem(STORAGE_KEY_PREREQS);
-  localStorage.removeItem(STORAGE_KEY_GATES);
+  safeStorageRemove(STORAGE_KEY_SELECTED_COURSES);
+  safeStorageRemove(STORAGE_KEY_PREREQS);
+  safeStorageRemove(STORAGE_KEY_GATES);
 }
 
 export function clearCisCoursesStorage(): void {
-  localStorage.removeItem(STORAGE_KEY_CIS_COURSES);
+  safeStorageRemove(STORAGE_KEY_CIS_COURSES);
 }
