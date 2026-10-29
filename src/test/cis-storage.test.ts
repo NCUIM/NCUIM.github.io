@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import {
   STORAGE_KEY_TRACK,
   STORAGE_KEY_SELECTED_COURSES,
@@ -17,6 +17,7 @@ import {
   setStoredCisCourses,
   clearCreditStorage,
   clearCisCoursesStorage,
+  isValidCisCourse,
 } from "../services/cis-storage";
 import type { CisCourse } from "../services/cis-course-api";
 
@@ -40,6 +41,35 @@ describe("cis-storage service", () => {
     localStorage.clear();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe("isValidCisCourse", () => {
+    it("returns true for well-formed CisCourse object", () => {
+      expect(isValidCisCourse(sampleCourse)).toBe(true);
+    });
+
+    it("returns false for non-object or null values", () => {
+      expect(isValidCisCourse(null)).toBe(false);
+      expect(isValidCisCourse(undefined)).toBe(false);
+      expect(isValidCisCourse("course")).toBe(false);
+      expect(isValidCisCourse(123)).toBe(false);
+    });
+
+    it("returns false when required string fields are missing", () => {
+      expect(isValidCisCourse({ ...sampleCourse, serialNo: undefined })).toBe(false);
+      expect(isValidCisCourse({ ...sampleCourse, name: 123 })).toBe(false);
+      expect(isValidCisCourse({ ...sampleCourse, classNo: null })).toBe(false);
+    });
+
+    it("returns false when classTimes is not an array of strings", () => {
+      expect(isValidCisCourse({ ...sampleCourse, classTimes: "1-2" })).toBe(false);
+      expect(isValidCisCourse({ ...sampleCourse, classTimes: [{}] })).toBe(false);
+      expect(isValidCisCourse({ ...sampleCourse, classTimes: [123] })).toBe(false);
+    });
+  });
+
   describe("track storage", () => {
     it("defaults to 'mgmt' when unset", () => {
       expect(getStoredTrack()).toBe("mgmt");
@@ -53,6 +83,13 @@ describe("cis-storage service", () => {
 
     it("falls back to 'mgmt' when stored value is invalid", () => {
       localStorage.setItem(STORAGE_KEY_TRACK, "invalid_track");
+      expect(getStoredTrack()).toBe("mgmt");
+    });
+
+    it("gracefully catches localStorage errors (blocked storage)", () => {
+      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("SecurityError: Access denied");
+      });
       expect(getStoredTrack()).toBe("mgmt");
     });
   });
@@ -77,6 +114,13 @@ describe("cis-storage service", () => {
     it("filters out non-string items if json is malformed", () => {
       localStorage.setItem(STORAGE_KEY_SELECTED_COURSES, JSON.stringify(["IM5019", 123, null, "IM5020"]));
       expect(getStoredSelectedCourses()).toEqual(["IM5019", "IM5020"]);
+    });
+
+    it("handles blocked storage without throwing", () => {
+      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("QuotaExceededError");
+      });
+      expect(getStoredSelectedCourses()).toEqual([]);
     });
   });
 
@@ -115,6 +159,31 @@ describe("cis-storage service", () => {
 
     it("safely handles corrupted cis courses json", () => {
       localStorage.setItem(STORAGE_KEY_CIS_COURSES, "invalid_json");
+      expect(getStoredCisCourses()).toEqual([]);
+    });
+
+    it("discards malformed course entries from stored json", () => {
+      const malformedList = [
+        sampleCourse,
+        null,
+        { serialNo: "123" }, // missing classTimes, name, etc.
+        { ...sampleCourse, classTimes: [{}] }, // non-string classTimes
+        "not an object",
+      ];
+      localStorage.setItem(STORAGE_KEY_CIS_COURSES, JSON.stringify(malformedList));
+      expect(getStoredCisCourses()).toEqual([sampleCourse]);
+    });
+
+    it("discards invalid courses when calling setStoredCisCourses", () => {
+      const invalid = { serialNo: 123 } as unknown as CisCourse;
+      setStoredCisCourses([sampleCourse, invalid]);
+      expect(getStoredCisCourses()).toEqual([sampleCourse]);
+    });
+
+    it("catches blocked storage exception on getItem and returns empty list", () => {
+      vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("SecurityError: Access denied");
+      });
       expect(getStoredCisCourses()).toEqual([]);
     });
   });

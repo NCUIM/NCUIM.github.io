@@ -3,7 +3,6 @@ import { renderHook, act } from "@testing-library/react";
 import {
   useCisBookmarkletSync,
   generateSyncToastMessage,
-  type CisSyncPayload,
 } from "../utils/useCisBookmarkletSync";
 import {
   getStoredCisCourses,
@@ -54,6 +53,10 @@ describe("useCisBookmarkletSync", () => {
   });
 
   describe("generateSyncToastMessage", () => {
+    it("returns null when both counts are zero", () => {
+      expect(generateSyncToastMessage(0, 0, 0)).toBeNull();
+    });
+
     it("formats message when both current and history courses are present", () => {
       const msg = generateSyncToastMessage(3, 10, 4);
       expect(msg).toContain("3 門本學期課表");
@@ -85,7 +88,19 @@ describe("useCisBookmarkletSync", () => {
       expect(getStoredCisCourses()).toEqual([]);
     });
 
-    it("processes current courses and saves them to local storage", () => {
+    it("ignores empty sync payloads without showing success toast or clearing hash", () => {
+      const onSyncSuccess = vi.fn();
+      const emptyPayload = { current: [], history: [] };
+      window.location.hash = `#cis_data=${encodeURIComponent(JSON.stringify(emptyPayload))}`;
+
+      renderHook(() => useCisBookmarkletSync({ onSyncSuccess }));
+
+      expect(onSyncSuccess).not.toHaveBeenCalled();
+      expect(mockPresentToast).not.toHaveBeenCalled();
+      expect(window.location.hash).toContain("cis_data");
+    });
+
+    it("processes current courses, saves to storage, and delivers expected payload to callback", () => {
       const onSyncSuccess = vi.fn();
       const payload = {
         current: [sampleCourse],
@@ -98,6 +113,13 @@ describe("useCisBookmarkletSync", () => {
       expect(getStoredCisCourses()).toHaveLength(1);
       expect(getStoredCisCourses()[0].serialNo).toBe("1001");
       expect(onSyncSuccess).toHaveBeenCalledTimes(1);
+      expect(onSyncSuccess).toHaveBeenCalledWith(
+        {
+          currentCourses: [sampleCourse],
+          historyCourses: [],
+        },
+        [],
+      );
       expect(mockPresentToast).toHaveBeenCalledWith(
         expect.objectContaining({
           color: "success",
@@ -105,13 +127,40 @@ describe("useCisBookmarkletSync", () => {
       );
     });
 
-    it("processes history courses, matches to track curriculum, and merges selections", () => {
+    it("filters out crafted invalid course entries such as non-string classTimes", () => {
+      const onSyncSuccess = vi.fn();
+      const craftedCourse = {
+        ...sampleCourse,
+        serialNo: "malicious_1",
+        classTimes: [{}], // non-string classTime object
+      };
+      const payload = {
+        current: [sampleCourse, craftedCourse],
+        history: [],
+      };
+      window.location.hash = `#cis_data=${encodeURIComponent(JSON.stringify(payload))}`;
+
+      renderHook(() => useCisBookmarkletSync({ onSyncSuccess }));
+
+      // Only valid sampleCourse should be stored and passed
+      expect(getStoredCisCourses()).toEqual([sampleCourse]);
+      expect(onSyncSuccess).toHaveBeenCalledWith(
+        {
+          currentCourses: [sampleCourse],
+          historyCourses: [],
+        },
+        [],
+      );
+    });
+
+    it("processes history courses, matches to track curriculum, asserts matched selections in storage and callback", () => {
       setStoredTrack("mgmt");
       setStoredSelectedCourses(["existing_course_1"]);
 
       const historyCourse: CisCourse = {
         ...sampleCourse,
-        classNo: "IM5019", // Should match track curriculum if present
+        classNo: "IM6003", // matches software engineering core in curriculum
+        name: "軟體工程",
       };
 
       const payload = {
@@ -124,13 +173,21 @@ describe("useCisBookmarkletSync", () => {
       renderHook(() => useCisBookmarkletSync({ currentTrack: "mgmt", onSyncSuccess }));
 
       expect(onSyncSuccess).toHaveBeenCalledTimes(1);
+      expect(onSyncSuccess).toHaveBeenCalledWith(
+        {
+          currentCourses: [],
+          historyCourses: [historyCourse],
+        },
+        ["IM6003"],
+      );
       const stored = getStoredSelectedCourses();
       expect(stored).toContain("existing_course_1");
+      expect(stored).toContain("IM6003");
     });
   });
 
-  describe("hashchange event listener", () => {
-    it("reacts dynamically to hashchange events", () => {
+  describe("hashchange event listener and cleanup", () => {
+    it("reacts dynamically to hashchange events with validated payload", () => {
       const onSyncSuccess = vi.fn();
       const { unmount } = renderHook(() => useCisBookmarkletSync({ onSyncSuccess }));
 
@@ -146,26 +203,46 @@ describe("useCisBookmarkletSync", () => {
       });
 
       expect(onSyncSuccess).toHaveBeenCalledTimes(1);
-      expect(getStoredCisCourses()).toHaveLength(1);
+      expect(onSyncSuccess).toHaveBeenCalledWith(
+        {
+          currentCourses: [sampleCourse],
+          historyCourses: [],
+        },
+        [],
+      );
+      expect(getStoredCisCourses()).toEqual([sampleCourse]);
 
       unmount();
 
+      // Dispatch a VALID payload after unmount to verify listener is truly unregistered
+      const secondCourse: CisCourse = {
+        ...sampleCourse,
+        serialNo: "9999",
+      };
       act(() => {
-        window.location.hash = "#cis_data=something_else";
+        const payload2 = {
+          current: [secondCourse],
+          history: [],
+        };
+        window.location.hash = `#cis_data=${encodeURIComponent(JSON.stringify(payload2))}`;
         window.dispatchEvent(new HashChangeEvent("hashchange"));
       });
-      // Should not trigger again after unmount
+
+      // Should not trigger again after unmount and storage must not contain secondCourse
       expect(onSyncSuccess).toHaveBeenCalledTimes(1);
+      expect(getStoredCisCourses()).toEqual([sampleCourse]);
     });
 
     it("triggers onSyncError and toast when parsing or processing throws", () => {
       const onSyncError = vi.fn();
-      renderHook(() => useCisBookmarkletSync({
-        onSyncError,
-        onSyncSuccess: () => {
-          throw new Error("Processing failed");
-        },
-      }));
+      renderHook(() =>
+        useCisBookmarkletSync({
+          onSyncError,
+          onSyncSuccess: () => {
+            throw new Error("Processing failed");
+          },
+        }),
+      );
 
       act(() => {
         const payload = {
