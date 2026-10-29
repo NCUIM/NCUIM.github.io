@@ -3,17 +3,20 @@ import {
   IonContent,
   IonPage,
   IonSpinner,
-  useIonToast,
 } from "@ionic/react";
 import { isCisLoggedIn, cisLogout } from "../services/cis-login";
-import { fetchCisSelectedCourses, parseBookmarkletPayload, type CisCourse } from "../services/cis-course-api";
+import { fetchCisSelectedCourses, type CisCourse } from "../services/cis-course-api";
 import { fetchImMasterCourses, type MasterCourseItem } from "../services/all-courses-api";
 import CisLoginModal from "../components/CisLoginModal";
 import {
   isModalDismissCooldown,
   markModalDismissed,
 } from "../utils/useModalHistorySync";
-import { TRACK_CONFIGS, matchCisToCurriculum, type TrackType } from "../data/im-curriculum";
+import {
+  getStoredCisCourses,
+  clearCisCoursesStorage,
+} from "../services/cis-storage";
+import { useCisBookmarkletSync } from "../utils/useCisBookmarkletSync";
 import {
   getDefaultDayIndex,
   getTimeIndicators,
@@ -43,8 +46,6 @@ export {
 export { DesktopRulerItem } from "../components/timetable/TimetableDesktopView";
 export { TimetableHeader } from "../components/timetable/TimetableHeader";
 
-const STORAGE_KEY_CIS_COURSES = "ncu_my_cis_courses";
-
 const handleCatchNoop = (err: unknown): void => {
   if (err) {
     // Handled in component state
@@ -52,7 +53,6 @@ const handleCatchNoop = (err: unknown): void => {
 };
 
 const TimetablePage = () => {
-  const [presentToast] = useIonToast();
   const defaultDay = getDefaultDayIndex();
   const [selectedDay, setSelectedDay] = useState(String(defaultDay));
   const [viewScope, setViewScope] = useState<"all" | "mine">(() =>
@@ -79,73 +79,25 @@ const TimetablePage = () => {
   }, [currentTimestamp]);
 
   const [masterCourses, setMasterCourses] = useState<MasterCourseItem[]>([]);
-  const [myCisCourses, setMyCisCourses] = useState<CisCourse[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CIS_COURSES);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [myCisCourses, setMyCisCourses] = useState<CisCourse[]>(() =>
+    getStoredCisCourses(),
+  );
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [cisAuthenticated, setCisAuthenticated] = useState(
-    () => isCisLoggedIn() || Boolean(localStorage.getItem(STORAGE_KEY_CIS_COURSES)),
+    () => isCisLoggedIn() || getStoredCisCourses().length > 0,
   );
   const [showCisLogin, setShowCisLogin] = useState(false);
 
-  useEffect(() => {
-    const handleHashSync = () => {
-      const hash = window.location.hash;
-      const payload = parseBookmarkletPayload(hash);
-      if (!payload) return;
-      try {
-        const { currentCourses, historyCourses } = payload;
-
-        if (currentCourses.length > 0) {
-          setMyCisCourses(currentCourses);
-          localStorage.setItem(STORAGE_KEY_CIS_COURSES, JSON.stringify(currentCourses));
-          setCisAuthenticated(true);
-          setViewScope("mine");
-        }
-
-        if (historyCourses.length > 0) {
-          const track = (localStorage.getItem("ncu_credit_track") as TrackType) || "mgmt";
-          const config = TRACK_CONFIGS[track] || TRACK_CONFIGS.mgmt;
-          const matchedIds = matchCisToCurriculum(historyCourses, config, track);
-          let prevSelected: string[] = [];
-          try {
-            const saved = localStorage.getItem("ncu_selected_credit_courses");
-            if (saved) prevSelected = JSON.parse(saved);
-          } catch {
-            // ignore
-          }
-          const merged = Array.from(new Set([...prevSelected, ...matchedIds]));
-          localStorage.setItem("ncu_selected_credit_courses", JSON.stringify(merged));
-        }
-
-        presentToast({
-          message: `🎉 成功同步！已匯入 ${currentCourses.length} 門本學期課表與 ${historyCourses.length} 門歷年學分紀錄！`,
-          duration: 4000,
-          color: "success",
-          position: "top",
-        });
-      } catch {
-        presentToast({
-          message: "課務資料解析失敗，請重新嘗試同步",
-          duration: 3000,
-          color: "danger",
-          position: "top",
-        });
-      } finally {
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  useCisBookmarkletSync({
+    onSyncSuccess: (payload) => {
+      if (payload.currentCourses.length > 0) {
+        setMyCisCourses(payload.currentCourses as CisCourse[]);
+        setCisAuthenticated(true);
+        setViewScope("mine");
       }
-    };
-
-    handleHashSync();
-    window.addEventListener("hashchange", handleHashSync);
-    return () => window.removeEventListener("hashchange", handleHashSync);
-  }, [presentToast]);
+    },
+  });
 
   const syncDefaultCourses = useCallback(async () => {
     setLoading(true);
@@ -233,7 +185,7 @@ const TimetablePage = () => {
 
   const handleLogout = useCallback(() => {
     cisLogout();
-    localStorage.removeItem(STORAGE_KEY_CIS_COURSES);
+    clearCisCoursesStorage();
     setCisAuthenticated(false);
     setMyCisCourses([]);
     setViewScope("all");

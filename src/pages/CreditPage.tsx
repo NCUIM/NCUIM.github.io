@@ -17,15 +17,25 @@ import {
   bookOutline,
   flashOutline,
 } from "ionicons/icons";
-import { parseBookmarkletPayload } from "../services/cis-course-api";
 import { isIosHeaderMode } from "../services/platform";
 import {
   TRACK_CONFIGS,
   calculateTrackCredits,
-  matchCisToCurriculum,
   type TrackType,
   type CreditCalculationResult,
 } from "../data/im-curriculum";
+import {
+  getStoredTrack,
+  setStoredTrack,
+  getStoredSelectedCourses,
+  setStoredSelectedCourses,
+  getStoredPrereqs,
+  setStoredPrereqs,
+  getStoredGates,
+  setStoredGates,
+  clearCreditStorage,
+} from "../services/cis-storage";
+import { useCisBookmarkletSync } from "../utils/useCisBookmarkletSync";
 import CisLoginModal from "../components/CisLoginModal";
 import {
   isModalDismissCooldown,
@@ -36,11 +46,6 @@ import CreditDashboardCard from "../components/credit/CreditDashboardCard";
 import SectionCard from "../components/credit/SectionCard";
 import PrereqsCard from "../components/credit/PrereqsCard";
 import GraduationGatesCard from "../components/credit/GraduationGatesCard";
-
-const STORAGE_KEY_TRACK = "ncu_credit_track";
-const STORAGE_KEY_COURSES = "ncu_selected_credit_courses";
-const STORAGE_KEY_PREREQS = "ncu_selected_prereqs";
-const STORAGE_KEY_GATES = "ncu_selected_gates";
 
 // ---------------------------------------------------------------------------
 // Sub-components: Header & Top Controls
@@ -152,96 +157,45 @@ const CreditPage: React.FC = () => {
   const [presentToast] = useIonToast();
   const [presentAlert] = useIonAlert();
 
-  const [track, setTrack] = useState<TrackType>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_TRACK);
-    return saved === "sys" ? "sys" : "mgmt";
-  });
-
-  const [selectedCourseIds, setSelectedCourseIds] = useState<readonly string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_COURSES);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [selectedPrereqIds, setSelectedPrereqIds] = useState<readonly string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_PREREQS);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [selectedGateIds, setSelectedGateIds] = useState<readonly string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_GATES);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [track, setTrack] = useState<TrackType>(() => getStoredTrack());
+  const [selectedCourseIds, setSelectedCourseIds] = useState<readonly string[]>(() =>
+    getStoredSelectedCourses(),
+  );
+  const [selectedPrereqIds, setSelectedPrereqIds] = useState<readonly string[]>(() =>
+    getStoredPrereqs(),
+  );
+  const [selectedGateIds, setSelectedGateIds] = useState<readonly string[]>(() =>
+    getStoredGates(),
+  );
 
   const [showCisModal, setShowCisModal] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_TRACK, track);
+    setStoredTrack(track);
   }, [track]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_COURSES, JSON.stringify(selectedCourseIds));
+    setStoredSelectedCourses(selectedCourseIds);
   }, [selectedCourseIds]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_PREREQS, JSON.stringify(selectedPrereqIds));
+    setStoredPrereqs(selectedPrereqIds);
   }, [selectedPrereqIds]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_GATES, JSON.stringify(selectedGateIds));
+    setStoredGates(selectedGateIds);
   }, [selectedGateIds]);
 
   const currentConfig = useMemo(() => TRACK_CONFIGS[track], [track]);
 
-  useEffect(() => {
-    const handleHashSync = () => {
-      const hash = window.location.hash;
-      const payload = parseBookmarkletPayload(hash);
-      if (!payload) return;
-      try {
-        const { currentCourses, historyCourses } = payload;
-
-        if (currentCourses.length > 0) {
-          localStorage.setItem("ncu_my_cis_courses", JSON.stringify(currentCourses));
-        }
-
-        if (historyCourses.length > 0) {
-          const matchedIds = matchCisToCurriculum(historyCourses, currentConfig, track);
-          setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...matchedIds])));
-          presentToast({
-            message: `🎉 成功同步！已匯入 ${historyCourses.length} 門歷年修課（自動配對 ${matchedIds.length} 門必選修）與本學期課表！`,
-            duration: 4000,
-            color: "success",
-            position: "top",
-          });
-        }
-      } catch {
-        presentToast({
-          message: "課務資料解析失敗，請重新嘗試同步",
-          duration: 3000,
-          color: "danger",
-          position: "top",
-        });
-      } finally {
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  useCisBookmarkletSync({
+    currentTrack: track,
+    onSyncSuccess: (_payload, matchedIds) => {
+      if (matchedIds.length > 0) {
+        setSelectedCourseIds((prev) => Array.from(new Set([...prev, ...matchedIds])));
       }
-    };
-
-    handleHashSync();
-    window.addEventListener("hashchange", handleHashSync);
-    return () => window.removeEventListener("hashchange", handleHashSync);
-  }, [currentConfig, track, presentToast]);
+    },
+  });
   const creditStats = useMemo(() => calculateTrackCredits(track, selectedCourseIds), [track, selectedCourseIds]);
 
   const toggleCourse = useCallback((courseId: string, checked: boolean) => {
@@ -275,6 +229,7 @@ const CreditPage: React.FC = () => {
             setSelectedCourseIds([]);
             setSelectedPrereqIds([]);
             setSelectedGateIds([]);
+            clearCreditStorage();
             presentToast({ message: "已重設所有學分試算記錄", duration: 2000, color: "medium" });
           },
         },
