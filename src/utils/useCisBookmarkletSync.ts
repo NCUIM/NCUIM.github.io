@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import { useIonToast } from "@ionic/react";
 import {
   parseBookmarkletPayload,
-  type BookmarkletPayload,
   type CisCourse,
 } from "../services/cis-course-api";
 import {
