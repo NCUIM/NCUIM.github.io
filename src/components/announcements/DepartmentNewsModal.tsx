@@ -14,14 +14,8 @@ import {
   closeOutline,
   openOutline,
   calendarOutline,
-  attachOutline,
-  downloadOutline,
   warningOutline,
   refreshOutline,
-  eyeOutline,
-  documentTextOutline,
-  imageOutline,
-  chevronUpOutline,
 } from "ionicons/icons";
 import {
   fetchDepartmentNewsDetail,
@@ -30,330 +24,24 @@ import {
 } from "../../services/department-news-api";
 import { useModalHistorySync } from "../../utils/useModalHistorySync";
 import { sanitizeDepartmentNewsHtml } from "../../utils/sanitize-news-html";
+import {
+  isPreviewable,
+  extractTextSnippet,
+} from "../../utils/news-preview-utils";
+import NewsAttachmentList from "./NewsAttachmentList";
+
+export {
+  isMobileDevice,
+  isSafePublicPdfUrl,
+  getPdfPreviewUrl,
+} from "../../utils/news-preview-utils";
+export { AttachmentItem } from "./AttachmentItem";
 
 export interface DepartmentNewsModalProps {
   readonly isOpen: boolean;
   readonly newsId: string | null;
   readonly onDismiss: () => void;
 }
-
-const isPdf = (name: string, url: string = ""): boolean => {
-  const pdfRegex = /\.pdf(\?.*)?$/i;
-  return pdfRegex.test(name) || pdfRegex.test(url);
-};
-
-const isImage = (name: string, url: string = ""): boolean => {
-  const imgRegex = /\.(jpe?g|png|webp|gif|svg)(\?.*)?$/i;
-  return imgRegex.test(name) || imgRegex.test(url);
-};
-
-const isPreviewable = (name: string, url: string = ""): boolean => {
-  return isPdf(name, url) || isImage(name, url);
-};
-
-export const isMobileDevice = (): boolean => {
-  if (typeof window === "undefined") return false;
-  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
-  if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
-    return true;
-  }
-  const hasTouchScreen =
-    typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
-  const isNarrowScreen =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 768px)").matches;
-
-  return hasTouchScreen && isNarrowScreen;
-};
-
-export const isSafePublicPdfUrl = (urlStr: string): boolean => {
-  try {
-    const parsed = new URL(urlStr);
-    if (parsed.username || parsed.password) {
-      return false;
-    }
-    const sensitiveKeys = [
-      "token",
-      "auth",
-      "secret",
-      "password",
-      "apikey",
-      "access_token",
-      "session",
-      "sig",
-      "signature",
-    ];
-    for (const key of sensitiveKeys) {
-      if (parsed.searchParams.has(key)) {
-        return false;
-      }
-    }
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return false;
-    }
-    const hostname = parsed.hostname.toLowerCase();
-    return (
-      hostname === "im.mgt.ncu.edu.tw" ||
-      hostname.endsWith(".ncu.edu.tw") ||
-      hostname.endsWith(".edu.tw")
-    );
-  } catch {
-    return false;
-  }
-};
-
-export const getPdfPreviewUrl = (rawUrl: string, isMobile: boolean): string => {
-  if (isMobile && isSafePublicPdfUrl(rawUrl)) {
-    return `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
-  }
-  return `${rawUrl}#view=FitH`;
-};
-
-
-const extractTextSnippet = (html: string): string => {
-  if (!html) return "";
-  const attachmentIndex = html.search(/<b>\s*附件[：:]/i);
-  const content = attachmentIndex !== -1 ? html.slice(0, attachmentIndex) : html;
-  if (typeof DOMParser !== "undefined") {
-    try {
-      const doc = new DOMParser().parseFromString(content, "text/html");
-      return (doc.body.textContent || "").trim();
-    } catch {
-      // Fallback
-    }
-  }
-  return content.trim();
-};
-
-interface AttachmentItemProps {
-  readonly att: { readonly name: string; readonly url: string };
-  readonly idx: number;
-  readonly isSelected: boolean;
-  readonly isExpanded: boolean;
-  readonly onTogglePreview: (att: { name: string; url: string }) => void;
-}
-
-interface AttachmentMeta {
-  readonly icon: string;
-  readonly color: string;
-  readonly label: string | null;
-  readonly actionText: string;
-  readonly openTitle: string;
-}
-
-const getAttachmentMeta = (isPdfFile: boolean, isImageFile: boolean): AttachmentMeta => {
-  if (isPdfFile) {
-    return {
-      icon: documentTextOutline,
-      color: "var(--ncu-primary, #0284c7)",
-      label: "PDF 文件 · 線上即時閱讀",
-      actionText: "閱讀",
-      openTitle: "在新分頁開啟原始 PDF",
-    };
-  }
-  if (isImageFile) {
-    return {
-      icon: imageOutline,
-      color: "var(--ncu-success, #10b981)",
-      label: "圖片檔案 · 線上即時預覽",
-      actionText: "預覽",
-      openTitle: "在新分頁開啟原始圖片",
-    };
-  }
-  return {
-    icon: attachOutline,
-    color: "var(--ncu-muted)",
-    label: null,
-    actionText: "下載",
-    openTitle: "下載附件",
-  };
-};
-
-export const AttachmentItem: React.FC<AttachmentItemProps> = ({
-  att,
-  idx,
-  isSelected,
-  isExpanded,
-  onTogglePreview,
-}) => {
-  const isAttPdf = isPdf(att.name, att.url);
-  const isAttImage = isImage(att.name, att.url);
-  const canPreview = isAttPdf || isAttImage;
-  const isCurrentPreview = isSelected && isExpanded;
-
-  const meta = getAttachmentMeta(isAttPdf, isAttImage);
-  const actionButtonText = isCurrentPreview ? "收合" : meta.actionText;
-  const isMobile = isMobileDevice();
-  const pdfSrc = getPdfPreviewUrl(att.url, isMobile);
-
-  return (
-    <div
-      style={{
-        borderRadius: 10,
-        border: isCurrentPreview
-          ? "1px solid var(--ncu-primary, #0284c7)"
-          : "1px solid var(--ncu-border, #e2e8f0)",
-        background: "#fff",
-        overflow: "hidden",
-        transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-        boxShadow: isCurrentPreview ? "0 2px 10px rgba(2, 132, 199, 0.08)" : "none",
-      }}
-    >
-      {/* Attachment Header Row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 14px",
-          background: isCurrentPreview ? "rgba(2, 132, 199, 0.04)" : "#fff",
-          gap: 12,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            minWidth: 0,
-            flex: 1,
-          }}
-        >
-          <IonIcon
-            icon={meta.icon}
-            style={{
-              fontSize: 20,
-              color: meta.color,
-              flexShrink: 0,
-            }}
-          />
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: "var(--ncu-text-main, #1e293b)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-              title={att.name || `附件 ${idx + 1}`}
-            >
-              {att.name || `附件 ${idx + 1}`}
-            </div>
-            {meta.label && (
-              <div style={{ fontSize: 11.5, color: "var(--ncu-muted, #64748b)" }}>
-                {meta.label}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-          {canPreview ? (
-            <>
-              <IonButton
-                fill={isCurrentPreview ? "solid" : "outline"}
-                size="small"
-                onClick={() => onTogglePreview(att)}
-                style={{
-                  fontSize: 12.5,
-                  height: 30,
-                  fontWeight: 600,
-                }}
-              >
-                <IonIcon slot="start" icon={isCurrentPreview ? chevronUpOutline : eyeOutline} />
-                {actionButtonText}
-              </IonButton>
-
-              <IonButton
-                fill="clear"
-                size="small"
-                href={att.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={meta.openTitle}
-                style={{ height: 30 }}
-              >
-                <IonIcon slot="icon-only" icon={openOutline} />
-              </IonButton>
-            </>
-          ) : (
-            <IonButton
-              fill="outline"
-              size="small"
-              href={att.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              download={att.name}
-              style={{
-                fontSize: 12.5,
-                height: 30,
-                fontWeight: 600,
-              }}
-            >
-              <IonIcon slot="start" icon={downloadOutline} />
-              下載
-            </IonButton>
-          )}
-        </div>
-      </div>
-
-      {/* Inline Preview (PDF Frame or Responsive Image) */}
-      {isCurrentPreview && isAttPdf && (
-        <div
-          style={{
-            borderTop: "1px solid var(--ncu-border, #e2e8f0)",
-            background: "#fff",
-            width: "100%",
-            overflow: "hidden",
-            position: "relative",
-          }}
-        >
-          <iframe
-            src={pdfSrc}
-            title={att.name}
-            scrolling={isMobile ? "yes" : "no"}
-            style={{
-              width: "100%",
-              height: isMobile ? "min(72vh, 560px)" : "min(68vh, 520px)",
-              border: "none",
-              display: "block",
-              background: "#fff",
-            }}
-          />
-        </div>
-      )}
-
-      {isCurrentPreview && isAttImage && (
-        <div
-          style={{
-            borderTop: "1px solid var(--ncu-border, #e2e8f0)",
-            background: "var(--ncu-surface-secondary, #f8fafc)",
-            padding: "16px 12px",
-            textAlign: "center",
-            overflowX: "auto",
-          }}
-        >
-          <img
-            src={att.url}
-            alt={att.name || "公告圖片附件"}
-            loading="lazy"
-            style={{
-              maxWidth: "100%",
-              maxHeight: "min(70vh, 560px)",
-              objectFit: "contain",
-              borderRadius: 8,
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
-              display: "inline-block",
-              backgroundColor: "#fff",
-            }}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
 
 export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
   isOpen,
@@ -743,49 +431,19 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
 
             {/* Unified Attachments & In-App Reader */}
             {detail.attachments && detail.attachments.length > 0 && (
-              <section
-                style={{
-                  marginTop: 28,
-                  paddingTop: 20,
-                  borderTop: "1px solid var(--ncu-border, #e2e8f0)",
+              <NewsAttachmentList
+                attachments={detail.attachments}
+                selectedPreview={selectedPreview}
+                isPreviewExpanded={isPreviewExpanded}
+                onTogglePreview={(selected) => {
+                  if (selectedPreview?.url === selected.url) {
+                    setIsPreviewExpanded((v) => !v);
+                  } else {
+                    setSelectedPreview(selected);
+                    setIsPreviewExpanded(true);
+                  }
                 }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: "var(--ncu-muted, #64748b)",
-                    letterSpacing: "0.03em",
-                    marginBottom: 12,
-                  }}
-                >
-                  <IonIcon icon={attachOutline} style={{ fontSize: 16 }} />
-                  <span>相關附件 ({detail.attachments.length})</span>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {detail.attachments.map((att, idx) => (
-                    <AttachmentItem
-                      key={`${att.name}-${idx}`}
-                      att={att}
-                      idx={idx}
-                      isSelected={selectedPreview?.url === att.url}
-                      isExpanded={isPreviewExpanded}
-                      onTogglePreview={(selected) => {
-                        if (selectedPreview?.url === selected.url) {
-                          setIsPreviewExpanded((v) => !v);
-                        } else {
-                          setSelectedPreview(selected);
-                          setIsPreviewExpanded(true);
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
+              />
             )}
           </article>
         );
