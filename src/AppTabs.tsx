@@ -1,17 +1,8 @@
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { Route, Switch } from "react-router-dom";
 
-import RouteLoadingFallback from "./components/common/RouteLoadingFallback";
+import { withRouteSuspense } from "./components/common/RouteLoadingFallback";
 import TabsShell from "./TabsShell";
-
-const withRouteSuspense = (LazyComponent: React.LazyExoticComponent<React.ComponentType<any>>) => {
-  const RouteSuspendedComponent: React.FC = (props) => (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <LazyComponent {...props} />
-    </Suspense>
-  );
-  return RouteSuspendedComponent;
-};
 
 const LotteryPage = withRouteSuspense(lazy(() => import("./pages/LotteryPage")));
 const LotteryAdminPage = withRouteSuspense(lazy(() => import("./pages/LotteryAdminPage")));

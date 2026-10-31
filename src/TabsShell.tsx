@@ -1,17 +1,8 @@
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { IonTabs, IonRouterOutlet, IonTabBar, IonTabButton, IonIcon, IonLabel } from "@ionic/react";
 import { Route, Redirect } from "react-router-dom";
 import { grid, book, newspaper } from "ionicons/icons";
-import RouteLoadingFallback from "./components/common/RouteLoadingFallback";
-
-const withRouteSuspense = (LazyComponent: React.LazyExoticComponent<React.ComponentType<any>>) => {
-  const RouteSuspendedComponent: React.FC = (props) => (
-    <Suspense fallback={<RouteLoadingFallback />}>
-      <LazyComponent {...props} />
-    </Suspense>
-  );
-  return RouteSuspendedComponent;
-};
+import { withRouteSuspense } from "./components/common/RouteLoadingFallback";
 
 const HomePage = withRouteSuspense(lazy(() => import("./pages/HomePage")));
 const GuidePage = withRouteSuspense(lazy(() => import("./pages/GuidePage")));

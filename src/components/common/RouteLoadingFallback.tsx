@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { IonContent, IonPage, IonSpinner } from "@ionic/react";
 
 export const RouteLoadingFallback: React.FC = () => (
@@ -24,5 +24,16 @@ export const RouteLoadingFallback: React.FC = () => (
     </IonContent>
   </IonPage>
 );
+
+export const withRouteSuspense = <P extends object>(
+  LazyComponent: React.LazyExoticComponent<React.ComponentType<P>>
+): React.FC<P> => {
+  const RouteSuspendedComponent: React.FC<P> = (props) => (
+    <Suspense fallback={<RouteLoadingFallback />}>
+      <LazyComponent {...props} />
+    </Suspense>
+  );
+  return RouteSuspendedComponent;
+};
 
 export default RouteLoadingFallback;
