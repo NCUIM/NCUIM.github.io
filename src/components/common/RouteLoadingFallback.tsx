@@ -4,8 +4,7 @@ import { IonContent, IonPage, IonSpinner } from "@ionic/react";
 export const RouteLoadingFallback: React.FC = () => (
   <IonPage style={{ background: "var(--ncu-canvas, #ffffff)" }}>
     <IonContent className="ion-padding" style={{ "--background": "var(--ncu-canvas, #ffffff)" }}>
-      <div
-        role="status"
+      <output
         aria-busy="true"
         aria-label="頁面載入中"
         style={{
@@ -21,7 +20,7 @@ export const RouteLoadingFallback: React.FC = () => (
         <span style={{ fontSize: 13, color: "var(--ncu-muted, #666666)" }}>
           載入頁面中…
         </span>
-      </div>
+      </output>
     </IonContent>
   </IonPage>
 );
