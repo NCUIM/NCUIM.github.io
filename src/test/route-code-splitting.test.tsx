@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import React, { lazy, Suspense } from "react";
-import RouteLoadingFallback from "../components/common/RouteLoadingFallback";
+import RouteLoadingFallback, { withRouteSuspense } from "../components/common/RouteLoadingFallback";
 
 describe("Route Code Splitting & Suspense Boundaries", () => {
   it("displays RouteLoadingFallback while lazy component is loading, then reveals component", async () => {
@@ -19,7 +19,7 @@ describe("Route Code Splitting & Suspense Boundaries", () => {
     );
 
     // Assert that loading fallback is rendered initially
-    expect(screen.getByLabelText("頁面載入中")).toBeDefined();
+    expect(screen.getByRole("status", { name: "頁面載入中" })).toBeDefined();
     expect(screen.getByText("載入頁面中…")).toBeDefined();
 
     // Resolve the lazy import
@@ -32,7 +32,35 @@ describe("Route Code Splitting & Suspense Boundaries", () => {
     });
 
     // Fallback should now be removed from document
-    expect(screen.queryByLabelText("頁面載入中")).toBeNull();
+    expect(screen.queryByRole("status", { name: "頁面載入中" })).toBeNull();
+  });
+
+  it("withRouteSuspense wraps a lazy component and renders fallback before resolving", async () => {
+    let resolvePage!: (value: { default: React.FC<{ title: string }> }) => void;
+    const LazyComponent = lazy(
+      () =>
+        new Promise<{ default: React.FC<{ title: string }> }>((resolve) => {
+          resolvePage = resolve;
+        })
+    );
+
+    const SuspendedComponent = withRouteSuspense(LazyComponent);
+
+    render(<SuspendedComponent title="Integration Route" />);
+
+    // Shows fallback
+    expect(screen.getByRole("status", { name: "頁面載入中" })).toBeDefined();
+
+    // Resolve
+    resolvePage({
+      default: ({ title }) => <h1>{title}</h1>,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Integration Route" })).toBeDefined();
+    });
+
+    expect(screen.queryByRole("status", { name: "頁面載入中" })).toBeNull();
   });
 
   it("handles multiple lazy routes independently without cascading fallback", async () => {
