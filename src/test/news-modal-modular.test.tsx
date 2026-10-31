@@ -5,6 +5,7 @@ import {
   isPdf,
   isImage,
   isPreviewable,
+  isMobileDevice,
   isSafePublicPdfUrl,
   getPdfPreviewUrl,
   extractTextSnippet,
@@ -54,8 +55,8 @@ describe("News Preview Utilities", () => {
     it("strips HTML tags and returns plain text", () => {
       const html = "<div><h2>公告標題</h2><p>第一段文字</p></div>";
       const snippet = extractTextSnippet(html);
-      expect(snippet).toContain("公告標題");
-      expect(snippet).toContain("第一段文字");
+      expect(snippet).toBe("公告標題第一段文字");
+      expect(snippet).not.toMatch(/<[^>]+>/);
     });
   });
 
@@ -73,18 +74,19 @@ describe("News Preview Utilities", () => {
     it("generates mobile preview URL with Google Docs embedded viewer for safe URLs", () => {
       const raw = "https://im.mgt.ncu.edu.tw/doc.pdf";
       const preview = getPdfPreviewUrl(raw, true);
-      expect(preview).toContain("https://docs.google.com/viewer?url=");
-      expect(preview).toContain("embedded=true");
+      expect(preview).toBe(`https://docs.google.com/viewer?url=${encodeURIComponent(raw)}&embedded=true`);
     });
   });
 });
 
 describe("PdfViewerFrame Component", () => {
   it("renders iframe with title and source", () => {
-    render(<PdfViewerFrame url="https://im.mgt.ncu.edu.tw/sample.pdf" title="測試附件" />);
-    const iframe = screen.getByTitle("測試附件");
+    const raw = "https://im.mgt.ncu.edu.tw/sample.pdf";
+    render(<PdfViewerFrame url={raw} title="測試附件" />);
+    const iframe = screen.getByTitle("測試附件") as HTMLIFrameElement;
     expect(iframe).toBeDefined();
     expect(iframe.tagName.toLowerCase()).toBe("iframe");
+    expect(iframe.src).toBe(getPdfPreviewUrl(raw, isMobileDevice()));
   });
 });
 
