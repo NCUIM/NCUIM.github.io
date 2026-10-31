@@ -25,10 +25,10 @@ export const RouteLoadingFallback: React.FC = () => (
   </IonPage>
 );
 
-export const withRouteSuspense = <P extends object>(
-  LazyComponent: React.LazyExoticComponent<React.ComponentType<P>>
-): React.FC<P> => {
-  const RouteSuspendedComponent: React.FC<P> = (props) => (
+export const withRouteSuspense = (
+  LazyComponent: React.LazyExoticComponent<React.ComponentType<any>>
+): React.FC<any> => {
+  const RouteSuspendedComponent: React.FC<any> = (props) => (
     <Suspense fallback={<RouteLoadingFallback />}>
       <LazyComponent {...props} />
     </Suspense>
