@@ -26,15 +26,16 @@ import { useModalHistorySync } from "../../utils/useModalHistorySync";
 import { sanitizeDepartmentNewsHtml } from "../../utils/sanitize-news-html";
 import {
   isPreviewable,
+  extractTextSnippet,
+} from "../../utils/news-preview-utils";
+import NewsAttachmentList from "./NewsAttachmentList";
+
+export {
   isMobileDevice,
   isSafePublicPdfUrl,
   getPdfPreviewUrl,
-  extractTextSnippet,
 } from "../../utils/news-preview-utils";
-import AttachmentItem from "./AttachmentItem";
-import NewsAttachmentList from "./NewsAttachmentList";
-
-export { isMobileDevice, isSafePublicPdfUrl, getPdfPreviewUrl, AttachmentItem };
+export { AttachmentItem } from "./AttachmentItem";
 
 export interface DepartmentNewsModalProps {
   readonly isOpen: boolean;
