@@ -30,100 +30,24 @@ import {
 } from "../../services/department-news-api";
 import { useModalHistorySync } from "../../utils/useModalHistorySync";
 import { sanitizeDepartmentNewsHtml } from "../../utils/sanitize-news-html";
+import {
+  isPdf,
+  isImage,
+  isPreviewable,
+  isMobileDevice,
+  isSafePublicPdfUrl,
+  getPdfPreviewUrl,
+  extractTextSnippet,
+} from "../../utils/news-preview-utils";
+import PdfViewerFrame from "./PdfViewerFrame";
+
+export { isMobileDevice, isSafePublicPdfUrl, getPdfPreviewUrl };
 
 export interface DepartmentNewsModalProps {
   readonly isOpen: boolean;
   readonly newsId: string | null;
   readonly onDismiss: () => void;
 }
-
-const isPdf = (name: string, url: string = ""): boolean => {
-  const pdfRegex = /\.pdf(\?.*)?$/i;
-  return pdfRegex.test(name) || pdfRegex.test(url);
-};
-
-const isImage = (name: string, url: string = ""): boolean => {
-  const imgRegex = /\.(jpe?g|png|webp|gif|svg)(\?.*)?$/i;
-  return imgRegex.test(name) || imgRegex.test(url);
-};
-
-const isPreviewable = (name: string, url: string = ""): boolean => {
-  return isPdf(name, url) || isImage(name, url);
-};
-
-export const isMobileDevice = (): boolean => {
-  if (typeof window === "undefined") return false;
-  const userAgent = typeof navigator !== "undefined" ? navigator.userAgent : "";
-  if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
-    return true;
-  }
-  const hasTouchScreen =
-    typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
-  const isNarrowScreen =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(max-width: 768px)").matches;
-
-  return hasTouchScreen && isNarrowScreen;
-};
-
-export const isSafePublicPdfUrl = (urlStr: string): boolean => {
-  try {
-    const parsed = new URL(urlStr);
-    if (parsed.username || parsed.password) {
-      return false;
-    }
-    const sensitiveKeys = [
-      "token",
-      "auth",
-      "secret",
-      "password",
-      "apikey",
-      "access_token",
-      "session",
-      "sig",
-      "signature",
-    ];
-    for (const key of sensitiveKeys) {
-      if (parsed.searchParams.has(key)) {
-        return false;
-      }
-    }
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return false;
-    }
-    const hostname = parsed.hostname.toLowerCase();
-    return (
-      hostname === "im.mgt.ncu.edu.tw" ||
-      hostname.endsWith(".ncu.edu.tw") ||
-      hostname.endsWith(".edu.tw")
-    );
-  } catch {
-    return false;
-  }
-};
-
-export const getPdfPreviewUrl = (rawUrl: string, isMobile: boolean): string => {
-  if (isMobile && isSafePublicPdfUrl(rawUrl)) {
-    return `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}&embedded=true`;
-  }
-  return `${rawUrl}#view=FitH`;
-};
-
-
-const extractTextSnippet = (html: string): string => {
-  if (!html) return "";
-  const attachmentIndex = html.search(/<b>\s*附件[：:]/i);
-  const content = attachmentIndex !== -1 ? html.slice(0, attachmentIndex) : html;
-  if (typeof DOMParser !== "undefined") {
-    try {
-      const doc = new DOMParser().parseFromString(content, "text/html");
-      return (doc.body.textContent || "").trim();
-    } catch {
-      // Fallback
-    }
-  }
-  return content.trim();
-};
 
 interface AttachmentItemProps {
   readonly att: { readonly name: string; readonly url: string };
@@ -183,8 +107,6 @@ export const AttachmentItem: React.FC<AttachmentItemProps> = ({
 
   const meta = getAttachmentMeta(isAttPdf, isAttImage);
   const actionButtonText = isCurrentPreview ? "收合" : meta.actionText;
-  const isMobile = isMobileDevice();
-  const pdfSrc = getPdfPreviewUrl(att.url, isMobile);
 
   return (
     <div
@@ -301,28 +223,7 @@ export const AttachmentItem: React.FC<AttachmentItemProps> = ({
 
       {/* Inline Preview (PDF Frame or Responsive Image) */}
       {isCurrentPreview && isAttPdf && (
-        <div
-          style={{
-            borderTop: "1px solid var(--ncu-border, #e2e8f0)",
-            background: "#fff",
-            width: "100%",
-            overflow: "hidden",
-            position: "relative",
-          }}
-        >
-          <iframe
-            src={pdfSrc}
-            title={att.name}
-            scrolling={isMobile ? "yes" : "no"}
-            style={{
-              width: "100%",
-              height: isMobile ? "min(72vh, 560px)" : "min(68vh, 520px)",
-              border: "none",
-              display: "block",
-              background: "#fff",
-            }}
-          />
-        </div>
+        <PdfViewerFrame url={att.url} title={att.name} />
       )}
 
       {isCurrentPreview && isAttImage && (
@@ -779,7 +680,6 @@ export const DepartmentNewsModal: React.FC<DepartmentNewsModalProps> = ({
                           setIsPreviewExpanded((v) => !v);
                         } else {
                           setSelectedPreview(selected);
-                          setIsPreviewExpanded(true);
                         }
                       }}
                     />
