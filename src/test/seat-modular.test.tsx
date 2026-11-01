@@ -11,6 +11,7 @@ import {
   buildFlatItems,
   resolveTotalGridRows,
   resolveLeftAisleTrack,
+  resolveLayoutFlags,
 } from "../components/seats/seat-layout-math";
 import {
   SeatCellElement,
@@ -115,15 +116,42 @@ describe("Seat Layout Math", () => {
     });
   });
 
+  describe("resolveLayoutFlags", () => {
+    it("resolves layout flags correctly for room 209 and 310", () => {
+      const flags209 = resolveLayoutFlags(room209);
+      expect(flags209.hasAisles).toBe(true);
+      expect(flags209.hasLeftAisle).toBe(false);
+      expect(flags209.leadingTracks).toBe(0);
+
+      const flags310 = resolveLayoutFlags(room310);
+      expect(flags310.hasAisles).toBe(true);
+      expect(flags310.hasLeftAisle).toBe(true);
+      expect(flags310.leadingTracks).toBe(1);
+    });
+  });
+
   describe("buildTemplateColumns", () => {
     it("builds correct grid template for room 209", () => {
-      const cols = buildTemplateColumns(room209, false, false, true, false);
+      const cols = buildTemplateColumns(room209);
       expect(cols).toEqual(["auto", "26px", "auto", "4px", "auto", "26px", "auto"]);
     });
 
     it("builds correct grid template for room 310 with left aisle", () => {
-      const cols = buildTemplateColumns(room310, false, true, true, false);
-      expect(cols[0]).toBe("minmax(24px, auto)");
+      const cols = buildTemplateColumns(room310);
+      expect(cols).toEqual([
+        "minmax(24px, auto)",
+        "auto",
+        "4px",
+        "auto",
+        "18px",
+        "auto",
+        "4px",
+        "auto",
+        "18px",
+        "auto",
+        "4px",
+        "auto",
+      ]);
       expect(cols).toHaveLength(12); // left aisle + 6 seat cols + 5 gap tracks
     });
   });
@@ -133,9 +161,14 @@ describe("Seat Layout Math", () => {
       const seatColumn = (logical: number) => resolveSeatColumn(logical, true, 0);
       const flat = buildFlatItems(room209, true, false, 2, seatColumn);
       expect(flat).toHaveLength(20); // 5 rows * 4 cols
-      expect(flat[0].row).toBe(2);
-      expect(flat[0].col).toBe(1);
-      expect(flat[0].cell.type).toBe("seat");
+      // Verify first row coordinates across all columns
+      expect(flat[0]).toMatchObject({ row: 2, col: 1, cell: { label: "1-1" } });
+      expect(flat[1]).toMatchObject({ row: 2, col: 3, cell: { label: "2-1" } });
+      expect(flat[2]).toMatchObject({ row: 2, col: 5, cell: { label: "3-1" } });
+      expect(flat[3]).toMatchObject({ row: 2, col: 7, cell: { label: "4-1" } });
+      // Verify last row coordinates across border columns
+      expect(flat[16]).toMatchObject({ row: 6, col: 1, cell: { label: "1-5" } });
+      expect(flat[19]).toMatchObject({ row: 6, col: 7, cell: { label: "4-5" } });
 
       const totalRows = resolveTotalGridRows(flat, room209);
       expect(totalRows).toBe(7); // rowOffset (2) + 5 rows
@@ -187,7 +220,7 @@ describe("Seat Grid Sub-Components", () => {
   it("renders DoorCellElement with custom border orientation", () => {
     const { container } = render(
       <DoorCellElement
-        cell={{ type: "door", label: "大門" }}
+        cell={{ type: "door", label: "大門" } as const}
         sizes={dummySizes}
         doorOpen="down"
         hasRowAisles={false}
@@ -202,7 +235,7 @@ describe("Seat Grid Sub-Components", () => {
   it("renders PrinterCellElement and handles vertical writing mode for spans", () => {
     const { rerender } = render(
       <PrinterCellElement
-        cell={{ type: "printer", label: "印表機" }}
+        cell={{ type: "printer", label: "印表機" } as const}
         rowSpan={1}
         sizes={dummySizes}
         hasRowAisles={false}
@@ -214,7 +247,7 @@ describe("Seat Grid Sub-Components", () => {
 
     rerender(
       <PrinterCellElement
-        cell={{ type: "printer", label: "印表機" }}
+        cell={{ type: "printer", label: "印表機" } as const}
         rowSpan={3}
         sizes={dummySizes}
         hasRowAisles={false}
