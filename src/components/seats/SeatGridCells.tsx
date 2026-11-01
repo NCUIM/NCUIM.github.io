@@ -42,6 +42,9 @@ export const SeatCellElement = ({
   );
 };
 
+export type DoorCell = SpecialCell & { readonly type: "door" };
+export type PrinterCell = SpecialCell & { readonly type: "printer" };
+
 export const DoorCellElement = ({
   cell,
   sizes,
@@ -49,7 +52,7 @@ export const DoorCellElement = ({
   hasRowAisles,
   itemStyle,
 }: Readonly<{
-  cell: SpecialCell;
+  cell: DoorCell;
   sizes: SeatSizes;
   doorOpen?: "down" | "left" | "right";
   hasRowAisles: boolean;
@@ -96,7 +99,7 @@ export const PrinterCellElement = ({
   hasRowAisles,
   itemStyle,
 }: Readonly<{
-  cell: SpecialCell;
+  cell: PrinterCell;
   rowSpan: number;
   sizes: SeatSizes;
   hasRowAisles: boolean;
@@ -165,7 +168,7 @@ export const GridCellElement = ({
     case "door":
       return (
         <DoorCellElement
-          cell={cell}
+          cell={cell as DoorCell}
           sizes={sizes}
           doorOpen={layout.doorOpen}
           hasRowAisles={hasRowAisles}
@@ -175,7 +178,7 @@ export const GridCellElement = ({
     case "printer":
       return (
         <PrinterCellElement
-          cell={cell}
+          cell={cell as PrinterCell}
           rowSpan={rowSpan}
           sizes={sizes}
           hasRowAisles={hasRowAisles}

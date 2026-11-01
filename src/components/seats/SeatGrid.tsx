@@ -6,6 +6,7 @@ import {
   resolveLeftAisleTrack,
   resolveRowOffset,
   resolveSeatColumn,
+  resolveLayoutFlags,
   buildTemplateColumns,
   buildFlatItems,
   resolveTotalGridRows,
@@ -31,34 +32,19 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
   const font = resolveFont(seatW);
   const sizes: SeatSizes = { ...baseSizes, seat: seatW, height: seatH, name: font.name, code: font.code };
 
-  const hasAisles = layout.gaps !== undefined;
-  const hasRowAisles = layout.rowGaps !== undefined;
-  const hasSideTrack =
-    layout.sideDoorRow !== undefined ||
-    layout.sidePrinterRow !== undefined ||
-    layout.sideWhiteboardRow !== undefined;
-  const hasSideDoor = layout.sideDoorRow !== undefined;
-  const hasLeftAisle = layout.leftAisle === true;
-  const hasRightAisle = layout.rightAisle === true;
-  const leadingTracks = (hasSideTrack ? 1 : 0) + (hasLeftAisle ? 1 : 0);
-  const leftAisleTrack = resolveLeftAisleTrack(hasLeftAisle, hasSideTrack);
+  const flags = resolveLayoutFlags(layout);
+  const leftAisleTrack = resolveLeftAisleTrack(flags.hasLeftAisle, flags.hasSideTrack);
 
   const seatColumn = (logical: number): number =>
-    resolveSeatColumn(logical, hasAisles, leadingTracks);
+    resolveSeatColumn(logical, flags.hasAisles, flags.leadingTracks);
 
-  const templateColumns = buildTemplateColumns(
-    layout,
-    hasSideTrack,
-    hasLeftAisle,
-    hasAisles,
-    hasRightAisle,
-  );
+  const templateColumns = buildTemplateColumns(layout, flags);
 
-  const rightAisleTrack = hasRightAisle ? templateColumns.length : undefined;
+  const rightAisleTrack = flags.hasRightAisle ? templateColumns.length : undefined;
   const hasDoorWalkway = layout.doorWalkway === true;
   const rowOffset = resolveRowOffset(layout.doorColumn, hasDoorWalkway);
 
-  const flat = buildFlatItems(layout, hasAisles, hasRowAisles, rowOffset, seatColumn);
+  const flat = buildFlatItems(layout, flags.hasAisles, flags.hasRowAisles, rowOffset, seatColumn);
   const doorCol = layout.doorColumn !== undefined ? seatColumn(layout.doorColumn - 1) : undefined;
 
   const rowSpacers = (layout.rowGaps ?? []).map((h, r) => ({
@@ -70,7 +56,7 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
   const totalGridRows = resolveTotalGridRows(flat, layout);
 
   const verticalAisleLines = (layout.gaps ?? [])
-    .map((g, i) => (g >= 12 ? leadingTracks + i * 2 + 2 : -1))
+    .map((g, i) => (g >= 12 ? flags.leadingTracks + i * 2 + 2 : -1))
     .filter((l) => l > 0);
 
   return (
@@ -88,8 +74,8 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
           margin: "0 auto",
           gridTemplateColumns: templateColumns.join(" "),
           gridTemplateRows: `repeat(${totalGridRows}, auto)`,
-          columnGap: hasAisles ? 0 : sizes.gap,
-          rowGap: hasRowAisles ? 0 : sizes.gap,
+          columnGap: flags.hasAisles ? 0 : sizes.gap,
+          rowGap: flags.hasRowAisles ? 0 : sizes.gap,
         }}
       >
         {doorCol !== undefined && (
@@ -98,7 +84,7 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
             sizes={sizes}
             doorOpen={layout.doorOpen}
             hasDoorWalkway={hasDoorWalkway}
-            hasRowAisles={hasRowAisles}
+            hasRowAisles={flags.hasRowAisles}
           />
         )}
         {layout.topWhiteboardCols !== undefined && (
@@ -106,7 +92,7 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
             key="top-whiteboard"
             colStart={seatColumn(layout.topWhiteboardCols[0] - 1)}
             colEnd={seatColumn(layout.topWhiteboardCols[1] - 1)}
-            hasRowAisles={hasRowAisles}
+            hasRowAisles={flags.hasRowAisles}
             gap={sizes.gap}
           />
         )}
@@ -117,7 +103,7 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
           <RowGapSpacer key={s.keyId} gridRow={s.gridRow} height={s.height} />
         ))}
         {/* Vertical aisle dividers (209/310/313): dashed frame lines along desk-separation walkways */}
-        {hasAisles &&
+        {flags.hasAisles &&
           verticalAisleLines.map((colTrack) => (
             <VerticalAisleTrack
               key={`aisle-col-${colTrack}`}
@@ -145,7 +131,7 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
           />
         )}
         {/* Side wall door */}
-        {hasSideDoor && layout.sideDoorRow !== undefined && (
+        {flags.hasSideDoor && layout.sideDoorRow !== undefined && (
           <SideDoorElement
             key="side-door"
             sideDoorRow={layout.sideDoorRow}
@@ -173,7 +159,7 @@ export const SeatGrid = ({ layout }: Readonly<{ layout: RoomLayout }>) => {
             item={item}
             sizes={sizes}
             layout={layout}
-            hasRowAisles={hasRowAisles}
+            hasRowAisles={flags.hasRowAisles}
           />
         ))}
       </div>

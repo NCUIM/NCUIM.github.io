@@ -57,18 +57,49 @@ export const resolvePhysicalSpan = (
   return colSpan;
 };
 
+export interface SeatLayoutFlags {
+  readonly hasAisles: boolean;
+  readonly hasRowAisles: boolean;
+  readonly hasSideTrack: boolean;
+  readonly hasSideDoor: boolean;
+  readonly hasLeftAisle: boolean;
+  readonly hasRightAisle: boolean;
+  readonly leadingTracks: number;
+}
+
+export const resolveLayoutFlags = (layout: RoomLayout): SeatLayoutFlags => {
+  const hasAisles = layout.gaps !== undefined;
+  const hasRowAisles = layout.rowGaps !== undefined;
+  const hasSideTrack =
+    layout.sideDoorRow !== undefined ||
+    layout.sidePrinterRow !== undefined ||
+    layout.sideWhiteboardRow !== undefined;
+  const hasSideDoor = layout.sideDoorRow !== undefined;
+  const hasLeftAisle = layout.leftAisle === true;
+  const hasRightAisle = layout.rightAisle === true;
+  const leadingTracks = (hasSideTrack ? 1 : 0) + (hasLeftAisle ? 1 : 0);
+
+  return {
+    hasAisles,
+    hasRowAisles,
+    hasSideTrack,
+    hasSideDoor,
+    hasLeftAisle,
+    hasRightAisle,
+    leadingTracks,
+  };
+};
+
 export const buildTemplateColumns = (
   layout: RoomLayout,
-  hasSideTrack: boolean,
-  hasLeftAisle: boolean,
-  hasAisles: boolean,
-  hasRightAisle: boolean
+  flags?: SeatLayoutFlags
 ): string[] => {
+  const resolved = flags ?? resolveLayoutFlags(layout);
   const tracks: string[] = [];
-  if (hasSideTrack) tracks.push("auto");
-  if (hasLeftAisle) tracks.push("minmax(24px, auto)");
+  if (resolved.hasSideTrack) tracks.push("auto");
+  if (resolved.hasLeftAisle) tracks.push("minmax(24px, auto)");
 
-  if (hasAisles && layout.gaps) {
+  if (resolved.hasAisles && layout.gaps) {
     for (let c = 0; c < layout.cols; c++) {
       tracks.push("auto");
       if (c < layout.cols - 1) {
@@ -82,7 +113,7 @@ export const buildTemplateColumns = (
     }
   }
 
-  if (hasRightAisle) tracks.push("24px");
+  if (resolved.hasRightAisle) tracks.push("24px");
   return tracks;
 };
 
