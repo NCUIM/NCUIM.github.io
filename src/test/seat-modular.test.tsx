@@ -132,7 +132,7 @@ describe("Seat Layout Math", () => {
     it("flattens room 209 rows and maps correct row and col tracks", () => {
       const seatColumn = (logical: number) => resolveSeatColumn(logical, true, 0);
       const flat = buildFlatItems(room209, true, false, 2, seatColumn);
-      expect(flat.length).toBe(20); // 5 rows * 4 cols
+      expect(flat).toHaveLength(20); // 5 rows * 4 cols
       expect(flat[0].row).toBe(2);
       expect(flat[0].col).toBe(1);
       expect(flat[0].cell.type).toBe("seat");
@@ -303,7 +303,7 @@ describe("Seat Grid Sub-Components", () => {
         <VerticalAisleTrack colTrack={2} rowOffset={2} totalGridRows={8} />
       </div>,
     );
-    expect(screen.getAllByText("走道").length).toBe(3);
+    expect(screen.getAllByText("走道")).toHaveLength(3);
   });
 });
 
